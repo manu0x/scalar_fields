@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <iostream>
+#include "mt19937ar.c"
 
 #include <fftw3.h>
 
@@ -292,3 +293,227 @@ int main()
 
 
 }
+
+
+double ini_power_spec(double ksqr)
+{
+	return (1e-5);
+}
+
+
+void initialise(int * ind)
+{
+      int l1,l2,r1,r2;
+      double Vvlb;
+
+    
+      int px,py,pz,ci,pgi,j;
+      int xcntr[3]={-1,-1,-1},anchor[3];
+      double gamma, v, gradmagf;
+      double ktmp,maxkmagsqr = 0.0,minkmagsqr = 1e10;
+      double a0 = 1.00;
+      double ai = 0.001;
+      double a = ai;
+      double Hi = 1.0;//H0;
+      double a_t = a*Hi;
+      double cpmc = 0.3;
+      double omdm_ini= (cpmc)*pow((a0/ai),3.0)/(cpmc*a0*a0*a0/(ai*ai*ai) + (1.0-cpmc));
+ 
+      double L[3],dx[3];
+      double dk; 
+      int kbins;     
+      double lenfac = 1.0;
+      int tN = ind[0]*ind[1]*ind[2];
+      int kbin_count[tN],kmag_grid[tN];
+      double k_grid[tN][3];
+      int n[3]{ind[0],ind[1],ind[2]};
+       
+	     
+	 
+	
+
+	double kf = twopie*lenfac/(64.0);
+
+	dx[0] = 1.0; dx[1] =1.0; dx[2] = 1.0;
+        L[0] = dx[0]*((double) ind[0]);  L[1] = dx[1]*((double) (ind[1]));  L[2] = dx[2]*((double) (ind[2]));
+	dk = 0.01/dx[0]; kbins = 0;
+	
+	//ini_rand_field();
+	//  read_ini_rand_field();
+        
+	for(ci = 0;ci <tN; ++ci)
+	{
+		kbin_count[ci]=0;
+	}
+	
+	for(ci = 0;ci <tN; ++ci)
+	{
+		
+		
+		if((ci%(n[2]*n[1]))==0)
+		 ++xcntr[0];
+		if((ci%(n[2]))==0)
+		 ++xcntr[1];
+		 ++xcntr[2];
+		ktmp=0.0;
+		
+		for(j=0;j<3;++j)
+		{	
+			
+
+			if((xcntr[j]%n[j])<=(n[j]/2))
+				{
+					
+				 k_grid[ci][j] = ((double)(xcntr[j]%n[j]))/L[j];
+
+				  ktmp+= k_grid[ci][j]*k_grid[ci][j];
+
+					
+				}
+			else
+				{ 
+				 k_grid[ci][j] = ((double)((xcntr[j]%n[j])-n[j]))/L[j];
+
+				 ktmp+= k_grid[ci][j]*k_grid[ci][j];
+
+				
+				  
+				}
+		
+			 
+			
+			
+		
+		}
+		
+		
+		
+
+
+		
+	
+			
+		if(ktmp>maxkmagsqr)
+		maxkmagsqr = (ktmp);
+		if((ktmp>0.0)&&(minkmagsqr>ktmp))
+		minkmagsqr = ktmp;
+		
+
+		kmag_grid[ci] = (int)(sqrt(ktmp)/(dk));
+		 //printf("yo  %d  %lf\n",kmag_grid[ci],sqrt(ktmp));
+		++kbin_count[kmag_grid[ci]];
+
+		if(kmag_grid[ci]>kbins)
+		kbins=kmag_grid[ci];
+		
+			
+
+		
+		
+		
+      	}
+
+	
+
+	
+	
+
+	printf("Initialization Complete.\n");
+	printf("\nK details:\n	dk is %lf  per MPc",dk/lenfac);
+	/*printf("\n Nyquist Wavenumber is %lf",M_PI/dx[0]);
+	printf("\n	Min k_mag is %lf per MPc:: corr lmbda is %.16lf MPc",1.0/(dx[0]*lenfac*((double) n)),dx[0]*lenfac*((double) n));
+	printf("\n	Max k_mag is %lf per MPc:: corr lmbda is %.16lf Mpc",sqrt(maxkmagsqr)/lenfac,lenfac/sqrt(maxkmagsqr));
+	printf("\n	kbins is %d\n",kbins);
+
+	printf("\nLengthscales:");
+	printf("\n	Grid Length is %.6lf MPc",dx[0]*lenfac*((double) n));
+	printf("\n	dx is %.16lf MPc\n",dx[0]*lenfac);
+
+	*/
+	
+	
+	  
+
+}
+
+
+void ini_rand_field(int * ind,double *kmag_grid,double * ini_dc)
+{	init_genrand(time(0));
+	int i,cnt,tN; 
+	double ksqr,muk,sigk;
+	double a1,a2,b1,b2,a,b;
+	fftw_plan ini_del_plan;
+
+
+	FILE *fpinirand = fopen("initial_rand_field.txt","w");
+
+	
+	
+	tN = ind[0]*ind[1]*ind[2];
+
+	fftw_complex *F_ini_del;
+	fftw_complex *ini_del;
+	F_ini_del = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) *tN);
+	ini_del = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) *tN);
+
+	init_genrand(time(0));
+	
+	for(cnt=0;cnt<tN;++cnt)
+	{	
+		 	    ksqr = kmag_grid[cnt];
+			    sigk  = sqrt(ini_power_spec(sqrt(ksqr)));
+			    muk = sigk/sqrt(2.0);
+		 	    a1 = genrand_res53();
+ 			    a2 = genrand_res53(); 
+			   // b1 = genrand_res53();
+ 			  //  b2 = genrand_res53();
+			    a = (muk*(sqrt(-2.0*log(a1))*cos(2.0*M_PI*a2)));
+			    b = (muk*(sqrt(-2.0*log(a1))*cos(2.0*M_PI*a2)));
+				
+			    F_ini_del[cnt][0] = a;	F_ini_del[cnt][1] = b;
+
+
+
+	}
+
+
+
+
+	ini_del_plan = fftw_plan_dft_3d(ind[0],ind[1],ind[2], F_ini_del, ini_del, FFTW_BACKWARD, FFTW_ESTIMATE);
+	
+	
+
+	fftw_execute(ini_del_plan);
+	
+
+	
+	for(cnt=0;cnt<tN;++cnt)
+	{
+		
+		ini_del[cnt][0] = ini_del[cnt][0]/sqrt(tN); ini_del[cnt][1] = ini_del[cnt][1]/sqrt(tN); 
+		ini_dc[cnt] = ini_del[cnt][0];
+		
+
+		fprintf(fpinirand,"%d\t%.16lf\n",
+					cnt,ini_del[cnt][0]);
+
+
+		
+
+	}
+    
+
+	 fftw_free(F_ini_del);
+
+	 fftw_free(ini_del);
+	
+
+
+	fftw_destroy_plan(ini_del_plan);
+	
+
+	
+}
+
+
+
