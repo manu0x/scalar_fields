@@ -226,7 +226,7 @@ class metric_potential
 
 	private:
 	int n[3];
-	scalar_field_3d phi;
+	//scalar_field_3d phi;
 
 	fftw_complex *fpGpsi;
 	fftw_complex *fpGpsi_ft;
@@ -236,7 +236,7 @@ class metric_potential
 	
 	public:
 	
-	metric_potential(int *ind,bool lb=false,bool sgb=false):phi(ind,lb,sgb)
+	metric_potential(int *ind,bool lb=false,bool sgb=false)//:phi(ind,lb,sgb)
 	{
 		int l = ind[0]*ind[1]*ind[2];
 		n[0]=ind[0];n[1]=ind[1];n[2]=ind[2];
@@ -251,11 +251,12 @@ class metric_potential
 	}
 
 
-	void solve_poisson(fdm_psi psi,double **k_grid)
+	void solve_poisson(fdm_psi psi,double k_grid[][3])
 	{
 		int i,j,k,ci,ind[3]{0,0,0},r;
 		double k2fac;
 		fftw_execute(plan_pois_f);
+		double sqrt_tN = sqrt((double)(n[0]*n[1]*n[2])); 
 
 		for(i=0;i<n[0];++i)
 		{
@@ -265,8 +266,8 @@ class metric_potential
 		    {
 			ci = (n[2]*n[1])*i + n[2]*j + k;			
 			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
-			fpGpsi_ft[ci][0] = 2.0*twopie*G*mass*fpGpsi_ft[ci][0]/k2fac;
-			fpGpsi_ft[ci][1] = 2.0*twopie*G*mass*fpGpsi_ft[ci][1]/k2fac;
+			fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(k2fac*sqrt_tN);
+			fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(k2fac*sqrt_tN);
 
 		    }
 
@@ -288,6 +289,15 @@ class metric_potential
 	}
 
 
+/*	int update(int * ind,double phi_val)
+	{
+		int c1;
+		c1 = phi.update_field(ind,phi_val);
+		
+		return (c1);
+	}
+
+*/
 
 
 };

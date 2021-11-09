@@ -16,9 +16,11 @@ using namespace std;
 
 ///////////////////////////////////////////Todo List///////////////////////////////////////////
 //////////////   1) Add error check for successful memory allocation in class scalar_field_3d    /////////////////////////////////////////
-//////////////   2) Check cosmo ini conditions as per fdm					 ////////////////////////////////////////
+//////////////   2) Check cosmo ini conditions as per fdm					 /////////////////////////////////////////
+//////////////   3) Check k grid related things							 /////////////////////////////////////////
 
-double hbar_by_m,h,lenfac;
+
+double hbar_by_m,h,H0,lenfac;
 double c_box,pc_box;
 
 enum code1 {give_f,give_f_t,give_f_x,give_f_y,give_f_z,give_f_lap};
@@ -26,10 +28,11 @@ enum code1 {give_f,give_f_t,give_f_x,give_f_y,give_f_z,give_f_lap};
 
 
 void ini_rand_field(int * ,double *,double *,double * ,double ,double ,double );
-void initialise(int * ,fdm_psi &,double ,double ,double ,double);
+void initialise(int * ,fdm_psi &,metric_potential &,double ,double ,double ,double);
 double ini_power_spec(double );
 double dlogD_dloga(double );
 void set_back_cosmo(double &,double &,double &,double &);
+int evolve_kdk(double,fdm_psi &,metric_potential &);
 
 
 
@@ -48,12 +51,7 @@ int main()
 	double a0,ai,Hi,omega_dm_ini;
 	set_back_cosmo(a0,ai,Hi,omega_dm_ini);
 	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n",Hi,omega_dm_ini,ai);
-	initialise(ind,psi,a0,ai,Hi,omega_dm_ini);
-
-	
-
-
-    
+	initialise(ind,psi,phi,a0,ai,Hi,omega_dm_ini);
 
 
 
@@ -95,7 +93,7 @@ double dlogD_dloga(double a)
 
 }
 
-void initialise(int * ind,fdm_psi &psi,double a0,double ai,double Hi,double omega_dm_ini)
+void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double a0,double ai,double Hi,double omega_dm_ini)
 {
       
 
@@ -120,7 +118,7 @@ void initialise(int * ind,fdm_psi &psi,double a0,double ai,double Hi,double omeg
       int loc_ind[3],err_hold;
 
       double ini_dc[tN],ini_theta[tN];
-      double psi_amp,psi_r_val,psi_i_val;
+      double psi_amp,psi_r_val,psi_i_val,poisson_rhs;
        
 	     
 	 
@@ -224,6 +222,9 @@ void initialise(int * ind,fdm_psi &psi,double a0,double ai,double Hi,double omeg
 			psi_i_val = psi_amp*sin(ini_theta[ci]);
 
 			err_hold =  psi.update(loc_ind, psi_r_val, psi_i_val);
+
+			poisson_rhs = 1.5*H0*H0*a*a*(psi_amp*psi_amp - omega_dm_ini*pow(a0/ai,3.0));
+			phi.update_4pieGpsi(ci,poisson_rhs);
 			
 
 
@@ -232,8 +233,7 @@ void initialise(int * ind,fdm_psi &psi,double a0,double ai,double Hi,double omeg
 
 		}
 
-	
-	
+	phi.solve_poisson(psi,k_grid);
 
 	printf("Initialization Complete.\n");
 	printf("\nK details:\n	dk is %lf  per MPc",dk/lenfac);
