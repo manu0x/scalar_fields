@@ -18,17 +18,18 @@ using namespace std;
 //////////////   1) Add error check for successful memory allocation in class scalar_field_3d    /////////////////////////////////////////
 //////////////   2) Check cosmo ini conditions as per fdm					 ////////////////////////////////////////
 
-double hbar_by_m;
+double hbar_by_m,h,lenfac;
+double c_box,pc_box;
 
 enum code1 {give_f,give_f_t,give_f_x,give_f_y,give_f_z,give_f_lap};
 #include "my_classes.cpp"
 
 
 void ini_rand_field(int * ,double *,double *,double * ,double ,double ,double );
-void initialise(int * ,fdm_psi,double ,double ,double ,double);
+void initialise(int * ,fdm_psi &,double ,double ,double ,double);
 double ini_power_spec(double );
 double dlogD_dloga(double );
-
+void set_back_cosmo(double &,double &,double &,double &);
 
 
 
@@ -39,18 +40,44 @@ double dlogD_dloga(double );
 int main()
 {
 
+	int ind[3]{64,64,64};	
+	
+	fdm_psi psi(ind,true);
+	metric_potential phi(ind,true);
 
-
-
-   int a[3][3][3];
-    int n[3]={2,2,2};
+	double a0,ai,Hi,omega_dm_ini;
+	set_back_cosmo(a0,ai,Hi,omega_dm_ini);
+	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n",Hi,omega_dm_ini,ai);
+	initialise(ind,psi,a0,ai,Hi,omega_dm_ini);
 
 	
 
- int t[3] {0,0,0};
-   scalar_field_3d b(n);
-	b.get_field(t,give_f_t);
 
+    
+
+
+
+}
+
+
+void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_ini)
+{
+	c_box = 2.99;
+	lenfac = 1.0;
+	omega_dm_ini = 0.29;
+	h = 0.7;
+	hbar_by_m = 1.0;	
+		
+	double z = 20.0;
+	double alpha = 1.0;// Mass in 10^(-22) eV;
+	
+	double H0 = lenfac*(h/c_box)*0.001;
+	printf("H0 %lf\n",H0);
+	
+	
+	a0 = 1.0;
+	ai = a0/(1.0+z);
+	Hi =   H0*sqrt(omega_dm_ini*pow(a0/ai,3.0)+ (1.0-omega_dm_ini));
 
 
 }
@@ -82,12 +109,11 @@ void initialise(int * ind,fdm_psi &psi,double a0,double ai,double Hi,double omeg
       double a_t = a*Hi;
       double a_ti = ai*Hi;
      
- 
+
       double L[3],dx[3];
       double dk; 
       int kbins;     
-      double lenfac = 1.0;
-      int tN = ind[0]*ind[1]*ind[2];
+      int tN = ind[0]*ind[1]*ind[2]; 
       int kbin_count[tN],kbin_grid[tN];
       double k_grid[tN][3],kmag_grid[tN];
       int n[3]{ind[0],ind[1],ind[2]};
@@ -104,7 +130,7 @@ void initialise(int * ind,fdm_psi &psi,double a0,double ai,double Hi,double omeg
 
 	dx[0] = 1.0; dx[1] =1.0; dx[2] = 1.0;
         L[0] = dx[0]*((double) ind[0]);  L[1] = dx[1]*((double) (ind[1]));  L[2] = dx[2]*((double) (ind[2]));
-	dk = 0.01/dx[0]; kbins = 0;
+	dk = 0.01/dx[0]; kbins = 0; printf("dk %lf\n",dk);
 	
 	//ini_rand_field();
 	//  read_ini_rand_field();
@@ -274,8 +300,12 @@ void ini_rand_field(int * ind,double *kmag_grid,double * ini_dc,double * ini_the
 				
 			    F_ini_del[cnt][0] = a_rand;	F_ini_del[cnt][1] = b_rand;
 			    if(ksqr>0.0)
-			    { F_ini_theta[cnt][0] =  mass*(a_t/a)*f_ini*(a/a0)*(a/a0)*F_ini_del[cnt][0];
-			      F_ini_theta[cnt][1] =  mass*(a_t/a)*f_ini*(a/a0)*(a/a0)*F_ini_del[cnt][1];
+			    { F_ini_theta[cnt][0] =  mass*(a_t/a)*f_ini*(a/a0)*(a/a0)*F_ini_del[cnt][0]/ksqr;
+			      F_ini_theta[cnt][1] =  mass*(a_t/a)*f_ini*(a/a0)*(a/a0)*F_ini_del[cnt][1]/ksqr;
+			    }	
+			    else
+			    { F_ini_theta[cnt][0] =  0.0;
+			      F_ini_theta[cnt][1]  = 0.0;
 			    }	
 
 

@@ -167,9 +167,9 @@ class fdm_psi
 	scalar_field_3d psi_r;
 	scalar_field_3d psi_i;
 	
-	public:
+	public:  
 	//int n[3];
-	fdm_psi(int *ind):psi_r(ind),psi_i(ind)
+	fdm_psi(int *ind,bool lb=false,bool sgb=false):psi_r(ind,lb,sgb),psi_i(ind,lb,sgb)
 	{
 	}
 	
@@ -236,7 +236,7 @@ class metric_potential
 	
 	public:
 	
-	metric_potential(int *ind):phi(ind)
+	metric_potential(int *ind,bool lb=false,bool sgb=false):phi(ind,lb,sgb)
 	{
 		int l = ind[0]*ind[1]*ind[2];
 		n[0]=ind[0];n[1]=ind[1];n[2]=ind[2];
