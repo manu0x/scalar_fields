@@ -15,6 +15,7 @@ using namespace std;
 
 ///////////////////////////////////////////Todo List///////////////////////////////////////////
 //////////////   1) Add error check for successful memory allocation in class scalar_field_3d    /////////////////////////////////////////
+//////////////   2) Check cosmo ini conditions as per fdm					 ////////////////////////////////////////
 
 double hbar_by_m;
 
@@ -116,19 +117,19 @@ class scalar_field_3d
 	  f_lap[ind[0]][ind[1]][ind[2]]=lapsum;
 
 	  if(isnan(lapsum))
-		return(-1);
+		return(0);
 	  else
 		return (1);
 	
 	}
 
-	int update_field(int * ind,double fu,double f_tu)
+	int update_field(int * ind,double fu,double f_tu=0.0)
 	{
 		f[ind[0]][ind[1]][ind[2]] = fu;
 		f_t[ind[0]][ind[1]][ind[2]] = f_tu;
 
 		if(isnan(fu+f_tu))
-			return(-1);
+			return(0);
 		else
 			return(1);
 
@@ -204,6 +205,15 @@ class fdm_psi
 
 		return(mag);
 
+	}
+
+	int update(int * ind,double psir,double psii)
+	{
+		int c1,c2;
+		c1 = psi_r.update_field(ind,psir);
+		c2 = psi_i.update_field(ind,psii);
+		
+		return (c1*c2);
 	}
 
 
@@ -301,7 +311,13 @@ double ini_power_spec(double ksqr)
 }
 
 
-void initialise(int * ind)
+double dlogD_dloga(double a)
+{
+	return (1.0);
+
+}
+
+void initialise(int * ind,fdm_psi * psi)
 {
       int l1,l2,r1,r2;
       double Vvlb;
@@ -316,8 +332,9 @@ void initialise(int * ind)
       double a = ai;
       double Hi = 1.0;//H0;
       double a_t = a*Hi;
+      double a_ti = ai*Hi;
       double cpmc = 0.3;
-      double omdm_ini= (cpmc)*pow((a0/ai),3.0)/(cpmc*a0*a0*a0/(ai*ai*ai) + (1.0-cpmc));
+      double omega_dm_ini= (cpmc)*pow((a0/ai),3.0)/(cpmc*a0*a0*a0/(ai*ai*ai) + (1.0-cpmc));
  
       double L[3],dx[3];
       double dk; 
@@ -327,6 +344,10 @@ void initialise(int * ind)
       int kbin_count[tN],kmag_grid[tN];
       double k_grid[tN][3];
       int n[3]{ind[0],ind[1],ind[2]};
+      int loc_ind[3];
+
+      double ini_dc[tN],ini_theta[tN];
+      double psi_amp,psi_r_val,psi_i_val;
        
 	     
 	 
@@ -413,7 +434,27 @@ void initialise(int * ind)
 		
       	}
 
-	
+
+	ini_rand_field(n,kmag_grid, ini_dc,ini_theta,ai,a0,a_ti)
+
+	for(i=0;i<n[0];++i)
+		{
+		  for(j=0;j<n[1];++j)
+		  {
+		    for(k=0;k<n[2];++k)
+		    {
+			ci = (n[2]*n[1])*i + n[2]*j + k;
+			loc_ind[0] = i;  loc_ind[1] = j;  loc_ind[2] = k;
+			psi_amp = sqrt(omega_dm_ini*pow(a0/ai,3.0)*(1.0+ini_dc[ci]));
+			psi_r_val = psi_amp*cos(ini_theta[ci]);
+			psi_i_val = psi_amp*sin(ini_theta[ci]);
+			
+
+
+		    }
+		  }
+
+		}
 
 	
 	
@@ -437,12 +478,13 @@ void initialise(int * ind)
 }
 
 
-void ini_rand_field(int * ind,double *kmag_grid,double * ini_dc)
+void ini_rand_field(int * ind,double *kmag_grid,double * ini_dc,double * ini_theta_return,double a,double a0,double a_t)
 {	init_genrand(time(0));
 	int i,cnt,tN; 
 	double ksqr,muk,sigk;
-	double a1,a2,b1,b2,a,b;
-	fftw_plan ini_del_plan;
+	double a1,a2,b1,b2,a_rand,b_rand;
+	double f_ini;
+	
 
 
 	FILE *fpinirand = fopen("initial_rand_field.txt","w");
@@ -451,12 +493,22 @@ void ini_rand_field(int * ind,double *kmag_grid,double * ini_dc)
 	
 	tN = ind[0]*ind[1]*ind[2];
 
+	fftw_plan ini_del_plan;
+	fftw_plan ini_theta_plan;
+
 	fftw_complex *F_ini_del;
 	fftw_complex *ini_del;
+	fftw_complex *F_ini_theta;
+	fftw_complex *ini_theta;
+
 	F_ini_del = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) *tN);
 	ini_del = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) *tN);
+	F_ini_theta = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) *tN);
+	ini_theta = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) *tN);
 
 	init_genrand(time(0));
+
+	f_ini  = dlogD_dloga(a);
 	
 	for(cnt=0;cnt<tN;++cnt)
 	{	
@@ -467,10 +519,14 @@ void ini_rand_field(int * ind,double *kmag_grid,double * ini_dc)
  			    a2 = genrand_res53(); 
 			   // b1 = genrand_res53();
  			  //  b2 = genrand_res53();
-			    a = (muk*(sqrt(-2.0*log(a1))*cos(2.0*M_PI*a2)));
-			    b = (muk*(sqrt(-2.0*log(a1))*cos(2.0*M_PI*a2)));
+			    a_rand = (muk*(sqrt(-2.0*log(a1))*cos(2.0*M_PI*a2)));
+			    b_rand = (muk*(sqrt(-2.0*log(a1))*cos(2.0*M_PI*a2)));
 				
-			    F_ini_del[cnt][0] = a;	F_ini_del[cnt][1] = b;
+			    F_ini_del[cnt][0] = a_rand;	F_ini_del[cnt][1] = b_rand;
+			    if(ksqr>0.0)
+			    { F_ini_theta[cnt][0] =  mass*(a_t/a)*f_ini*(a/a0)*(a/a0)*F_ini_del[cnt][0];
+			      F_ini_theta[cnt][1] =  mass*(a_t/a)*f_ini*(a/a0)*(a/a0)*F_ini_del[cnt][1];
+			    }	
 
 
 
@@ -480,10 +536,12 @@ void ini_rand_field(int * ind,double *kmag_grid,double * ini_dc)
 
 
 	ini_del_plan = fftw_plan_dft_3d(ind[0],ind[1],ind[2], F_ini_del, ini_del, FFTW_BACKWARD, FFTW_ESTIMATE);
+	ini_theta_plan = fftw_plan_dft_3d(ind[0],ind[1],ind[2], F_ini_theta, ini_theta, FFTW_BACKWARD, FFTW_ESTIMATE);
 	
 	
 
 	fftw_execute(ini_del_plan);
+	fftw_execute(ini_theta_plan);
 	
 
 	
@@ -491,11 +549,13 @@ void ini_rand_field(int * ind,double *kmag_grid,double * ini_dc)
 	{
 		
 		ini_del[cnt][0] = ini_del[cnt][0]/sqrt(tN); ini_del[cnt][1] = ini_del[cnt][1]/sqrt(tN); 
+		ini_theta[cnt][0] = ini_theta[cnt][0]/sqrt(tN); ini_theta[cnt][1] = ini_theta[cnt][1]/sqrt(tN); 
 		ini_dc[cnt] = ini_del[cnt][0];
+		ini_theta_return[cnt] = ini_theta[cnt][0];
 		
 
-		fprintf(fpinirand,"%d\t%.16lf\n",
-					cnt,ini_del[cnt][0]);
+		fprintf(fpinirand,"%d\t%.16lf\t%.16lf\n",
+					cnt,ini_del[cnt][0],ini_theta[cnt][0]);
 
 
 		
@@ -504,12 +564,12 @@ void ini_rand_field(int * ind,double *kmag_grid,double * ini_dc)
     
 
 	 fftw_free(F_ini_del);
-
 	 fftw_free(ini_del);
+	 fftw_destroy_plan(ini_del_plan);
 	
-
-
-	fftw_destroy_plan(ini_del_plan);
+	 fftw_free(F_ini_theta);
+	 fftw_free(ini_theta);
+	 fftw_destroy_plan(ini_theta_plan);
 	
 
 	
