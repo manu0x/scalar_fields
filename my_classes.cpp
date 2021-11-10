@@ -71,7 +71,7 @@ class scalar_field_3d
 
 	}
 
-	int cal_lap(int *ind,double *dx,bool spt_grad=true,bool laplacian=true)
+	int cal_spt_grads(int *ind,double *dx,bool laplacian=false,bool spt_grad=false)
 	{
 	   int i,j;
 	   double m[3],lapsum=0.0;
@@ -175,17 +175,20 @@ class fdm_psi
 	
 	
 
-	int calc_vel(int * ind,double *v,double potn,double a,double a_t)
+	int calc_vel(int * ind,double *v,double potn,double a,double a_t,double *dx)
 	{
+		int c1;		
 		double psi_r_lap,psi_i_lap,psi_r_val,psi_i_val;
 		psi_r_val = psi_r.get_field(ind,give_f);
 		psi_i_val = psi_i.get_field(ind,give_f);
+		c1 = psi_r.cal_spt_grads(ind,dx,true);
+		c1 = psi_i.cal_spt_grads(ind,dx,true);
 		psi_r_lap = psi_r.get_field(ind,give_f_lap);
 		psi_i_lap = psi_i.get_field(ind,give_f_lap);
 		v[0] = -1.5*(a_t/a)*psi_i_val;
-		v[0]+= (-0.5*hbar_by_m*psi_i_lap/(a*a) + potn/hbar_by_m);
+		v[0]+= (-0.5*hbar_by_m*psi_i_lap/(a*a) + potn*psi_i_val/hbar_by_m);
 		v[1] = -1.5*(a_t/a)*psi_r_val;
-		v[1]+= (0.5*hbar_by_m*psi_r_lap/(a*a) - potn/hbar_by_m);
+		v[1]+= (0.5*hbar_by_m*psi_r_lap/(a*a) - potn*psi_r_val/hbar_by_m);
 
 		if(isnan(v[0]+v[1]))
 			return (-1);
@@ -282,8 +285,8 @@ class metric_potential
 			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
 			
 			if(k2fac>0.0)
-			{fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(k2fac*sqrt_tN);
-			 fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(k2fac*sqrt_tN);
+			{fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(k2fac*sqrt_tN*sqrt_tN);
+			 fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(k2fac*sqrt_tN*sqrt_tN);
 			}	
 			else
 			{fpGpsi_ft[ci][0] = 0.0;
