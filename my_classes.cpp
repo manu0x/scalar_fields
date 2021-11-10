@@ -216,6 +216,20 @@ class fdm_psi
 		return (c1*c2);
 	}
 
+	int get_psi(int *ind,double *psi_ret,code1 c = give_f)
+	{
+		int c1=1;		
+		
+		psi_ret[0]= psi_r.get_field(ind,c);
+		psi_ret[1] = psi_i.get_field(ind,c);
+
+		return c1;
+
+
+
+
+	}
+
 
 
 };
@@ -275,7 +289,7 @@ class metric_potential
 
 		}
 		
-		fftw_execute(plan_pois_f);
+		fftw_execute(plan_pois_b);
 		
 
 	}
@@ -286,6 +300,14 @@ class metric_potential
 		
 		fpGpsi[ci][0] = val;
 	
+	}
+
+
+	double get_potential(int ci)
+	{
+
+		return (fpGpsi[ci][0]);	
+
 	}
 
 

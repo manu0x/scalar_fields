@@ -28,11 +28,11 @@ enum code1 {give_f,give_f_t,give_f_x,give_f_y,give_f_z,give_f_lap};
 
 
 void ini_rand_field(int * ,double *,double *,double * ,double ,double ,double );
-void initialise(int * ,fdm_psi &,metric_potential &,double ,double ,double ,double);
+void initialise(int * ,fdm_psi &,metric_potential &,double [][3],double ,double ,double ,double);
 double ini_power_spec(double );
 double dlogD_dloga(double );
 void set_back_cosmo(double &,double &,double &,double &);
-int evolve_kdk(double,fdm_psi &,metric_potential &);
+int evolve_kdk(int *,fdm_psi &,metric_potential &,double [][3],double ,double,double,double,double );
 
 
 
@@ -44,14 +44,17 @@ int main()
 {
 
 	int ind[3]{64,64,64};	
-	
+	int tN = ind[0]*ind[1]*ind[2];
 	fdm_psi psi(ind,true);
 	metric_potential phi(ind,true);
+	
 
 	double a0,ai,Hi,omega_dm_ini;
+	double k_grid[tN][3];
+	
 	set_back_cosmo(a0,ai,Hi,omega_dm_ini);
 	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n",Hi,omega_dm_ini,ai);
-	initialise(ind,psi,phi,a0,ai,Hi,omega_dm_ini);
+	initialise(ind,psi,phi,k_grid,a0,ai,Hi,omega_dm_ini);
 
 
 
@@ -81,6 +84,92 @@ void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_ini)
 }
 
 
+
+
+
+int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
+					double a_final,double a_ini,double a0,double omega_dm_ini,double dt=1e-4)
+{
+	double a,a_t,t,ak;
+	double psi_vel[2],psi_val[n[0]*n[1]*n[2]][2],psi_upd[2],psi_k[2],potn,poisson_rhs,psi_amp;
+	double psi_retrive[2];
+	int i,j,k,ci,ind[3];
+	int c1,c2;	
+
+	for(a=a_ini;a<a_final;t+=dt)
+	{
+	 a_t = a*sqrt(omega_dm_ini*pow(a0/a,3.0)+ (1.0-omega_dm_ini));
+	 for(i=0;i<n[0];++i)
+	 {
+		  for(j=0;j<n[1];++j)
+		  {
+		    for(k=0;k<n[2];++k)
+		    {
+			ci = (n[2]*n[1])*i + n[2]*j + k;
+			ind[0] = i;ind[1] = j;ind[2] = k;
+			potn = phi.get_potential(ci);
+			c1  = psi.get_psi(ind,psi_val[ci]);///Check if this as intented
+			
+			
+			c1 = psi.calc_vel(ind,psi_vel, potn, a, a_t);
+			psi_k[0] = psi_val[ci][0]+ psi_vel[0]*dt;
+			psi_k[1] = psi_val[ci][1]+ psi_vel[1]*dt;
+			psi_amp = sqrt(psi_k[0]*psi_k[0] + psi_k[1]*psi_k[1]);
+			psi.update(ind,psi_k[0],psi_k[1]);
+
+			poisson_rhs = 1.5*H0*H0*a*a*(psi_amp*psi_amp - omega_dm_ini*pow(a0/a,3.0));
+			phi.update_4pieGpsi(ci,poisson_rhs);
+			
+
+
+		    }
+
+		   }
+	}
+	phi.solve_poisson(psi,k_grid);
+	ak = a+a_t*dt;
+	a_t = ak*sqrt(omega_dm_ini*pow(a0/ak,3.0)+ (1.0-omega_dm_ini));
+
+	for(i=0;i<n[0];++i)
+	 {
+		  for(j=0;j<n[1];++j)
+		  {
+		    for(k=0;k<n[2];++k)
+		    {
+			ci = (n[2]*n[1])*i + n[2]*j + k;
+			ind[0] = i;ind[1] = j;ind[2] = k;
+			
+			c1  = psi.get_psi(ind,psi_retrive);
+			
+			c1 = psi.calc_vel(ind,psi_vel, potn, a, a_t);
+			psi_k[0] = 0.5*(psi_retrive[0]+psi_val[ci][0]+ psi_vel[0]*dt);
+			psi_k[1] = 0.5*(psi_retrive[1]+psi_val[ci][1]+ psi_vel[1]*dt);
+			psi.update(ind,psi_k[0],psi_k[1]);
+
+			psi_amp = sqrt(psi_k[0]*psi_k[0] + psi_k[1]*psi_k[1]);
+
+			poisson_rhs = 1.5*H0*H0*a*a*(psi_amp*psi_amp - omega_dm_ini*pow(a0/ak,3.0));
+			phi.update_4pieGpsi(ci,poisson_rhs);
+			
+
+
+		    }
+
+		   }
+	}
+
+	phi.solve_poisson(psi,k_grid);
+
+
+	a = 0.5*(ak+a+a_t*dt);
+
+	}
+
+
+
+}
+
+
 double ini_power_spec(double ksqr)
 {
 	return (1e-5);
@@ -93,7 +182,7 @@ double dlogD_dloga(double a)
 
 }
 
-void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double a0,double ai,double Hi,double omega_dm_ini)
+void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],double a0,double ai,double Hi,double omega_dm_ini)
 {
       
 
@@ -113,7 +202,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double a0,double ai
       int kbins;     
       int tN = ind[0]*ind[1]*ind[2]; 
       int kbin_count[tN],kbin_grid[tN];
-      double k_grid[tN][3],kmag_grid[tN];
+      double kmag_grid[tN];
       int n[3]{ind[0],ind[1],ind[2]};
       int loc_ind[3],err_hold;
 
