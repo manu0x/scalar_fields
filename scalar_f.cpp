@@ -57,9 +57,6 @@ int main()
 	initialise(ind,psi,phi,k_grid,a0,ai,Hi,omega_dm_ini);
 	//fail = evolve_kdk(ind,psi,phi,k_grid,a0,ai,a0,omega_dm_ini);
 	printf("fail is %d\n",fail);
-	//(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
-	//				double a_final,double a_ini,double a0,double omega_dm_ini,double dt=1e-4)
-
 
 }
 
@@ -150,7 +147,7 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	ak = a+a_t*dt;
 	a_t = ak*sqrt(omega_dm_ini*pow(a0/ak,3.0)+ (1.0-omega_dm_ini));
 
-/*	for(i=0;i<n[0];++i)
+	for(i=0;i<n[0];++i)
 	 {
 		  for(j=0;j<n[1];++j)
 		  {
@@ -181,8 +178,8 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 
 		   }
 	}
-*/
-	//phi.solve_poisson(psi,k_grid);
+
+	phi.solve_poisson(psi,k_grid);
 
 
 	a = 0.5*(ak+a+a_t*dt);
