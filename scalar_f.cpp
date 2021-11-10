@@ -21,7 +21,7 @@ using namespace std;
 
 
 double hbar_by_m,h,H0,lenfac;
-double c_box,pc_box;
+double c_box,pc_box,hbar_box;
 
 enum code1 {give_f,give_f_t,give_f_x,give_f_y,give_f_z,give_f_lap};
 #include "my_classes.cpp"
@@ -32,7 +32,7 @@ void initialise(int * ,fdm_psi &,metric_potential &,double [][3],double ,double 
 double ini_power_spec(double );
 double dlogD_dloga(double );
 void set_back_cosmo(double &,double &,double &,double &);
-int evolve_kdk(int *,fdm_psi &,metric_potential &,double [][3],double ,double,double,double,double );
+int evolve_kdk(int *,fdm_psi &,metric_potential &,double [][3],double ,double,double,double,double dt=1e-4);
 
 
 
@@ -42,7 +42,7 @@ int evolve_kdk(int *,fdm_psi &,metric_potential &,double [][3],double ,double,do
 
 int main()
 {
-
+	int c1=1,c2=1,fail=0;
 	int ind[3]{64,64,64};	
 	int tN = ind[0]*ind[1]*ind[2];
 	fdm_psi psi(ind,true);
@@ -55,7 +55,10 @@ int main()
 	set_back_cosmo(a0,ai,Hi,omega_dm_ini);
 	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n",Hi,omega_dm_ini,ai);
 	initialise(ind,psi,phi,k_grid,a0,ai,Hi,omega_dm_ini);
-
+	//fail = evolve_kdk(ind,psi,phi,k_grid,a0,ai,a0,omega_dm_ini);
+	printf("fail is %d\n",fail);
+	//(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
+	//				double a_final,double a_ini,double a0,double omega_dm_ini,double dt=1e-4)
 
 
 }
@@ -63,16 +66,20 @@ int main()
 
 void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_ini)
 {
+	double z = 20.0;
+	double alpha = 1.0;// Mass in 10^(-22) eV;	
+
 	c_box = 2.99;
+	pc_box = 3.0857;
+	hbar_box = 6.582119569;//eVs 
 	lenfac = 1.0;
 	omega_dm_ini = 0.29;
 	h = 0.7;
-	hbar_by_m = 1.0;	
+	hbar_by_m = hbar_box*c_box*(1e-8)/(alpha*pc_box);	
 		
-	double z = 20.0;
-	double alpha = 1.0;// Mass in 10^(-22) eV;
 	
-	double H0 = lenfac*(h/c_box)*0.001;
+	
+	 H0 = lenfac*(h/c_box)*0.001;
 	printf("H0 %lf\n",H0);
 	
 	
@@ -88,22 +95,32 @@ void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_ini)
 
 
 int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
-					double a_final,double a_ini,double a0,double omega_dm_ini,double dt=1e-4)
-{
+					double a_final,double a_ini,double a0,double omega_dm_ini,double dt)
+{	printf("Yo\n");
 	double a,a_t,t,ak;
+	double a_print;
 	double psi_vel[2],psi_val[n[0]*n[1]*n[2]][2],psi_upd[2],psi_k[2],potn,poisson_rhs,psi_amp;
 	double psi_retrive[2];
 	int i,j,k,ci,ind[3];
-	int c1,c2;	
+	int c1,c2,fail=0;
+	int step_cnt;	
 
-	for(a=a_ini;a<a_final;t+=dt)
+	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<a_final)&&(!fail);t+=dt,++step_cnt)
 	{
-	 a_t = a*sqrt(omega_dm_ini*pow(a0/a,3.0)+ (1.0-omega_dm_ini));
-	 for(i=0;i<n[0];++i)
+	 
+	  if(a>=a_print)
+	  {
+		printf("a %lf\n",a);
+		a_print+=a_ini;
+	  }
+	a_t = a*sqrt(omega_dm_ini*pow(a0/a,3.0)+ (1.0-omega_dm_ini));
+	  
+
+	 for(i=0;i<1;++i)
 	 {
-		  for(j=0;j<n[1];++j)
+		  for(j=0;j<1;++j)
 		  {
-		    for(k=0;k<n[2];++k)
+		    for(k=0;k<1;++k)
 		    {
 			ci = (n[2]*n[1])*i + n[2]*j + k;
 			ind[0] = i;ind[1] = j;ind[2] = k;
@@ -112,25 +129,28 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 			
 			
 			c1 = psi.calc_vel(ind,psi_vel, potn, a, a_t);
+			//printf("i %d j %d k %d psi %lf\n",i,j,k,psi_val[ci][0]);
 			psi_k[0] = psi_val[ci][0]+ psi_vel[0]*dt;
 			psi_k[1] = psi_val[ci][1]+ psi_vel[1]*dt;
 			psi_amp = sqrt(psi_k[0]*psi_k[0] + psi_k[1]*psi_k[1]);
+			
 			psi.update(ind,psi_k[0],psi_k[1]);
 
 			poisson_rhs = 1.5*H0*H0*a*a*(psi_amp*psi_amp - omega_dm_ini*pow(a0/a,3.0));
 			phi.update_4pieGpsi(ci,poisson_rhs);
 			
-
+			fail =1;
 
 		    }
 
 		   }
 	}
-	phi.solve_poisson(psi,k_grid);
+	//phi.solve_poisson(psi,k_grid);
+
 	ak = a+a_t*dt;
 	a_t = ak*sqrt(omega_dm_ini*pow(a0/ak,3.0)+ (1.0-omega_dm_ini));
 
-	for(i=0;i<n[0];++i)
+/*	for(i=0;i<n[0];++i)
 	 {
 		  for(j=0;j<n[1];++j)
 		  {
@@ -147,6 +167,10 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 			psi.update(ind,psi_k[0],psi_k[1]);
 
 			psi_amp = sqrt(psi_k[0]*psi_k[0] + psi_k[1]*psi_k[1]);
+			if(isnan(psi_amp))
+			{	fail=1;
+				printf("FAIL %d %d %d\n",i,j,k);
+			}
 
 			poisson_rhs = 1.5*H0*H0*a*a*(psi_amp*psi_amp - omega_dm_ini*pow(a0/ak,3.0));
 			phi.update_4pieGpsi(ci,poisson_rhs);
@@ -157,15 +181,18 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 
 		   }
 	}
-
-	phi.solve_poisson(psi,k_grid);
+*/
+	//phi.solve_poisson(psi,k_grid);
 
 
 	a = 0.5*(ak+a+a_t*dt);
+	 if(isnan(a))
+	  {printf("FAILED  \n"); fail = 1;	break;
+	  }
 
 	}
 
-
+	return(fail);
 
 }
 
@@ -313,6 +340,8 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 			err_hold =  psi.update(loc_ind, psi_r_val, psi_i_val);
 
 			poisson_rhs = 1.5*H0*H0*a*a*(psi_amp*psi_amp - omega_dm_ini*pow(a0/ai,3.0));
+
+			//printf("P rhs %.15lf %.15lf\n",poisson_rhs,psi_amp*psi_amp);
 			phi.update_4pieGpsi(ci,poisson_rhs);
 			
 
@@ -323,6 +352,24 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 		}
 
 	phi.solve_poisson(psi,k_grid);
+
+/*	for(i=0;i<n[0];++i)
+		{
+		  for(j=0;j<n[1];++j)
+		  {
+		    for(k=0;k<n[2];++k)
+		    {
+			ci = (n[2]*n[1])*i + n[2]*j + k;
+			loc_ind[0] = i;  loc_ind[1] = j;  loc_ind[2] = k;
+			double potn = phi.get_potential(ci);
+
+			printf("Checking ini potn %.13lf\n",potn);
+
+	            }
+		  }
+
+		}
+*/
 
 	printf("Initialization Complete.\n");
 	printf("\nK details:\n	dk is %lf  per MPc",dk/lenfac);

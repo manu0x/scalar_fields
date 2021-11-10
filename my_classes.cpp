@@ -280,8 +280,17 @@ class metric_potential
 		    {
 			ci = (n[2]*n[1])*i + n[2]*j + k;			
 			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
-			fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(k2fac*sqrt_tN);
-			fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(k2fac*sqrt_tN);
+			
+			if(k2fac>0.0)
+			{fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(k2fac*sqrt_tN);
+			 fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(k2fac*sqrt_tN);
+			}	
+			else
+			{fpGpsi_ft[ci][0] = 0.0;
+			 fpGpsi_ft[ci][1] = 0.0;
+			}
+
+			
 
 		    }
 
@@ -290,7 +299,7 @@ class metric_potential
 		}
 		
 		fftw_execute(plan_pois_b);
-		
+	
 
 	}
 
@@ -299,6 +308,7 @@ class metric_potential
 	{
 		
 		fpGpsi[ci][0] = val;
+		fpGpsi[ci][1] = 0.0;
 	
 	}
 
