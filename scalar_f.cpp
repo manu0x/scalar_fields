@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <iostream>
+#include <string.h> 
 #include "mt19937ar.c"
 
 
@@ -52,11 +53,14 @@ int main()
 	double a0,ai,Hi,omega_dm_ini;
 	double k_grid[tN][3],dx[3];
 	
-	set_back_cosmo(a0,ai,Hi,omega_dm_ini);
+	/*set_back_cosmo(a0,ai,Hi,omega_dm_ini);
 	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n",Hi,omega_dm_ini,ai);
 	initialise(ind,psi,phi,k_grid,a0,ai,Hi,omega_dm_ini,dx);
 	fail = evolve_kdk(ind,psi,phi,k_grid,a0,ai,a0,omega_dm_ini,dx,1e-3);
 	printf("fail is %d\n",fail);
+	*/
+	const char name[] = "ax_test_matterpower.dat";
+	ini_power_generator gen(name);
 
 }
 

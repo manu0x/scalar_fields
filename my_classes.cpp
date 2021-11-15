@@ -337,3 +337,49 @@ class metric_potential
 
 };
 
+
+class ini_power_generator
+{
+
+	private:
+	double *p,*k;
+	const char *fname;
+	
+	public:
+
+	ini_power_generator(const char *name)
+	{
+		double a,b;
+		int i = 0;
+		fname =  name;		
+
+		FILE *fp = fopen(fname,"r");
+		while(fp)
+		{
+			fscanf(fp,"    %lf    %lf",&a,&b);
+			printf("Reading %d %d %lf\n",i,fp,a);
+			++i;
+		}
+
+		fclose(fp);
+		p = new double[i];	
+		k = new double[i];		
+		fp = fopen(fname,"r");
+		i=0;
+		while(fp)
+		{
+			fscanf(fp,"%lf %lf\n",k+i,p+i);
+			printf("%d %lf %lf\n",i,*(k+i),*(p+i));
+			++i;
+		}
+
+		fclose(fp);
+	
+	
+
+	}
+
+
+
+};
+
