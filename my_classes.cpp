@@ -153,7 +153,8 @@ class scalar_field_3d
 					return(f_x[2][ind[0]][ind[1]][ind[2]]);
 				case give_f_lap:
 					return(f_lap[ind[0]][ind[1]][ind[2]]);
-					
+				default:
+					return(f[ind[0]][ind[1]][ind[2]]);
 
 			}
 		
@@ -350,15 +351,20 @@ class ini_power_generator
 	ini_power_generator(const char *name)
 	{
 		double a,b;
-		int i = 0;
+		int i = 0,fre=1;
 		fname =  name;		
 
 		FILE *fp = fopen(fname,"r");
-		while(fp)
+		while(fre!=EOF)
 		{
-			fscanf(fp,"    %lf    %lf",&a,&b);
-			printf("Reading %d %d %lf\n",i,fp,a);
-			++i;
+			fre=fscanf(fp,"%lf\t%lf\n",&a,&b);
+			
+			if(fre!=EOF)
+			{
+			 printf("Reading %d %d %lf %.8lf\n",i,fre,a,b);
+			 ++i;
+			}
+			
 		}
 
 		fclose(fp);
@@ -366,10 +372,15 @@ class ini_power_generator
 		k = new double[i];		
 		fp = fopen(fname,"r");
 		i=0;
-		while(fp)
+		fre=1;
+		while(fre!=EOF)
 		{
-			fscanf(fp,"%lf %lf\n",k+i,p+i);
-			printf("%d %lf %lf\n",i,*(k+i),*(p+i));
+			fre=fscanf(fp,"%lf\t%lf\n",&a,&b);
+			if(fre!=EOF)
+			{*(k+i)=a;
+			 *(p+i)=b;
+			 printf("ff %d %lf %.10lf\n",i,*(k+i),*(p+i));
+			}
 			++i;
 		}
 
