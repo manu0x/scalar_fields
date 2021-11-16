@@ -1,5 +1,5 @@
 #include <fftw3.h>
-
+#include "spline.c"
 
 
 class scalar_field_3d
@@ -345,12 +345,15 @@ class ini_power_generator
 	private:
 	double *p,*k;
 	const char *fname;
+	double **c,max_dx=0.0,x_min;
+	int point_cnt,checkspl;
+	
 	
 	public:
 
 	ini_power_generator(const char *name)
 	{
-		double a,b;
+		double a,b,pre_x=0.0;
 		int i = 0,fre=1;
 		fname =  name;		
 
@@ -358,35 +361,123 @@ class ini_power_generator
 		while(fre!=EOF)
 		{
 			fre=fscanf(fp,"%lf\t%lf\n",&a,&b);
+
+			if(i==0)
+			{
+			
+				max_dx = a;	
+				x_min = a;
+				pre_x = a;	
+
+
+			}
+
+			else
+			if(fre!=EOF)
+			{
+			   if(fabs(a-pre_x)>max_dx)
+				max_dx = fabs(a-pre_x);
+			   if(a<x_min)
+				x_min = a;
+			   pre_x = a;
+
+			}
 			
 			if(fre!=EOF)
 			{
-			 printf("Reading %d %d %lf %.8lf\n",i,fre,a,b);
+			// printf("Reading %d %d %lf %.8lf\n",i,fre,a,b);
 			 ++i;
 			}
+
+			
+		
 			
 		}
 
 		fclose(fp);
-		p = new double[i];	
-		k = new double[i];		
+		point_cnt = i;
+		p = new double[point_cnt];	
+		k = new double[point_cnt];
+		c = new double* [point_cnt];	
+		for(i=0;i<point_cnt;++i)
+			c[i] =  new double[3];	
 		fp = fopen(fname,"r");
 		i=0;
 		fre=1;
+		double cload[point_cnt][3];
 		while(fre!=EOF)
 		{
 			fre=fscanf(fp,"%lf\t%lf\n",&a,&b);
 			if(fre!=EOF)
 			{*(k+i)=a;
 			 *(p+i)=b;
-			 printf("ff %d %lf %.10lf\n",i,*(k+i),*(p+i));
+			 //printf("ff %d %lf %.10lf\n",i,*(k+i),*(p+i));
 			}
 			++i;
 		}
-
+		
 		fclose(fp);
+		
+		checkspl = spline(k,p,point_cnt,cload); 
 	
+		for(i=0;i<point_cnt;++i)
+		{
+			c[i][0] = cload[i][0];
+			c[i][1] = cload[i][1];
+			c[i][2] = cload[i][2];
+			 
+
+		}
+
+		
+		if(checkspl)
+		printf("\nALERT !!!! Spline fit failed....%.10lf\n",max_dx);
 	
+		
+
+	}
+
+	double get_ini_spectrum(double x)
+	{
+
+	  double Val;
+	  int cur_ind = (int)((x-x_min)/max_dx);
+	  int ind_match=0;//printf("Yo %d %lf %lf\n",cur_ind,x,max_dx);
+	while(cur_ind<point_cnt)
+	 { if((x>=k[cur_ind])&&(x<=k[cur_ind+1]))
+    	  {//printf("cur_ind is %d\n",cur_ind);
+            ind_match = 1;
+            Val = (p[cur_ind]+c[cur_ind][0]*(x-k[cur_ind])+c[cur_ind][1]*(x-k[cur_ind])*(x-k[cur_ind])
+                                                  +c[cur_ind][2]*(x-k[cur_ind])*(x-k[cur_ind])*(x-k[cur_ind]));
+          	break;
+          }
+	  ++cur_ind;
+	  
+	 }
+
+	if(!ind_match)
+	printf("\nALERT index overrun for spline...\n");
+
+	return Val;
+		
+
+	}
+
+	void check(double x)
+	{
+		int i;
+		double v;
+		FILE *fpcheck = fopen("spline_check.txt","w");
+		for(i=0;i<point_cnt;++i)
+		{
+			v = get_ini_spectrum(*(k+i));
+			fprintf(fpcheck,"%.10lf\t%.10lf\t%.10lf\n",*(k+i),v,*(p+i));	
+			
+			//printf("Check result is v %lf @ x %lf\n",v,x);
+		}
+		
+		
+		
 
 	}
 
