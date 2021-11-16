@@ -28,8 +28,8 @@ enum code1 {give_f,give_f_t,give_f_x,give_f_y,give_f_z,give_f_lap};
 #include "my_classes.cpp"
 
 
-void ini_rand_field(int * ,double *,double *,double * ,double ,double ,double );
-void initialise(int * ,fdm_psi &,metric_potential &,double [][3],double ,double ,double ,double,double *);
+void ini_rand_field(int * ,double *,double *,double * ,double ,double ,double,ini_power_generator );
+void initialise(int * ,fdm_psi &,metric_potential &,double [][3],double ,double ,double ,double,double *,ini_power_generator);
 double ini_power_spec(double );
 double dlogD_dloga(double );
 void set_back_cosmo(double &,double &,double &,double &);
@@ -48,21 +48,23 @@ int main()
 	int tN = ind[0]*ind[1]*ind[2];
 	fdm_psi psi(ind,true);
 	metric_potential phi(ind,true);
+
+	const char name[] = "ax_test_matterpower.dat";
+	ini_power_generator gen(name);
+	gen.check(3.1);
+
 	
 
 	double a0,ai,Hi,omega_dm_ini;
 	double k_grid[tN][3],dx[3];
 	
-	/*set_back_cosmo(a0,ai,Hi,omega_dm_ini);
+	set_back_cosmo(a0,ai,Hi,omega_dm_ini);
 	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n",Hi,omega_dm_ini,ai);
-	initialise(ind,psi,phi,k_grid,a0,ai,Hi,omega_dm_ini,dx);
-	fail = evolve_kdk(ind,psi,phi,k_grid,a0,ai,a0,omega_dm_ini,dx,1e-3);
+	initialise(ind,psi,phi,k_grid,a0,ai,Hi,omega_dm_ini,dx,gen);
+	/*fail = evolve_kdk(ind,psi,phi,k_grid,a0,ai,a0,omega_dm_ini,dx,1e-3);
 	printf("fail is %d\n",fail);
 	*/
-	const char name[] = "ax_test_matterpower.dat";
-	ini_power_generator gen(name);
-	gen.check(3.1);
-
+	
 }
 
 
@@ -209,7 +211,7 @@ double dlogD_dloga(double a)
 
 }
 
-void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],double a0,double ai,double Hi,double omega_dm_ini,double *dx)
+void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],double a0,double ai,double Hi,double omega_dm_ini,double *dx,ini_power_generator gen)
 {
       
 
@@ -321,9 +323,9 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 		
 		
       	}
-
+	printf("kmin %lf kmax %lf\n",sqrt(minkmagsqr),sqrt(maxkmagsqr));
 	
-	ini_rand_field(n,kmag_grid, ini_dc,ini_theta,ai,a0,a_ti);
+	ini_rand_field(n,kmag_grid, ini_dc,ini_theta,ai,a0,a_ti,gen);
 
 	for(i=0;i<n[0];++i)
 		{
@@ -390,7 +392,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 }
 
 
-void ini_rand_field(int * ind,double *kmag_grid,double * ini_dc,double * ini_theta_return,double a,double a0,double a_t)
+void ini_rand_field(int * ind,double *kmag_grid,double * ini_dc,double * ini_theta_return,double a,double a0,double a_t,ini_power_generator gen)
 {	init_genrand(time(0));
 	int i,cnt,tN; 
 	double ksqr,muk,sigk;
@@ -425,7 +427,9 @@ void ini_rand_field(int * ind,double *kmag_grid,double * ini_dc,double * ini_the
 	for(cnt=0;cnt<tN;++cnt)
 	{	
 		 	    ksqr = kmag_grid[cnt];
-			    sigk  = sqrt(ini_power_spec(sqrt(ksqr)));
+			    //sigk  = sqrt(ini_power_spec(sqrt(ksqr)));
+			if(ksqr>0.0)	
+			    sigk  = gen.get_ini_spectrum(h*sqrt(ksqr));
 			    muk = sigk/sqrt(2.0);
 		 	    a1 = genrand_res53();
  			    a2 = genrand_res53(); 

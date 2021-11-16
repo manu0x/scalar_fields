@@ -235,6 +235,15 @@ class fdm_psi
 	}
 
 
+	void write_psi(bool rho=false, bool psi=true,file *fp_psi)
+	{
+		int i,j,k;
+		
+
+
+	}
+
+
 
 };
 
@@ -456,7 +465,7 @@ class ini_power_generator
 	 }
 
 	if(!ind_match)
-	printf("\nALERT index overrun for spline...\n");
+	printf("\nALERT index overrun for spline...for x %lf\n",x);
 
 	return Val;
 		
