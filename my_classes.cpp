@@ -167,11 +167,13 @@ class fdm_psi
 	private:
 	scalar_field_3d psi_r;
 	scalar_field_3d psi_i;
+	int n[3];
 	
 	public:  
 	//int n[3];
 	fdm_psi(int *ind,bool lb=false,bool sgb=false):psi_r(ind,lb,sgb),psi_i(ind,lb,sgb)
 	{
+		n[0] = ind[0];  n[1] = ind[1];  n[2] = ind[2];
 	}
 	
 	
@@ -235,11 +237,43 @@ class fdm_psi
 	}
 
 
-	void write_psi(bool rho=false, bool psi=true,file *fp_psi)
+	void write_psi(FILE *fp_psi,double *dx,double a3a03omega,double a,bool get_dc=false, bool get_psi=true)
 	{
-		int i,j,k;
-		
+		int i,j,k,locind[3];
+		double psi_r_val,psi_i_val,psi_amp2,dc;
+		for(i=0;i<n[0];++i)
+		{
+			for(j=0;j<n[1];++j)
+			{
+				for(k=0;k<n[2];++k)
+				{
+					locind[0]=i; locind[1]=j; locind[2]=k;
+					psi_r_val=psi_r.get_field(locind,give_f);
+					psi_i_val=psi_i.get_field(locind,give_f);	
+							
 
+					if(get_dc)
+					{
+					  psi_amp2 = psi_r_val*psi_r_val + psi_i_val*psi_i_val;		
+					  dc= a3a03omega*psi_amp2 - 1.0;
+					  fprintf(fp_psi,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",a,dx[0]*i,dx[1]*j,dx[2]*k,psi_r_val,psi_i_val,dc);
+					}
+
+					else
+					{
+					  fprintf(fp_psi,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",a,dx[0]*i,dx[1]*j,dx[2]*k,psi_r_val,psi_i_val);
+
+
+					}
+
+
+				}
+	
+			}
+
+		}
+		
+		fprintf(fp_psi,"\n\n\n\n");
 
 	}
 
