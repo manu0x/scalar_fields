@@ -119,7 +119,7 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 		printf("a %lf\n",a);
 		a_print+=1e-3;
 		a3a03omega = pow(a/a0,3.0)/omega_dm_ini;
-		psi.write_psi(fp_psi,dx,a3a03omega,true, true);
+		psi.write_psi(fp_psi,dx,a,a3a03omega,true, true);
 		
 
 	  }
