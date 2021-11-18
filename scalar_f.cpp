@@ -61,7 +61,7 @@ int main()
 	set_back_cosmo(a0,ai,Hi,omega_dm_ini);
 	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n",Hi,omega_dm_ini,ai);
 	initialise(ind,psi,phi,k_grid,a0,ai,Hi,omega_dm_ini,dx,gen);
-	fail = evolve_kdk(ind,psi,phi,k_grid,a0,ai,a0,omega_dm_ini,dx,1e-5);
+	fail = evolve_kdk(ind,psi,phi,k_grid,a0,ai,a0,omega_dm_ini,dx,0.8e-4);
 	printf("fail is %d\n",fail);
 	
 	
@@ -70,7 +70,7 @@ int main()
 
 void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_ini)
 {
-	double z = 200.0;
+	double z = 99.0;
 	double alpha = 1.0;// Mass in 10^(-22) eV;	
 
 	c_box = 2.99;
@@ -113,7 +113,7 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 
 	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<a_final)&&(!fail);t+=dt,++step_cnt)
 	{
-	   dt=dti*sqrt(a/a_ini);
+	   //dt=dti*sqrt(a/a_ini);
 	 if(a>=a_print)
 	  {
 		printf("a %lf\n",a);
