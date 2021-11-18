@@ -22,17 +22,17 @@ void main(int argc,char *args[])
 	printf("%s",f_out_str);
 	
 	FILE *fpout = fopen(f_out_str,"w");
-	double a,dx0,dx1,dx2,psi_r_val,psi_i_val,dc;
+	double a,dx0,dx1,dx2,psi_r_val,psi_i_val,dc,psiamp2,a3;
 
 
-	for(j=0;j<=((i+1)*tN);++j)
+	for(j=0;j<((i+1)*tN);++j)
 	{
 
-		 fscanf(fpin,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",&a,&dx0,&dx1,&dx2,&psi_r_val,&psi_i_val,&dc);
+		 fscanf(fpin,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",&a,&dx0,&dx1,&dx2,&psi_r_val,&psi_i_val,&psiamp2,&dc,&a3);
 
 		if(j>=(i*tN))
 
-		fprintf(fpout,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",a,dx0,dx1,dx2,psi_r_val,psi_i_val,dc);
+		fprintf(fpout,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",a,dx0,dx1,dx2,psi_r_val,psi_i_val,psiamp2,dc,a3);
 	}
 	
 

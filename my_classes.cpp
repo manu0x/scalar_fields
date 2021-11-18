@@ -238,7 +238,7 @@ class fdm_psi
 
 
 	void write_psi(FILE *fp_psi,double *dx,double a3a03omega,double a,bool get_dc=false, bool get_psi=true)
-	{
+	{	//printf("a3  %.10lf\n",a3a03omega);
 		int i,j,k,locind[3];
 		double psi_r_val,psi_i_val,psi_amp2,dc;
 		for(i=0;i<n[0];++i)
@@ -256,7 +256,7 @@ class fdm_psi
 					{
 					  psi_amp2 = psi_r_val*psi_r_val + psi_i_val*psi_i_val;		
 					  dc= a3a03omega*psi_amp2 - 1.0;
-					  fprintf(fp_psi,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",a,dx[0]*i,dx[1]*j,dx[2]*k,psi_r_val,psi_i_val,dc);
+					  fprintf(fp_psi,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",a,dx[0]*i,dx[1]*j,dx[2]*k,psi_r_val,psi_i_val,psi_amp2,dc,a3a03omega);
 					}
 
 					else
