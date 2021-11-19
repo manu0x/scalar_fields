@@ -1,14 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define n 64
+
 
 void main(int argc,char *args[])
 {
 	int i = atoi(args[1]);
+	int n = atoi(args[2]);
 	int tN =n*n*n;
 	int j,k;
-	printf("i is %d\n",i);
+	printf("i is %d %d\n",i,n);
 
 	FILE *fpin = fopen("psi.txt","r");
 
