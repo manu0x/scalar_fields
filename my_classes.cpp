@@ -329,8 +329,8 @@ class metric_potential
 			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
 			
 			if(k2fac>0.0)
-			{fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(k2fac*sqrt_tN*sqrt_tN);
-			 fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(k2fac*sqrt_tN*sqrt_tN);
+			{fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/(k2fac*sqrt_tN*sqrt_tN);
+			 fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/(k2fac*sqrt_tN*sqrt_tN);
 			}	
 			else
 			{fpGpsi_ft[ci][0] = 0.0;
