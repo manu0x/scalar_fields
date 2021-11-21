@@ -115,10 +115,15 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	int prn=0;	
 	
 	
-	FILE *fp_psi = fopen("psi_2.txt","w");
-	FILE *fp_phi = fopen("phi_2.txt","w");
+	
 
-	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<a_final)&&(!fail);t+=dt,++step_cnt)
+	
+	
+	
+	
+
+
+	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail);t+=dt,++step_cnt)
 	{
 	   //dt=dti*sqrt(a/a_ini);
 	 if(a>=a_print)
@@ -127,6 +132,22 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 		a_print+=1e-3;
 		a3a03omega = pow(a/a0,3.0)/omega_dm_ini;
 		z_cur = ((a0/a) -1.0);
+
+		char fp_psi_name[20]("psi_z_");
+		char fp_phi_name[20]("phi_z_");
+		char fp_z_num[10];
+
+		sprintf(fp_z_num,"%.2lf",z_cur);
+		strcat(fp_psi_name,fp_z_num);
+		strcat(fp_phi_name,fp_z_num); 
+		strcat(fp_psi_name,".txt"); 
+		strcat(fp_phi_name,".txt"); 
+
+		FILE *fp_psi = fopen(fp_psi_name,"w");
+		FILE *fp_phi = fopen(fp_phi_name,"w");
+
+		printf("psi name %s\n",fp_psi_name);
+		printf("phi name %s\n",fp_phi_name);
 		
 		printf("a %lf %lf\n",a,a3a03omega);
 		
@@ -138,6 +159,9 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 			++prn;
 
 		}
+
+		fclose(fp_psi);
+	 	fclose(fp_phi);
 		
 
 	  }
@@ -219,6 +243,21 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	}
 
 	a3a03omega = pow(a/a0,3.0)/omega_dm_ini;	
+	z_cur = ((a0/a) -1.0);
+
+	char fp_psi_name[20]("psi_z_");
+	char fp_phi_name[20]("phi_z_");
+	char fp_z_num[10];
+
+	sprintf(fp_z_num,"%.2lf",z_cur);
+	strcat(fp_psi_name,fp_z_num);
+	strcat(fp_phi_name,fp_z_num); 
+	strcat(fp_psi_name,".txt"); 
+	strcat(fp_phi_name,".txt"); 
+
+	FILE *fp_psi = fopen(fp_psi_name,"w");
+	FILE *fp_phi = fopen(fp_phi_name,"w");
+
 	psi.write_psi(fp_psi,dx,a3a03omega,a,true, true);
 	phi.write_potential(fp_phi,dx,a3a03omega,a);
 	fclose(fp_psi);
