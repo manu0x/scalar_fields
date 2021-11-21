@@ -115,7 +115,8 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	int prn=0;	
 
 
-	FILE *fp_psi = fopen("psi.txt","w");
+	FILE *fp_psi = fopen("psi_2.txt","w");
+	FILE *fp_phi = fopen("phi_2.txt","w");
 
 	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<a_final)&&(!fail);t+=dt,++step_cnt)
 	{
@@ -132,11 +133,11 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 		if(z_cur<=z_print_list[prn])
 		{ 
 			psi.write_psi(fp_psi,dx,a3a03omega,a,true, true);
+			phi.write_potential(fp_phi,dx,a3a03omega,a);
 			printf("\nWriting at z = %lf\n",z_cur);
 			++prn;
 
 		}
-		
 
 	  }
 	a_t = a*sqrt(omega_dm_ini*pow(a0/a,3.0)+ (1.0-omega_dm_ini));
@@ -187,7 +188,7 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 			ind[0] = i;ind[1] = j;ind[2] = k;
 			
 			c1  = psi.get_psi(ind,psi_retrive);			
-			c1 = psi.calc_vel(ind,psi_vel, potn, a, a_t,dx);
+			c1 = psi.calc_vel(ind,psi_vel, potn, ak, a_t,dx);
 			psi_k[0] = 0.5*(psi_retrive[0]+psi_val[ci][0]+ psi_vel[0]*dt);
 			psi_k[1] = 0.5*(psi_retrive[1]+psi_val[ci][1]+ psi_vel[1]*dt);
 			psi.update(ind,psi_k[0],psi_k[1]);
@@ -198,7 +199,7 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 				printf("FAIL %d %d %d\n",i,j,k);break;
 			}
 
-			poisson_rhs = 1.5*H0*H0*a*a*(psi_amp*psi_amp - omega_dm_ini*pow(a0/ak,3.0));
+			poisson_rhs = 1.5*H0*H0*ak*ak*(psi_amp*psi_amp - omega_dm_ini*pow(a0/ak,3.0));
 			phi.update_4pieGpsi(ci,poisson_rhs);
 			
 
@@ -220,9 +221,10 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 
 	a3a03omega = pow(a/a0,3.0)/omega_dm_ini;
 	psi.write_psi(fp_psi,dx,a3a03omega,a,true, true);
-
-
+	phi.write_potential(fp_phi,dx,a3a03omega,a);
 	fclose(fp_psi);
+	fclose(fp_phi);
+
 
 	return(fail);
 

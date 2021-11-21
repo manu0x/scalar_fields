@@ -126,7 +126,7 @@ class scalar_field_3d
 	int update_field(int * ind,double fu,double f_tu=0.0)
 	{
 		f[ind[0]][ind[1]][ind[2]] = fu;
-		f_t[ind[0]][ind[1]][ind[2]] = f_tu;
+		//f_t[ind[0]][ind[1]][ind[2]] = f_tu;
 
 		if(isnan(fu+f_tu))
 			return(0);
@@ -331,6 +331,7 @@ class metric_potential
 			if(k2fac>0.0)
 			{fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/(k2fac*sqrt_tN*sqrt_tN);
 			 fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/(k2fac*sqrt_tN*sqrt_tN);
+				
 			}	
 			else
 			{fpGpsi_ft[ci][0] = 0.0;
@@ -366,6 +367,34 @@ class metric_potential
 		return (fpGpsi[ci][0]);	
 
 	}
+
+	void write_potential(FILE *fp_ptn,double *dx,double a3a03omega,double a)
+	{	
+		int i,j,k,ci;
+		
+		for(i=0;i<n[0];++i)
+		{
+			for(j=0;j<n[1];++j)
+			{
+				for(k=0;k<n[2];++k)
+				{
+					 ci = (n[2]*n[1])*i + n[2]*j + k;
+				
+					  fprintf(fp_ptn,"%lf\t%lf\t%lf\t%lf\t%lf\n",a,dx[0]*i,dx[1]*j,dx[2]*k,fpGpsi[ci][0]);
+				
+
+
+
+				}
+	
+			}
+
+		}
+		
+		fprintf(fp_ptn,"\n\n\n\n");
+
+	}
+
 
 
 /*	int update(int * ind,double phi_val)
