@@ -116,8 +116,8 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	
 	
 	
-
-	
+	FILE *fp_psi;
+	FILE *fp_phi;
 	
 	
 	
@@ -137,22 +137,25 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 		char fp_phi_name[20]("phi_z_");
 		char fp_z_num[10];
 
-		sprintf(fp_z_num,"%.2lf",z_cur);
-		strcat(fp_psi_name,fp_z_num);
-		strcat(fp_phi_name,fp_z_num); 
-		strcat(fp_psi_name,".txt"); 
-		strcat(fp_phi_name,".txt"); 
-
-		FILE *fp_psi = fopen(fp_psi_name,"w");
-		FILE *fp_phi = fopen(fp_phi_name,"w");
-
-		printf("psi name %s\n",fp_psi_name);
-		printf("phi name %s\n",fp_phi_name);
+		
 		
 		printf("a %lf %lf\n",a,a3a03omega);
 		
-		if(z_cur<=z_print_list[prn])
+		if((z_cur<=z_print_list[prn])||(a==a_ini))
 		{ 
+			
+			sprintf(fp_z_num,"%.2lf",z_cur);
+			strcat(fp_psi_name,fp_z_num);
+			strcat(fp_phi_name,fp_z_num); 
+			strcat(fp_psi_name,".txt"); 
+			strcat(fp_phi_name,".txt"); 
+
+			fp_psi = fopen(fp_psi_name,"w");
+			fp_phi = fopen(fp_phi_name,"w");
+
+			printf("psi name %s\n",fp_psi_name);
+			printf("phi name %s\n",fp_phi_name);
+
 			psi.write_psi(fp_psi,dx,a3a03omega,a,true, true);
 			phi.write_potential(fp_phi,dx,a3a03omega,a);
 			printf("\nWriting at z = %lf\n",z_cur);
@@ -255,8 +258,8 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	strcat(fp_psi_name,".txt"); 
 	strcat(fp_phi_name,".txt"); 
 
-	FILE *fp_psi = fopen(fp_psi_name,"w");
-	FILE *fp_phi = fopen(fp_phi_name,"w");
+	fp_psi = fopen(fp_psi_name,"w");
+	fp_phi = fopen(fp_phi_name,"w");
 
 	psi.write_psi(fp_psi,dx,a3a03omega,a,true, true);
 	phi.write_potential(fp_phi,dx,a3a03omega,a);
@@ -496,9 +499,9 @@ void ini_rand_field(int * ind,double *kmag_grid,double * ini_dc,double * ini_the
 	for(cnt=0;cnt<tN;++cnt)
 	{	
 		 	    ksqr = kmag_grid[cnt];
-			    //sigk  = sqrt(ini_power_spec(sqrt(ksqr)));
+			   // sigk  = sqrt(ini_power_spec(sqrt(ksqr)));
 			if(ksqr>0.0)	
-			    sigk  = gen.get_ini_spectrum(h*sqrt(ksqr));
+			    {sigk  = gen.get_ini_spectrum(h*sqrt(ksqr));}// printf("jhfhfbsfbn %lf %lf\n",h*sqrt(ksqr),h);}
 			    muk = sigk/sqrt(2.0);
 		 	    a1 = genrand_res53();
  			    a2 = genrand_res53(); 
@@ -507,14 +510,19 @@ void ini_rand_field(int * ind,double *kmag_grid,double * ini_dc,double * ini_the
 			    a_rand = (muk*(sqrt(-2.0*log(a1))*cos(2.0*M_PI*a2)));
 			    b_rand = (muk*(sqrt(-2.0*log(a1))*cos(2.0*M_PI*a2)));
 				
-			    F_ini_del[cnt][0] = a_rand;	F_ini_del[cnt][1] = b_rand;
+			    
 			    if(ksqr>0.0)
-			    { F_ini_theta[cnt][0] =  mass*(a_t/a)*f_ini*(a/a0)*(a/a0)*F_ini_del[cnt][0]/ksqr;
-			      F_ini_theta[cnt][1] =  mass*(a_t/a)*f_ini*(a/a0)*(a/a0)*F_ini_del[cnt][1]/ksqr;
+			    { 
+			      F_ini_del[cnt][0] = a_rand;	F_ini_del[cnt][1] = b_rand;
+			      F_ini_theta[cnt][0] =  (a_t/a)*f_ini*(a/a0)*(a/a0)*F_ini_del[cnt][0]/(ksqr*hbar_by_m);
+			      F_ini_theta[cnt][1] =  (a_t/a)*f_ini*(a/a0)*(a/a0)*F_ini_del[cnt][1]/(ksqr*hbar_by_m);
+			     
 			    }	
 			    else
 			    { F_ini_theta[cnt][0] =  0.0;
 			      F_ini_theta[cnt][1]  = 0.0;
+			      F_ini_del[cnt][0] = 0.0;
+			      F_ini_del[cnt][1] = 0.0;
 			    }	
 
 
@@ -537,8 +545,8 @@ void ini_rand_field(int * ind,double *kmag_grid,double * ini_dc,double * ini_the
 	for(cnt=0;cnt<tN;++cnt)
 	{
 		
-		ini_del[cnt][0] = ini_del[cnt][0]/sqrt(tN); ini_del[cnt][1] = ini_del[cnt][1]/sqrt(tN); 
-		ini_theta[cnt][0] = ini_theta[cnt][0]/sqrt(tN); ini_theta[cnt][1] = ini_theta[cnt][1]/sqrt(tN); 
+		ini_del[cnt][0] = ini_del[cnt][0]/(tN); ini_del[cnt][1] = ini_del[cnt][1]/(tN); 
+		ini_theta[cnt][0] = ini_theta[cnt][0]/(tN); ini_theta[cnt][1] = ini_theta[cnt][1]/(tN); 
 		ini_dc[cnt] = ini_del[cnt][0];
 		ini_theta_return[cnt] = ini_theta[cnt][0];
 		
