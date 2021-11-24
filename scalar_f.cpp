@@ -83,8 +83,8 @@ void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_ini)
 		
 	
 	
-	 H0 = lenfac*(h/c_box)*0.001;
-	printf("H0 %lf\n",H0);
+	H0 = lenfac*(h/c_box)*0.001;
+	printf("H0 %lf hbar_by_m  %.15lf\n",H0,hbar_by_m);
 	
 	
 	a0 = 1.0;
@@ -160,16 +160,18 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 			phi.write_potential(fp_phi,dx,a3a03omega,a);
 			printf("\nWriting at z = %lf\n",z_cur);
 			++prn;
+			fclose(fp_psi);
+	 		fclose(fp_phi);
 
 		}
 
-		fclose(fp_psi);
-	 	fclose(fp_phi);
+		
 		
 
 	  }
 	a_t = a*sqrt(omega_dm_ini*pow(a0/a,3.0)+ (1.0-omega_dm_ini));
 	  
+	ak = a+a_t*dt;
 
 	 for(i=0;i<n[0];++i)
 	 {
@@ -183,7 +185,7 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 			c1  = psi.get_psi(ind,psi_val[ci]);///Check if this as intented
 			
 			c1 = psi.calc_vel(ind,psi_vel, potn, a, a_t,dx);
-			//printf("i %d j %d k %d psi %lf\n",i,j,k,psi_val[ci][0]);
+			//printf("i %d j %d k %d psi r %10lf i  %10lf\n",i,j,k,psi_val[ci][0],psi_val[ci][1]);
 			psi_k[0] = psi_val[ci][0]+ psi_vel[0]*dt;
 			psi_k[1] = psi_val[ci][1]+ psi_vel[1]*dt;
 			psi_amp = sqrt(psi_k[0]*psi_k[0] + psi_k[1]*psi_k[1]);
@@ -201,9 +203,9 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	}
 	phi.solve_poisson(psi,k_grid);
 
-	ak = a+a_t*dt;
+	
 	a_t = ak*sqrt(omega_dm_ini*pow(a0/ak,3.0)+ (1.0-omega_dm_ini));
-
+	a = 0.5*(ak+a+a_t*dt);
 	for(i=0;(i<n[0])&&(!fail);++i)
 	 {
 		  for(j=0;(j<n[1])&&(!fail);++j)
@@ -217,6 +219,7 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 			c1 = psi.calc_vel(ind,psi_vel, potn, ak, a_t,dx);
 			psi_k[0] = 0.5*(psi_retrive[0]+psi_val[ci][0]+ psi_vel[0]*dt);
 			psi_k[1] = 0.5*(psi_retrive[1]+psi_val[ci][1]+ psi_vel[1]*dt);
+			printf("psi_vel %lf %lf\n",psi_vel[0],psi_vel[1]);
 			psi.update(ind,psi_k[0],psi_k[1]);
 
 			psi_amp = sqrt(psi_k[0]*psi_k[0] + psi_k[1]*psi_k[1]);
@@ -225,7 +228,7 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 				printf("FAIL %d %d %d\n",i,j,k);break;
 			}
 
-			poisson_rhs = 1.5*H0*H0*ak*ak*(psi_amp*psi_amp - omega_dm_ini*pow(a0/ak,3.0));
+			poisson_rhs = 1.5*H0*H0*a*a*(psi_amp*psi_amp - omega_dm_ini*pow(a0/a,3.0));
 			phi.update_4pieGpsi(ci,poisson_rhs);
 			
 
@@ -238,7 +241,7 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	phi.solve_poisson(psi,k_grid);
 
 
-	a = 0.5*(ak+a+a_t*dt);
+	
 	 if(isnan(a))
 	  {printf("FAILED  \n"); fail = 1;	break;
 	  }
@@ -296,6 +299,8 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
       double a = ai;
       double a_t = a*Hi;
       double a_ti = ai*Hi;
+
+      FILE *fpstoreini = fopen("initial.txt","w");
      
 
       double L[3];
@@ -316,7 +321,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 
 	double kf = twopie*lenfac/(64.0);
 
-	dx[0] = 0.02; dx[1] =0.02; dx[2] = 0.02;
+	dx[0] = 0.2; dx[1] =0.2; dx[2] = 0.2;
         L[0] = dx[0]*((double) ind[0]);  L[1] = dx[1]*((double) (ind[1]));  L[2] = dx[2]*((double) (ind[2]));
 	dk = 0.01/dx[0]; kbins = 0; printf("dk %lf\n",dk);
 	
@@ -398,7 +403,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	printf("kmin %lf kmax %lf\n",sqrt(minkmagsqr),sqrt(maxkmagsqr));
 	
 	ini_rand_field(n,kmag_grid, ini_dc,ini_theta,ai,a0,a_ti,gen);
-
+	double ggg;
 	for(i=0;i<n[0];++i)
 		{
 		  for(j=0;j<n[1];++j)
@@ -413,9 +418,13 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 
 			err_hold =  psi.update(loc_ind, psi_r_val, psi_i_val);
 
+			ggg = 1.5*H0*H0*a*a*omega_dm_ini*pow(a0/ai,3.0)*(ini_dc[ci]);
+
+			
+
 			poisson_rhs = 1.5*H0*H0*a*a*(psi_amp*psi_amp - omega_dm_ini*pow(a0/ai,3.0));
 
-			//printf("P rhs %.10lf %.10lf %.10lf %.10lf %.10lf\n",poisson_rhs,psi_amp*psi_amp,psi_r_val,psi_i_val,ini_theta[ci]);
+			//printf("P rhs %.15lf %.15lf %.10lf %.10lf %.10lf\n",poisson_rhs,ggg,1.5*H0*H0,psi_i_val,ini_theta[ci]);
 			phi.update_4pieGpsi(ci,poisson_rhs);
 			
 
@@ -427,7 +436,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 
 	phi.solve_poisson(psi,k_grid);
 
-/*	for(i=0;i<n[0];++i)
+	for(i=0;i<n[0];++i)
 		{
 		  for(j=0;j<n[1];++j)
 		  {
@@ -436,14 +445,19 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 			ci = (n[2]*n[1])*i + n[2]*j + k;
 			loc_ind[0] = i;  loc_ind[1] = j;  loc_ind[2] = k;
 			double potn = phi.get_potential(ci);
+			psi_amp = sqrt(omega_dm_ini*pow(a0/ai,3.0)*(1.0+ini_dc[ci]));
+			psi_r_val = psi_amp*cos(ini_theta[ci]);
+			psi_i_val = psi_amp*sin(ini_theta[ci]);
 
-			printf("Checking ini potn %.13lf\n",potn);
+			fprintf(fpstoreini,"%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.15lf\n",a,dx[0]*i,dx[1]*j,dx[2]*k,psi_r_val,psi_i_val,potn);
+			//printf("ci %d   %.15lf\n",ci,potn);
 
 	            }
 		  }
 
 		}
-*/
+	fclose(fpstoreini);
+
 
 	printf("Initialization Complete.\n");
 	printf("\nK details:\n	dk is %lf  per MPc",dk/lenfac);
@@ -501,8 +515,8 @@ void ini_rand_field(int * ind,double *kmag_grid,double * ini_dc,double * ini_the
 		 	    ksqr = kmag_grid[cnt];
 			   // sigk  = sqrt(ini_power_spec(sqrt(ksqr)));
 			if(ksqr>0.0)	
-			    {sigk  = gen.get_ini_spectrum(h*sqrt(ksqr));}// printf("jhfhfbsfbn %lf %lf\n",h*sqrt(ksqr),h);}
-			    muk = sigk/sqrt(2.0);
+			    {sigk  = gen.get_ini_spectrum(sqrt(ksqr)/h);}// printf("jhfhfbsfbn %lf %lf\n",h*sqrt(ksqr),h);}
+			    muk = 200000.0*sigk*ksqr*sqrt(ksqr)/sqrt(2.0);
 		 	    a1 = genrand_res53();
  			    a2 = genrand_res53(); 
 			   // b1 = genrand_res53();
@@ -552,7 +566,7 @@ void ini_rand_field(int * ind,double *kmag_grid,double * ini_dc,double * ini_the
 		
 
 		fprintf(fpinirand,"%d\t%.16lf\t%.16lf\t%.16lf\n",
-					cnt,kmag_grid[cnt],ini_del[cnt][0],ini_theta[cnt][0]);
+					cnt,kmag_grid[cnt]*sqrt(kmag_grid[cnt]),ini_del[cnt][0],ini_theta[cnt][0]);
 
 
 		

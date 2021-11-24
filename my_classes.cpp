@@ -190,8 +190,10 @@ class fdm_psi
 		psi_i_lap = psi_i.get_field(ind,give_f_lap);
 		v[0] = -1.5*(a_t/a)*psi_r_val;
 		v[0]+= (-0.5*hbar_by_m*psi_i_lap/(a*a) + potn*psi_i_val/hbar_by_m);
+		//printf("back  %lf lap %.10lf  potn  %.10lf\n", -1.5*(a_t/a)*psi_r_val,-0.5*hbar_by_m*psi_i_lap/(a*a) ,potn*psi_i_val/hbar_by_m);
 		v[1] = -1.5*(a_t/a)*psi_i_val;
 		v[1]+= (0.5*hbar_by_m*psi_r_lap/(a*a) - potn*psi_r_val/hbar_by_m);
+		//printf("back  %lf lap %.10lf  potn  %.10lf\n\n", -1.5*(a_t/a)*psi_i_val,0.5*hbar_by_m*psi_r_lap/(a*a),potn*psi_r_val/hbar_by_m);
 
 		if(isnan(v[0]+v[1]))
 			return (-1);
@@ -256,7 +258,9 @@ class fdm_psi
 					{
 					  psi_amp2 = psi_r_val*psi_r_val + psi_i_val*psi_i_val;		
 					  dc= a3a03omega*psi_amp2 - 1.0;
-					  fprintf(fp_psi,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",a,dx[0]*i,dx[1]*j,dx[2]*k,psi_r_val,psi_i_val,psi_amp2,dc,a3a03omega);
+					  fprintf(fp_psi,
+						"%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\n",
+							a,dx[0]*i,dx[1]*j,dx[2]*k,psi_r_val,psi_i_val,psi_amp2,dc,a3a03omega);
 					}
 
 					else
@@ -380,7 +384,7 @@ class metric_potential
 				{
 					 ci = (n[2]*n[1])*i + n[2]*j + k;
 				
-					  fprintf(fp_ptn,"%lf\t%lf\t%lf\t%lf\t%lf\n",a,dx[0]*i,dx[1]*j,dx[2]*k,fpGpsi[ci][0]);
+					  fprintf(fp_ptn,"%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\n",a,dx[0]*i,dx[1]*j,dx[2]*k,fpGpsi[ci][0]);
 				
 
 
