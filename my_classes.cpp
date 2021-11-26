@@ -189,10 +189,10 @@ class fdm_psi
 		psi_r_lap = psi_r.get_field(ind,give_f_lap);
 		psi_i_lap = psi_i.get_field(ind,give_f_lap);
 		v[0] = -1.5*(a_t/a)*psi_r_val;
-		v[0]+= (-0.5*hbar_by_m*psi_i_lap/(a*a) + potn*psi_i_val/hbar_by_m);
+		v[0]+= ((-0.5*hbar_by_m*psi_i_lap/(a*a) + potn*psi_i_val/hbar_by_m))/H0;
 		//printf("back  %lf lap %.10lf  potn  %.10lf\n", -1.5*(a_t/a)*psi_r_val,-0.5*hbar_by_m*psi_i_lap/(a*a) ,potn*psi_i_val/hbar_by_m);
 		v[1] = -1.5*(a_t/a)*psi_i_val;
-		v[1]+= (0.5*hbar_by_m*psi_r_lap/(a*a) - potn*psi_r_val/hbar_by_m);
+		v[1]+= ((0.5*hbar_by_m*psi_r_lap/(a*a) - potn*psi_r_val/hbar_by_m))/H0;
 		//printf("back  %lf lap %.10lf  potn  %.10lf\n\n", -1.5*(a_t/a)*psi_i_val,0.5*hbar_by_m*psi_r_lap/(a*a),potn*psi_r_val/hbar_by_m);
 
 		if(isnan(v[0]+v[1]))

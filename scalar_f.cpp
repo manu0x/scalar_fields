@@ -61,7 +61,7 @@ int main()
 	set_back_cosmo(a0,ai,Hi,omega_dm_ini);
 	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n",Hi,omega_dm_ini,ai);
 	initialise(ind,psi,phi,k_grid,a0,ai,Hi,omega_dm_ini,dx,gen);
-	fail = evolve_kdk(ind,psi,phi,k_grid,a0,ai,a0,omega_dm_ini,dx,0.8e-4);
+	fail = evolve_kdk(ind,psi,phi,k_grid,a0,ai,a0,omega_dm_ini,dx,0.4e-4);
 	printf("fail is %d\n",fail);
 	
 	
@@ -219,7 +219,7 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 			c1 = psi.calc_vel(ind,psi_vel, potn, ak, a_t,dx);
 			psi_k[0] = 0.5*(psi_retrive[0]+psi_val[ci][0]+ psi_vel[0]*dt);
 			psi_k[1] = 0.5*(psi_retrive[1]+psi_val[ci][1]+ psi_vel[1]*dt);
-			printf("psi_vel %lf %lf\n",psi_vel[0],psi_vel[1]);
+			//printf("psi_vel %lf %lf\n",psi_vel[0],psi_vel[1]);
 			psi.update(ind,psi_k[0],psi_k[1]);
 
 			psi_amp = sqrt(psi_k[0]*psi_k[0] + psi_k[1]*psi_k[1]);
@@ -321,7 +321,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 
 	double kf = twopie*lenfac/(64.0);
 
-	dx[0] = 0.2; dx[1] =0.2; dx[2] = 0.2;
+	dx[0] = 0.06; dx[1] =0.06; dx[2] = 0.06;
         L[0] = dx[0]*((double) ind[0]);  L[1] = dx[1]*((double) (ind[1]));  L[2] = dx[2]*((double) (ind[2]));
 	dk = 0.01/dx[0]; kbins = 0; printf("dk %lf\n",dk);
 	
