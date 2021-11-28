@@ -561,3 +561,67 @@ class ini_power_generator
 
 };
 
+
+
+void cal_spectrum(double *f,int *kbingrid,int kbins,int *s,double *pwspctrm,double dk,double abyai, FILE *fspwrite)
+{	int i,j;
+	int tN = s[0]*s[1]*s[2];
+	double delta_pw;
+	double kbincnt[kbins+1];
+
+	fftw_complex *dens_cntrst; fftw_complex *Fdens_cntrst;
+	fftw_plan spec_plan;
+
+	dens_cntrst = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * tN );
+	Fdens_cntrst = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * tN);
+	
+	for(i=0;i<tN;++i)
+	{
+		dens_cntrst[i][0] = f[i]; 
+		dens_cntrst[i][1] = 0.0;
+		if(i<=kbins)
+		pwspctrm[i] = 0.0;
+		kbincnt[kbingrid[i]] = 0.0;
+	}
+
+	
+	spec_plan = fftw_plan_dft_3d(s[0],s[1],s[2], dens_cntrst, Fdens_cntrst, FFTW_FORWARD, FFTW_ESTIMATE);
+	
+	fftw_execute(spec_plan);
+	fftw_free(dens_cntrst);
+
+	
+
+	for(i=0;i<tN;++i)
+	{
+		
+		pwspctrm[kbingrid[i]]+=  (Fdens_cntrst[i][1]*Fdens_cntrst[i][1] + Fdens_cntrst[i][0]*Fdens_cntrst[i][0])/((double )tN);
+		++kbincnt[kbingrid[i]];
+		
+
+	}
+	
+	for(i=0;i<=kbins;++i)
+	{
+
+		if(kbincnt[i]!=0)
+	        {  delta_pw = sqrt(pwspctrm[i]*i*i*i*dk*dk*dk/(2.0*M_PI*M_PI*kbincnt[i]));  
+
+		   fprintf(fspwrite,"%lf\t%lf\t%.13lf\t%.13lf\t%.13lf\n",
+							abyai,i*dk,pwspctrm[i]/(kbincnt[i]),pwspctrm[i]/(kbincnt[i]*abyai*abyai),delta_pw/abyai);
+
+		}
+
+	
+
+	}
+
+	
+
+	
+	
+	fftw_free(Fdens_cntrst);
+	fftw_destroy_plan(spec_plan);
+	fprintf(fspwrite,"\n\n\n\n");
+}
+

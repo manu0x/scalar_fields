@@ -29,11 +29,12 @@ enum code1 {give_f,give_f_t,give_f_x,give_f_y,give_f_z,give_f_lap};
 
 
 void ini_rand_field(int * ,double *,double *,double * ,double ,double ,double,ini_power_generator );
-void initialise(int * ,fdm_psi &,metric_potential &,double [][3],double ,double ,double ,double,double *,ini_power_generator);
+void initialise(int * ,fdm_psi &,metric_potential &,double [][3],int[] ,double ,double ,double,double,double *,double &,int &,ini_power_generator);
+		   
 double ini_power_spec(double );
 double dlogD_dloga(double );
 void set_back_cosmo(double &,double &,double &,double &);
-int evolve_kdk(int *,fdm_psi &,metric_potential &,double [][3],double ,double,double,double,double *,double dt=1e-4);
+int evolve_kdk(int *,fdm_psi &,metric_potential &,double [][3],int [],double ,double,double,double,double *,double,int,double dt=1e-4);
 
 
 
@@ -56,12 +57,14 @@ int main()
 	
 
 	double a0,ai,Hi,omega_dm_ini;
-	double k_grid[tN][3],dx[3];
+	double k_grid[tN][3],dx[3],dk;
+	int kbins,kbin_grid[tN];
 	
 	set_back_cosmo(a0,ai,Hi,omega_dm_ini);
 	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n",Hi,omega_dm_ini,ai);
-	initialise(ind,psi,phi,k_grid,a0,ai,Hi,omega_dm_ini,dx,gen);
-	fail = evolve_kdk(ind,psi,phi,k_grid,a0,ai,a0,omega_dm_ini,dx,0.4e-4);
+	initialise(ind,psi,phi,k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,gen);
+	printf("\ndk is %lf\n",dk);
+	fail = evolve_kdk(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4);
 	printf("fail is %d\n",fail);
 	
 	
@@ -98,8 +101,8 @@ void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_ini)
 
 
 
-int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
-					double a_final,double a_ini,double a0,double omega_dm_ini,double *dx,double dt)
+int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],int kbin_grid[],
+					double a_final,double a_ini,double a0,double omega_dm_ini,double *dx,double dk,int kbins,double dt)
 {	printf("Yo\n");
 	double a,a_t,t,ak,a3a03omega,dti=dt;
 	double a_print;
@@ -286,7 +289,7 @@ double dlogD_dloga(double a)
 
 }
 
-void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],double a0,double ai,double Hi,double omega_dm_ini,double *dx,ini_power_generator gen)
+void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],int kbin_grid[],double a0,double ai,double Hi,double omega_dm_ini,double *dx,double &dk,int & kbins,ini_power_generator gen)
 {
       
 
@@ -304,10 +307,10 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
      
 
       double L[3];
-      double dk; 
-      int kbins;     
+      
+           
       int tN = ind[0]*ind[1]*ind[2]; 
-      int kbin_count[tN],kbin_grid[tN];
+      int kbin_count[tN];
       double kmag_grid[tN];
       int n[3]{ind[0],ind[1],ind[2]};
       int loc_ind[3],err_hold;
@@ -389,7 +392,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 		kbin_grid[ci] = (int)(sqrt(ktmp)/(dk));
 		kmag_grid[ci] = sqrt(ktmp);
 		 //printf("yo  %d  %lf\n",kmag_grid[ci],sqrt(ktmp));
-		++kbin_count[kbin_grid[ci]];
+		kbin_count[kbin_grid[ci]] = kbin_count[kbin_grid[ci]]+1;
 
 		if(kbin_grid[ci]>kbins)
 		kbins=kbin_grid[ci];
@@ -400,7 +403,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 		
 		
       	}
-	printf("kmin %lf kmax %lf\n",sqrt(minkmagsqr),sqrt(maxkmagsqr));
+	
 	
 	ini_rand_field(n,kmag_grid, ini_dc,ini_theta,ai,a0,a_ti,gen);
 	double ggg;
@@ -461,6 +464,9 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 
 	printf("Initialization Complete.\n");
 	printf("\nK details:\n	dk is %lf  per MPc",dk/lenfac);
+	printf("kmin %lf kmax %lf\n",sqrt(minkmagsqr),sqrt(maxkmagsqr));
+	printf("dk is %lf\n",dk);
+	printf("kbins is %d   %d\n",kbins,(int)((sqrt(maxkmagsqr)-sqrt(minkmagsqr))/kbins));
 	/*printf("\n Nyquist Wavenumber is %lf",M_PI/dx[0]);
 	printf("\n	Min k_mag is %lf per MPc:: corr lmbda is %.16lf MPc",1.0/(dx[0]*lenfac*((double) n)),dx[0]*lenfac*((double) n));
 	printf("\n	Max k_mag is %lf per MPc:: corr lmbda is %.16lf Mpc",sqrt(maxkmagsqr)/lenfac,lenfac/sqrt(maxkmagsqr));
