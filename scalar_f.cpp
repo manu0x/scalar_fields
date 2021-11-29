@@ -106,7 +106,7 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],int 
 {	printf("Yo\n");
 	double a,a_t,t,ak,a3a03omega,dti=dt;
 	double a_print;
-	double psi_vel[2],psi_val[n[0]*n[1]*n[2]][2],psi_upd[2],psi_k[2],potn,poisson_rhs,psi_amp;
+	double psi_vel[2],psi_val[n[0]*n[1]*n[2]][2],psi_upd[2],psi_k[2],potn,poisson_rhs,psi_amp,dc[n[0]*n[1]*n[2]],pwr_spec[n[0]*n[1]*n[2]];
 	double psi_retrive[2];
 	int i,j,k,ci,ind[3];
 	int c1,c2,fail=0;
@@ -121,6 +121,12 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],int 
 	
 	FILE *fp_psi;
 	FILE *fp_phi;
+
+	FILE *fpwr_spec ;
+	//cal_spectrum(double *f,int *kbingrid,int kbins,int *s,double *pwspctrm,double dk,double abyai, FILE *fspwrite)
+	
+	
+
 	
 	
 	
@@ -138,6 +144,7 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],int 
 
 		char fp_psi_name[20]("psi_z_");
 		char fp_phi_name[20]("phi_z_");
+		char fp_pwr_spec_name[20]("pwr_z_");
 		char fp_z_num[10];
 
 		
@@ -150,21 +157,27 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],int 
 			sprintf(fp_z_num,"%.2lf",z_cur);
 			strcat(fp_psi_name,fp_z_num);
 			strcat(fp_phi_name,fp_z_num); 
+			strcat(fp_pwr_spec_name,fp_z_num); 
 			strcat(fp_psi_name,".txt"); 
 			strcat(fp_phi_name,".txt"); 
+			strcat(fp_pwr_spec_name,".txt"); 
 
 			fp_psi = fopen(fp_psi_name,"w");
 			fp_phi = fopen(fp_phi_name,"w");
+			fpwr_spec = fopen(fp_pwr_spec_name,"w");
 
 			printf("psi name %s\n",fp_psi_name);
 			printf("phi name %s\n",fp_phi_name);
+			printf("pwr spec name %s\n",fp_pwr_spec_name);
 
-			psi.write_psi(fp_psi,dx,a3a03omega,a,true, true);
+			psi.write_psi(fp_psi,dc,dx,a3a03omega,a,true, true);
 			phi.write_potential(fp_phi,dx,a3a03omega,a);
+			cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
 			printf("\nWriting at z = %lf\n",z_cur);
 			++prn;
 			fclose(fp_psi);
 	 		fclose(fp_phi);
+			fclose(fpwr_spec);
 
 		}
 
@@ -256,21 +269,27 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],int 
 
 	char fp_psi_name[20]("psi_z_");
 	char fp_phi_name[20]("phi_z_");
+	char fp_pwr_spec_name[20]("pwr_z_");
 	char fp_z_num[10];
 
 	sprintf(fp_z_num,"%.2lf",z_cur);
 	strcat(fp_psi_name,fp_z_num);
 	strcat(fp_phi_name,fp_z_num); 
+	strcat(fp_pwr_spec_name,fp_z_num); 
 	strcat(fp_psi_name,".txt"); 
 	strcat(fp_phi_name,".txt"); 
+	strcat(fp_pwr_spec_name,".txt"); 
 
 	fp_psi = fopen(fp_psi_name,"w");
 	fp_phi = fopen(fp_phi_name,"w");
+	fpwr_spec = fopen(fp_pwr_spec_name,"w");
 
-	psi.write_psi(fp_psi,dx,a3a03omega,a,true, true);
+	psi.write_psi(fp_psi,dc,dx,a3a03omega,a,true, true);
 	phi.write_potential(fp_phi,dx,a3a03omega,a);
+	cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
 	fclose(fp_psi);
 	fclose(fp_phi);
+	fclose(fpwr_spec);
 
 	return(fail);
 
@@ -315,7 +334,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
       int n[3]{ind[0],ind[1],ind[2]};
       int loc_ind[3],err_hold;
 
-      double ini_dc[tN],ini_theta[tN];
+      double ini_dc[tN],ini_theta[tN],pwr_spec[tN];
       double psi_amp,psi_r_val,psi_i_val,poisson_rhs;
        
 	     
@@ -452,7 +471,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 			psi_r_val = psi_amp*cos(ini_theta[ci]);
 			psi_i_val = psi_amp*sin(ini_theta[ci]);
 
-			fprintf(fpstoreini,"%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.15lf\n",a,dx[0]*i,dx[1]*j,dx[2]*k,psi_r_val,psi_i_val,potn);
+			fprintf(fpstoreini,"%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.15lf\t%.15lf\n",a,dx[0]*i,dx[1]*j,dx[2]*k,psi_r_val,psi_i_val,potn,ini_dc[ci]);
 			//printf("ci %d   %.15lf\n",ci,potn);
 
 	            }
@@ -461,12 +480,17 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 		}
 	fclose(fpstoreini);
 
+	FILE *fpwr_spec = fopen("spec_test.txt","w");
+	//cal_spectrum(double *f,int *kbingrid,int kbins,int *s,double *pwspctrm,double dk,double abyai, FILE *fspwrite)
+	cal_spectrum(ini_dc,kbin_grid, kbins,n,pwr_spec, dk,a/ai,fpwr_spec);
+	fclose(fpwr_spec);
+
 
 	printf("Initialization Complete.\n");
-	printf("\nK details:\n	dk is %lf  per MPc",dk/lenfac);
+	printf("\nK details:\n	dk is %lf  per MPc\n",dk/lenfac);
 	printf("kmin %lf kmax %lf\n",sqrt(minkmagsqr),sqrt(maxkmagsqr));
 	printf("dk is %lf\n",dk);
-	printf("kbins is %d   %d\n",kbins,(int)((sqrt(maxkmagsqr)-sqrt(minkmagsqr))/kbins));
+	printf("kbins is %d   %d\n",kbins,(int)((sqrt(maxkmagsqr)-sqrt(minkmagsqr))/dk));
 	/*printf("\n Nyquist Wavenumber is %lf",M_PI/dx[0]);
 	printf("\n	Min k_mag is %lf per MPc:: corr lmbda is %.16lf MPc",1.0/(dx[0]*lenfac*((double) n)),dx[0]*lenfac*((double) n));
 	printf("\n	Max k_mag is %lf per MPc:: corr lmbda is %.16lf Mpc",sqrt(maxkmagsqr)/lenfac,lenfac/sqrt(maxkmagsqr));
