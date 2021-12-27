@@ -545,14 +545,14 @@ void ini_rand_field(int * ind,double *kmag_grid,double * ini_dc,double * ini_the
 		 	    ksqr = kmag_grid[cnt];
 			   // sigk  = sqrt(ini_power_spec(sqrt(ksqr)));
 			if(ksqr>0.0)	
-			    {sigk  = gen.get_ini_spectrum(sqrt(ksqr)/h);}// printf("jhfhfbsfbn %lf %lf\n",h*sqrt(ksqr),h);}
-			    muk = 200000.0*sigk*ksqr*sqrt(ksqr)/sqrt(2.0);
-		 	    a1 = genrand_res53();
- 			    a2 = genrand_res53(); 
+			    {sigk  = gen.get_ini_spectrum(sqrt(ksqr));}// printf("jhfhfbsfbn %lf %lf\n",h*sqrt(ksqr),h);}
+			     muk = sigk*ksqr*sqrt(ksqr)/sqrt(2.0);
+		 	     a1 = genrand_res53();
+ 			     a2 = genrand_res53(); 
 			   // b1 = genrand_res53();
  			  //  b2 = genrand_res53();
-			    a_rand = (muk*(sqrt(-2.0*log(a1))*cos(2.0*M_PI*a2)));
-			    b_rand = (muk*(sqrt(-2.0*log(a1))*cos(2.0*M_PI*a2)));
+			     a_rand = (muk*(sqrt(-2.0*log(a1))*cos(2.0*M_PI*a2)));
+			     b_rand = (muk*(sqrt(-2.0*log(a1))*cos(2.0*M_PI*a2)));
 				
 			    
 			    if(ksqr>0.0)
