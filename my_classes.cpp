@@ -539,6 +539,11 @@ class ini_power_generator
 
 	}
 
+	double test_spec(double x)
+	{
+		return(1.0/pow(x,3.0));
+	}
+
 	void check(double x)
 	{
 		int i;
@@ -625,3 +630,270 @@ void cal_spectrum(double *f,int *kbingrid,int kbins,int *s,double *pwspctrm,doub
 	fprintf(fspwrite,"\n\n\n\n");
 }
 
+
+class gauss_rand_field_gen
+{
+	private:
+	int n[3];
+	//scalar_field_3d phi;
+
+	fftw_complex *field;
+	fftw_complex *field_ft;
+
+	fftw_plan plan_grf_f;
+	fftw_plan plan_grf_b;
+
+	
+
+	public:
+	int ntN; 
+	gauss_rand_field_gen(int *ind)
+	{
+		int l = ind[0]*ind[1]*ind[2];
+		ntN = l;
+		n[0]=ind[0];n[1]=ind[1];n[2]=ind[2];
+		
+		field = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * l);
+		field_ft =(fftw_complex*) fftw_malloc(sizeof(fftw_complex) *l);
+
+
+		plan_grf_f = fftw_plan_dft_3d(ind[0],ind[1],ind[2], field, field_ft, FFTW_FORWARD, FFTW_ESTIMATE);
+		plan_grf_b = fftw_plan_dft_3d(ind[0],ind[1],ind[2],field_ft,field, FFTW_BACKWARD, FFTW_ESTIMATE);
+
+
+
+	}
+	
+
+	double unit_normal()
+	{
+
+		double a1,a2,r;
+		a1 = genrand_res53();
+ 		a2 = genrand_res53(); 
+		r = (sqrt(-2.0*log(a1))*cos(2.0*M_PI*a2));
+
+		return(r);
+
+
+	}
+
+	void test_normal()
+	{
+		int i; double r;
+		FILE *fpnorm = fopen("norm.txt","w");
+		for(i=0;i<20000;++i)
+		{	
+			r = unit_normal();			
+			fprintf(fpnorm,"%lf\n",r);
+			
+
+		}
+		fclose(fpnorm);
+
+	}
+
+
+	void gen(double k_grid[][3],double f[][2],double ft[][2], ini_power_generator p_k)
+	{	int i,j,k,ci;
+		double ksqr,pk_val,tN;
+
+		tN = (double)(n[0]*n[1]*n[2]);
+
+		for(i=0;i<n[0];++i)
+		{
+		  for(j=0;j<n[1];++j)
+		  {
+		    for(k=0;k<n[2];++k)
+		    {
+			ci = (n[2]*n[1])*i + n[2]*j + k;			
+						
+			
+			field[ci][0] = unit_normal();
+			field[ci][1] = 0.0;
+			
+
+		    }
+
+		  }
+
+		}
+
+		fftw_execute(plan_grf_f);
+
+
+		for(i=0;i<n[0];++i)
+		{
+		  for(j=0;j<n[1];++j)
+		  {
+		    for(k=0;k<n[2];++k)
+		    {
+			ci = (n[2]*n[1])*i + n[2]*j + k;			
+			ksqr = (k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
+
+			pk_val = p_k.get_ini_spectrum(sqrt(ksqr));			
+			if(ksqr==0.0)
+			{field_ft[ci][0] = 0.0;
+			 field_ft[ci][1] = 0.0;
+			}
+			else
+			{
+
+				field_ft[ci][0] = sqrt(pk_val)*field_ft[ci][0]/tN;
+				field_ft[ci][1] = sqrt(pk_val)*field_ft[ci][1]/tN;
+
+
+			}
+
+			ft[ci][0] = field_ft[ci][0];
+			ft[ci][1] = field_ft[ci][1];
+			
+
+		    }
+
+		  }
+
+		}
+		
+		fftw_execute(plan_grf_b);
+
+
+		for(i=0;i<n[0];++i)
+		{
+		  for(j=0;j<n[1];++j)
+		  {
+		    for(k=0;k<n[2];++k)
+		    {
+			ci = (n[2]*n[1])*i + n[2]*j + k;			
+			f[ci][0] = field[ci][0];
+			f[ci][1] = field[ci][1];
+			
+
+		    }
+
+		  }
+
+		}
+		
+	
+
+	//fftw_free(field);
+	//fftw_free(field_ft);
+	
+	//fftw_destroy_plan(plan_grf_f);
+	//fftw_destroy_plan(plan_grf_b);	
+	}
+		
+	void check(double k_grid[][3],ini_power_generator p_k,int *kbin_grid,int kbins,double dk,double abyai)
+	{
+		
+		FILE *fp = fopen("grf2.txt","w");
+		FILE *fp3 = fopen("3.txt","w");
+		FILE *fppwr = fopen("pwr_grf.txt","w");
+
+		double f[ntN][2],ft[ntN][2],pwr_spec[ntN],fld[ntN],pk_val,ksqr,kv,delta_pw;
+		double kbincnt[kbins+1];
+		double pwspctrm[kbins+1];
+		int i,j,k,ci,maxi=0;
+
+		gen(k_grid,f,ft,p_k);
+
+		for(i=0;i<n[0];++i)
+		{
+		  for(j=0;j<n[1];++j)
+		  {
+		    for(k=0;k<n[2];++k)
+		    {
+			ci = (n[2]*n[1])*i + n[2]*j + k;
+
+			fld[ci] = f[ci][0];
+			fprintf(fp3,"%lf\t%lf\t%lf\n",fld[ci],f[ci][0],f[ci][1]);
+				
+			pwr_spec[ci] = 0.0;
+			kbincnt[kbin_grid[ci]] = 0.0;
+			if(kbin_grid[ci]>maxi)
+				maxi = kbin_grid[ci];
+
+		    }
+		  }
+		}
+
+
+		for(i=0;i<ntN;++i)
+		{ ++kbincnt[kbin_grid[i]];
+			//fprintf(fp,"%d\t%lf\n",i,fld[i]);
+		
+		}
+
+		cal_spectrum(fld,kbin_grid, kbins,n,pwr_spec, dk,abyai,fppwr);
+		printf("hsjk %d\t%lf\t%d\n",kbins,kbincnt[0],maxi);
+		for(i=0;i<=kbins;++i)
+		{
+
+		   if(kbincnt[i]!=0)
+	           {  delta_pw = sqrt(pwspctrm[i]*i*i*i*dk*dk*dk/(2.0*M_PI*M_PI*kbincnt[i]));  
+			kv = (((double)(i+1))*dk*0.5);
+			
+			pk_val = p_k.test_spec(kv);
+			
+		      fprintf(fp,"%lf\t%lf\t%.13lf\t%.13lf\t%.13lf\n",
+							kv,pwr_spec[i]/(kbincnt[i]),pk_val,f[ci][0],f[ci][1]);
+
+		   }
+
+	
+
+		}
+
+
+	}
+
+
+	void stats_check(double k_grid[][3],ini_power_generator p_k,int *kbin_grid,int kbins,double dk,double abyai)
+	{
+
+		FILE *fp;
+		
+
+		double f[ntN][2],ft[ntN][2],pwr_spec[ntN],fld[ntN],pk_val,ksqr,kv,delta_pw;
+		double kbincnt[kbins+1],famp2;
+		double pwspctrm[kbins+1];
+		int i,j,k,maxi=0;
+
+	
+		char fp_num[10];
+		
+
+		for(i=0;i<100;++i)
+		{
+			
+			char fp_name[20]("stat_");
+		
+			sprintf(fp_num,"%d",i);
+			strcat(fp_name,fp_num);
+			fp = fopen(fp_name,"w");
+			
+
+			gen(k_grid,f,ft,p_k);
+			printf("check i %d  %s\n",i,fp_name);
+			for(j=0;j<ntN;++j)
+			{
+				ksqr = (k_grid[j][0]*k_grid[j][0]+k_grid[j][1]*k_grid[j][1]+k_grid[j][2]*k_grid[j][2]);
+				pk_val = p_k.get_ini_spectrum(sqrt(ksqr));
+				famp2 = ft[j][0]*ft[j][0]+ft[j][1]*ft[j][1];
+				fprintf(fp,"%lf\t%lf\t%lf\t%lf\n",ksqr,ft[j][0],ft[j][1],famp2,pk_val);
+
+			}
+
+			fclose(fp);
+
+		}
+		
+		
+
+	}
+
+
+
+
+};
