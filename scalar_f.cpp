@@ -53,6 +53,7 @@ int main()
 	const char name[] = "ax_test_matterpower.dat";
 	ini_power_generator gen(name);
 	gen.check(3.1);
+	gen.stats_check(3.1);
 
 	
 

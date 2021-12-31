@@ -881,7 +881,7 @@ class gauss_rand_field_gen
 				ksqr = (k_grid[j][0]*k_grid[j][0]+k_grid[j][1]*k_grid[j][1]+k_grid[j][2]*k_grid[j][2]);
 				pk_val = p_k.get_ini_spectrum(sqrt(ksqr));
 				famp2 = ft[j][0]*ft[j][0]+ft[j][1]*ft[j][1];
-				fprintf(fp,"%lf\t%lf\t%lf\t%lf\n",ksqr,ft[j][0],ft[j][1],famp2,pk_val);
+				fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\n",ksqr,ft[j][0],ft[j][1],famp2,pk_val);
 
 			}
 
