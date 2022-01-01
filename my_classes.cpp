@@ -571,6 +571,7 @@ class ini_power_generator
 void cal_spectrum(double *f,int *kbingrid,int kbins,int *s,double *pwspctrm,double dk,double abyai, FILE *fspwrite)
 {	int i,j;
 	int tN = s[0]*s[1]*s[2];
+	double dtN = (double)(tN);
 	double delta_pw;
 	double kbincnt[kbins+1];
 
@@ -600,7 +601,7 @@ void cal_spectrum(double *f,int *kbingrid,int kbins,int *s,double *pwspctrm,doub
 	for(i=0;i<tN;++i)
 	{
 		
-		pwspctrm[kbingrid[i]]+=  (Fdens_cntrst[i][1]*Fdens_cntrst[i][1] + Fdens_cntrst[i][0]*Fdens_cntrst[i][0])/((double )tN);
+		pwspctrm[kbingrid[i]]+=  (Fdens_cntrst[i][1]*Fdens_cntrst[i][1] + Fdens_cntrst[i][0]*Fdens_cntrst[i][0])/(sqrt(dtN));
 		++kbincnt[kbingrid[i]];
 		
 
@@ -614,6 +615,7 @@ void cal_spectrum(double *f,int *kbingrid,int kbins,int *s,double *pwspctrm,doub
 
 		   fprintf(fspwrite,"%lf\t%lf\t%.13lf\t%.13lf\t%.13lf\n",
 							abyai,i*dk,pwspctrm[i]/(kbincnt[i]),pwspctrm[i]/(kbincnt[i]*abyai*abyai),delta_pw/abyai);
+		   pwspctrm[i]=pwspctrm[i]/(kbincnt[i]);
 
 		}
 
