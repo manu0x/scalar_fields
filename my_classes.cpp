@@ -601,7 +601,7 @@ void cal_spectrum(double *f,int *kbingrid,int kbins,int *s,double *pwspctrm,doub
 	for(i=0;i<tN;++i)
 	{
 		
-		pwspctrm[kbingrid[i]]+=  (Fdens_cntrst[i][1]*Fdens_cntrst[i][1] + Fdens_cntrst[i][0]*Fdens_cntrst[i][0])/(sqrt(dtN));
+		pwspctrm[kbingrid[i]]+=  (Fdens_cntrst[i][1]*Fdens_cntrst[i][1] + Fdens_cntrst[i][0]*Fdens_cntrst[i][0])/(dtN);
 		++kbincnt[kbingrid[i]];
 		
 
@@ -611,10 +611,11 @@ void cal_spectrum(double *f,int *kbingrid,int kbins,int *s,double *pwspctrm,doub
 	{
 
 		if(kbincnt[i]!=0)
-	        {  delta_pw = sqrt(pwspctrm[i]*i*i*i*dk*dk*dk/(2.0*M_PI*M_PI*kbincnt[i]));  
+	        {  //delta_pw = sqrt(pwspctrm[i]*i*i*i*dk*dk*dk/(2.0*M_PI*M_PI*kbincnt[i]));  
+		    delta_pw = 1.0/(i*dk);
 
 		   fprintf(fspwrite,"%lf\t%lf\t%.13lf\t%.13lf\t%.13lf\n",
-							abyai,i*dk,pwspctrm[i]/(kbincnt[i]),pwspctrm[i]/(kbincnt[i]*abyai*abyai),delta_pw/abyai);
+							abyai,i*dk,pwspctrm[i]/(kbincnt[i]),delta_pw,pwspctrm[i]/(kbincnt[i]*abyai*abyai));
 		   pwspctrm[i]=pwspctrm[i]/(kbincnt[i]);
 
 		}
@@ -642,8 +643,12 @@ class gauss_rand_field_gen
 	fftw_complex *field;
 	fftw_complex *field_ft;
 
+	fftw_complex *theta;
+	fftw_complex *theta_ft;
+
 	fftw_plan plan_grf_f;
 	fftw_plan plan_grf_b;
+	fftw_plan plan_grf_theta_b;
 
 	
 
@@ -658,9 +663,13 @@ class gauss_rand_field_gen
 		field = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * l);
 		field_ft =(fftw_complex*) fftw_malloc(sizeof(fftw_complex) *l);
 
+		theta = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * l);
+		theta_ft =(fftw_complex*) fftw_malloc(sizeof(fftw_complex) *l);
+
 
 		plan_grf_f = fftw_plan_dft_3d(ind[0],ind[1],ind[2], field, field_ft, FFTW_FORWARD, FFTW_ESTIMATE);
 		plan_grf_b = fftw_plan_dft_3d(ind[0],ind[1],ind[2],field_ft,field, FFTW_BACKWARD, FFTW_ESTIMATE);
+		plan_grf_theta_b = fftw_plan_dft_3d(ind[0],ind[1],ind[2],theta_ft,theta, FFTW_BACKWARD, FFTW_ESTIMATE);
 
 
 
@@ -696,11 +705,12 @@ class gauss_rand_field_gen
 	}
 
 
-	void gen(double k_grid[][3],double f[][2],double ft[][2], ini_power_generator p_k)
+	void gen(double k_grid[][3],double *ini_dc,double *ini_theta, ini_power_generator p_k,double a_t,double a,double a0,double f_ini)
 	{	int i,j,k,ci;
-		double ksqr,pk_val,tN;
+		double ksqr,pk_val,dtN;
 
-		tN = (double)(n[0]*n[1]*n[2]);
+		
+		dtN = (double)(n[0]*n[1]*n[2]);
 
 		for(i=0;i<n[0];++i)
 		{
@@ -711,7 +721,110 @@ class gauss_rand_field_gen
 			ci = (n[2]*n[1])*i + n[2]*j + k;			
 						
 			
-			field[ci][0] = unit_normal();
+			field[ci][0] = sqrt(twopie)*unit_normal();
+			field[ci][1] = 0.0;
+			
+
+		    }
+
+		  }
+
+		}
+
+		fftw_execute(plan_grf_f);
+
+
+		for(i=0;i<n[0];++i)
+		{
+		  for(j=0;j<n[1];++j)
+		  {
+		    for(k=0;k<n[2];++k)
+		    {
+			ci = (n[2]*n[1])*i + n[2]*j + k;			
+			ksqr = (k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
+
+			pk_val = p_k.get_ini_spectrum(sqrt(ksqr));			
+			if(ksqr==0.0)
+			{field_ft[ci][0] = 0.0;
+			 field_ft[ci][1] = 0.0;
+
+			 theta_ft[ci][0] = 0.0;
+			 theta_ft[ci][1] = 0.0;
+			}
+			else
+			{
+
+				field_ft[ci][0] = sqrt(pk_val)*field_ft[ci][0]/dtN;
+				field_ft[ci][1] = sqrt(pk_val)*field_ft[ci][1]/dtN;
+
+				theta[ci][0] =  (a_t/a)*f_ini*(a/a0)*(a/a0)*field_ft[ci][0]/(ksqr*hbar_by_m);
+				theta_ft[ci][1] =  (a_t/a)*f_ini*(a/a0)*(a/a0)*field_ft[ci][1]/(ksqr*hbar_by_m);
+
+
+			}
+
+			 
+
+			
+			
+
+		    }
+
+		  }
+
+		}
+		
+		fftw_execute(plan_grf_b);
+		fftw_execute(plan_grf_theta_b);
+
+
+		for(i=0;i<n[0];++i)
+		{
+		  for(j=0;j<n[1];++j)
+		  {
+		    for(k=0;k<n[2];++k)
+		    {
+			ci = (n[2]*n[1])*i + n[2]*j + k;			
+			ini_dc[ci] = field[ci][0];
+			ini_theta[ci] = theta[ci][0];
+			
+
+		    }
+
+		  }
+
+		}
+		
+	
+
+	fftw_free(field);
+	fftw_free(field_ft);
+	fftw_free(theta);
+	fftw_free(theta_ft);
+	
+	fftw_destroy_plan(plan_grf_f);
+	fftw_destroy_plan(plan_grf_b);
+	fftw_destroy_plan(plan_grf_theta_b);	
+	}
+
+
+
+	void gen_check(double k_grid[][3],double f[][2],double ft[][2], ini_power_generator p_k)
+	{	int i,j,k,ci;
+		double ksqr,pk_val,dtN;
+
+		dtN = (double)(n[0]*n[1]*n[2]);
+
+		for(i=0;i<n[0];++i)
+		{
+		  for(j=0;j<n[1];++j)
+		  {
+		    for(k=0;k<n[2];++k)
+		    {
+			ci = (n[2]*n[1])*i + n[2]*j + k;			
+						
+			
+			field[ci][0] = sqrt(twopie)*unit_normal();
 			field[ci][1] = 0.0;
 			
 
@@ -741,8 +854,8 @@ class gauss_rand_field_gen
 			else
 			{
 
-				field_ft[ci][0] = sqrt(pk_val)*field_ft[ci][0]/tN;
-				field_ft[ci][1] = sqrt(pk_val)*field_ft[ci][1]/tN;
+				field_ft[ci][0] = sqrt(pk_val)*field_ft[ci][0]/dtN;
+				field_ft[ci][1] = sqrt(pk_val)*field_ft[ci][1]/dtN;
 
 
 			}
@@ -798,7 +911,7 @@ class gauss_rand_field_gen
 		double pwspctrm[kbins+1];
 		int i,j,k,ci,maxi=0;
 
-		gen(k_grid,f,ft,p_k);
+		gen_check(k_grid,f,ft,p_k);
 
 		for(i=0;i<n[0];++i)
 		{
@@ -832,14 +945,14 @@ class gauss_rand_field_gen
 		for(i=0;i<=kbins;++i)
 		{
 
-		   if(kbincnt[i]!=0)
+		   //if(kbincnt[i]!=0)
 	           {  delta_pw = sqrt(pwspctrm[i]*i*i*i*dk*dk*dk/(2.0*M_PI*M_PI*kbincnt[i]));  
 			kv = (((double)(i+1))*dk*0.5);
 			
-			pk_val = p_k.test_spec(kv);
+			pk_val = p_k.get_ini_spectrum(kv);
 			
-		      fprintf(fp,"%lf\t%lf\t%.13lf\t%.13lf\t%.13lf\n",
-							kv,pwr_spec[i]/(kbincnt[i]),pk_val,f[ci][0],f[ci][1]);
+		      fprintf(fp,"%.16lf\t%.16lf\t%.13lf\t%.13lf\t%.13lf\n",
+							kv,pwr_spec[i],pk_val,f[i][0],f[i][1]);
 
 		   }
 
@@ -876,7 +989,7 @@ class gauss_rand_field_gen
 			fp = fopen(fp_name,"w");
 			
 
-			gen(k_grid,f,ft,p_k);
+			gen_check(k_grid,f,ft,p_k);
 			printf("check i %d  %s\n",i,fp_name);
 			for(j=0;j<ntN;++j)
 			{

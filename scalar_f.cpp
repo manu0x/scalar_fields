@@ -31,7 +31,7 @@ enum code1 {give_f,give_f_t,give_f_x,give_f_y,give_f_z,give_f_lap};
 void ini_rand_field(int * ,double *,double *,double * ,double ,double ,double,ini_power_generator );
 void ini_rand_field_2(int * ,double [][3],int *,int ,double,double *,double * ,double ,double ,double,ini_power_generator );
 
-void initialise(int * ,fdm_psi &,metric_potential &,double [][3],int[] ,double ,double ,double,double,double *,double &,int &,ini_power_generator);
+void initialise(int * ,fdm_psi &,metric_potential &,double [][3],int[] ,double ,double ,double,double,double *,double &,int &,ini_power_generator,gauss_rand_field_gen grf);
 		   
 double ini_power_spec(double );
 double dlogD_dloga(double );
@@ -54,7 +54,8 @@ int main()
 
 	const char name[] = "ax_test_matterpower.dat";
 	ini_power_generator pk(name);
-	//gen.check(3.1);
+	gauss_rand_field_gen grf(ind);
+	
 	//gen.stats_check(3.1);
 
 	
@@ -65,8 +66,9 @@ int main()
 	
 	set_back_cosmo(a0,ai,Hi,omega_dm_ini);
 	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n",Hi,omega_dm_ini,ai);
-	initialise(ind,psi,phi,k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk);
+	initialise(ind,psi,phi,k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf);
 	printf("\ndk is %lf\n",dk);
+	
 	//fail = evolve_kdk(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4);
 	printf("fail is %d\n",fail);
 	
@@ -311,7 +313,7 @@ double dlogD_dloga(double a)
 
 }
 
-void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],int kbin_grid[],double a0,double ai,double Hi,double omega_dm_ini,double *dx,double &dk,int & kbins,ini_power_generator pk)
+void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],int kbin_grid[],double a0,double ai,double Hi,double omega_dm_ini,double *dx,double &dk,int & kbins,ini_power_generator pk,gauss_rand_field_gen grf)
 {
       
 
@@ -339,16 +341,16 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 
       double ini_dc[tN],ini_theta[tN],pwr_spec[tN];
       double psi_amp,psi_r_val,psi_i_val,poisson_rhs;
-       
+      double f_ini;
 	     
 	 
-	
+	f_ini=dlogD_dloga(a);
 
 	double kf = twopie*lenfac/(64.0);
 
 	dx[0] = 1.05; dx[1] =1.05; dx[2] = 1.05;
         L[0] = dx[0]*((double) ind[0]);  L[1] = dx[1]*((double) (ind[1]));  L[2] = dx[2]*((double) (ind[2]));
-	dk = twopie/L[0]; kbins = 0; printf("dk %lf\n",dk);
+	dk = 1.0/L[0]; kbins = 0; printf("dk %lf\n",dk);
 	
 	//ini_rand_field();
 	//  read_ini_rand_field();
@@ -378,7 +380,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 			if((xcntr[j]%n[j])<=(n[j]/2))
 				{
 					
-				 k_grid[ci][j] = twopie*((double)(xcntr[j]%n[j]))/L[j];
+				 k_grid[ci][j] = ((double)(xcntr[j]%n[j]))/L[j];
 
 				  ktmp+= k_grid[ci][j]*k_grid[ci][j];
 
@@ -386,7 +388,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 				}
 			else
 				{ 
-				 k_grid[ci][j] = twopie*((double)((xcntr[j]%n[j])-n[j]))/L[j];
+				 k_grid[ci][j] = ((double)((xcntr[j]%n[j])-n[j]))/L[j];
 
 				 ktmp+= k_grid[ci][j]*k_grid[ci][j];
 
@@ -429,8 +431,11 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
       	}	
 
 
-	ini_rand_field_2(ind,k_grid,kbin_grid,kbins, dk,
-						ini_dc,ini_theta,a,a0,a_t,pk);
+	//ini_rand_field_2(ind,k_grid,kbin_grid,kbins, dk,
+	//					ini_dc,ini_theta,a,a0,a_t,pk);
+	//ini_rand_field(ind,kmag_grid,ini_dc,ini_theta,a,a0,a_t,pk);
+
+	grf.gen(k_grid,ini_dc,ini_theta, pk,a_t,a,a0,f_ini);
 	double ggg;
 	for(i=0;i<n[0];++i)
 		{
@@ -552,13 +557,13 @@ void ini_rand_field(int * ind,double *kmag_grid,double * ini_dc,double * ini_the
 			   // sigk  = sqrt(ini_power_spec(sqrt(ksqr)));
 			if(ksqr>0.0)	
 			    {sigk  = gen.test_spec(sqrt(ksqr));}// printf("jhfhfbsfbn %lf %lf\n",h*sqrt(ksqr),h);}
-			     muk = sigk*ksqr*sqrt(ksqr)/sqrt(2.0);
+			     muk = sqrt(sigk)/pow(twopie,1.5);
 		 	     a1 = genrand_res53();
  			     a2 = genrand_res53(); 
 			   // b1 = genrand_res53();
  			  //  b2 = genrand_res53();
 			     a_rand = (muk*(sqrt(-2.0*log(a1))*cos(2.0*M_PI*a2)));
-			     b_rand = (muk*(sqrt(-2.0*log(a1))*cos(2.0*M_PI*a2)));
+			     b_rand = (muk*(sqrt(-2.0*log(a1))*sin(2.0*M_PI*a2)));
 				
 			    
 			    if(ksqr>0.0)
@@ -647,7 +652,8 @@ void ini_rand_field_2(int * ind,double k_grid[][3],int *kbin_grid,int kbins,doub
 	double ksqr,pk_val;
 	double a1,a2,b1,b2,a_rand,b_rand;
 	double f_ini;
-	double pwr_spec[kbins+1];
+	double pwr_spec[kbins+1];	
+	double dtN;
 	
 
 
@@ -662,6 +668,7 @@ void ini_rand_field_2(int * ind,double k_grid[][3],int *kbin_grid,int kbins,doub
 	
 	
 	tN = ind[0]*ind[1]*ind[2];
+	dtN = (double)tN;
 
 	fftw_plan ini_del_f_plan;
 	fftw_plan ini_del_b_plan;
@@ -712,8 +719,8 @@ void ini_rand_field_2(int * ind,double k_grid[][3],int *kbin_grid,int kbins,doub
 			else
 			{
 
-				F_ini_del[cnt][0] = sqrt(pk_val)*F_ini_del[cnt][0];
-				F_ini_del[cnt][1] = sqrt(pk_val)*F_ini_del[cnt][1];
+				F_ini_del[cnt][0] = F_ini_del[cnt][0]/sqrt(pow(twopie,3.0));
+				F_ini_del[cnt][1] = F_ini_del[cnt][1]/sqrt(pow(twopie,3.0));
 
 				F_ini_theta[cnt][0] =  (a_t/a)*f_ini*(a/a0)*(a/a0)*F_ini_del[cnt][0]/(ksqr*hbar_by_m);
 			        F_ini_theta[cnt][1] =  (a_t/a)*f_ini*(a/a0)*(a/a0)*F_ini_del[cnt][1]/(ksqr*hbar_by_m);
@@ -734,8 +741,8 @@ void ini_rand_field_2(int * ind,double k_grid[][3],int *kbin_grid,int kbins,doub
 	for(cnt=0;cnt<tN;++cnt)
 	{
 		
-		ini_del[cnt][0] = ini_del[cnt][0]/(tN); ini_del[cnt][1] = ini_del[cnt][1]/(tN); 
-		ini_theta[cnt][0] = ini_theta[cnt][0]/(tN); ini_theta[cnt][1] = ini_theta[cnt][1]/(tN); 
+		ini_del[cnt][0] = ini_del[cnt][0]/(dtN); ini_del[cnt][1] = ini_del[cnt][1]/(dtN); 
+		ini_theta[cnt][0] = ini_theta[cnt][0]/(dtN); ini_theta[cnt][1] = ini_theta[cnt][1]/(dtN); 
 		ini_dc[cnt] = ini_del[cnt][0];
 		ini_theta_return[cnt] = ini_theta[cnt][0];
 
@@ -760,8 +767,8 @@ void ini_rand_field_2(int * ind,double k_grid[][3],int *kbin_grid,int kbins,doub
 		
 		
 
-		ksqr = ((double)(cnt))*dk;
-		pk_val = pk.test_spec(sqrt(ksqr));
+		ksqr = ((double)(cnt+1))*dk*(0.5);
+		pk_val = pk.test_spec(ksqr);
 
 		
 
