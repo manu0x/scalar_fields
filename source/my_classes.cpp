@@ -1,5 +1,4 @@
-#include <fftw3.h>
-#include "spline.c"
+
 
 
 class scalar_field_3d
@@ -808,7 +807,7 @@ class gauss_rand_field_gen
 	}
 
 
-
+///////////////////##################### Codes just for testing...############################//////////////////////////////////////////////////////////////////////////////
 	void gen_check(double k_grid[][3],double f[][2],double ft[][2], ini_power_generator p_k)
 	{	int i,j,k,ci;
 		double ksqr,pk_val,dtN;
