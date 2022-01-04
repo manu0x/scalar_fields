@@ -107,7 +107,7 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],int 
 			
 			psi.update(ind,psi_k[0],psi_k[1]);
 
-			poisson_rhs = 1.5*H0*H0*a*a*(psi_amp*psi_amp - omega_dm_ini*pow(a0/a,3.0));
+			poisson_rhs = 1.5*H0*H0*ak*ak*(psi_amp*psi_amp - omega_dm_ini*pow(a0/ak,3.0));
 			phi.update_4pieGpsi(ci,poisson_rhs);
 			
 			//fail =1;
