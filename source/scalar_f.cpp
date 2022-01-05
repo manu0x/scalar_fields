@@ -19,6 +19,7 @@ int main()
 	int ind[3]{128,128,128};	
 	int tN = ind[0]*ind[1]*ind[2];
 	fdm_psi psi(ind,true);
+	int use_omp{1};
 	metric_potential phi(ind,true);
 
 	const char name[] = "ax_test_matterpower.dat";
@@ -39,7 +40,11 @@ int main()
 	initialise(ind,psi,phi,k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf);
 	printf("\ndk is %lf\n",dk);
 	
-	//fail = evolve_kdk(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4);
+	if(use_omp)
+	 fail = evolve_kdk_openmp(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4);
+	else
+	 fail = evolve_kdk(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4);
+
 	printf("fail is %d\n",fail);
 	
 	

@@ -17,5 +17,6 @@ enum code1 {give_f,give_f_t,give_f_x,give_f_y,give_f_z,give_f_lap};
 
 #include "../source/my_classes.cpp"
 
+#include "utilities.h"
 #include "scalar_f_initial.h"
 #include "scalar_f_evolve.h"

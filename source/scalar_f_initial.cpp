@@ -3,7 +3,28 @@ double ini_power_spec(double ksqr)
 	return (1e-5);
 }
 
+void res_limits(double max_potn,double vmax,double dx,double a,double &dt_limit,double &len_res )
+{
+	
+	double t_constrain_1,t_constrain_2,t_smaller_constrain;
 
+	t_constrain_1 = (4.0/(3.0*M_PI))*H0*a*a*dx*dx/hbar_by_m;
+	t_constrain_2 = 2.0*M_PI*hbar_by_m*H0*a/fabs(max_potn);
+
+	if (t_constrain_1<t_constrain_2)
+		t_smaller_constrain = t_constrain_1;
+	else
+		t_smaller_constrain = t_constrain_2;
+
+	
+	len_res  = twopie*hbar_by_m/vmax;
+
+	printf("t_constrain_1 %lf\nt_constrain_2 %lf\nlen_res %lf\n",t_constrain_1,t_constrain_2,len_res);
+
+	
+
+
+}
 
 
 void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],int kbin_grid[],double a0,double ai,double Hi,double omega_dm_ini,double *dx,double &dk,int & kbins,ini_power_generator pk,gauss_rand_field_gen grf)
@@ -35,6 +56,8 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
       double ini_dc[tN],ini_theta[tN],pwr_spec[tN];
       double psi_amp,psi_r_val,psi_i_val,poisson_rhs;
       double f_ini;
+
+      double max_potn=0.0,vmax=0.0;
 	     
 	 
 	f_ini=dlogD_dloga(a);
@@ -174,6 +197,11 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 			psi_amp = sqrt(omega_dm_ini*pow(a0/ai,3.0)*(1.0+ini_dc[ci]));
 			psi_r_val = psi_amp*cos(ini_theta[ci]);
 			psi_i_val = psi_amp*sin(ini_theta[ci]);
+			
+			if(fabs(potn)>=max_potn)
+				max_potn = fabs(potn);
+
+			
 
 			fprintf(fpstoreini,"%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.15lf\t%.15lf\t%.15lf\n",
 							a,dx[0]*i,dx[1]*j,dx[2]*k,psi_r_val,psi_i_val,potn,ini_dc[ci],ini_theta[ci]);
