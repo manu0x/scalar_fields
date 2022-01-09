@@ -506,7 +506,7 @@ class ini_power_generator
 
 		
 		if(checkspl)
-		printf("\nALERT !!!! Spline fit failed....%.10lf\n",max_dx);
+		printf("\nALERT !!!! Spline fit failed....checkspl %d  %.10lf\n",checkspl,max_dx);
 	
 		
 
@@ -742,7 +742,7 @@ class gauss_rand_field_gen
 			ci = (n[2]*n[1])*i + n[2]*j + k;			
 			ksqr = (k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
 
-			pk_val = p_k.get_ini_spectrum(sqrt(ksqr));			
+						
 			if(ksqr==0.0)
 			{field_ft[ci][0] = 0.0;
 			 field_ft[ci][1] = 0.0;
@@ -752,12 +752,14 @@ class gauss_rand_field_gen
 			}
 			else
 			{
-
+				pk_val = p_k.get_ini_spectrum(sqrt(ksqr));				
+					
 				field_ft[ci][0] = sqrt(pk_val)*field_ft[ci][0]/dtN;
 				field_ft[ci][1] = sqrt(pk_val)*field_ft[ci][1]/dtN;
 
-				theta[ci][0] =  (a_t/a)*f_ini*(a/a0)*(a/a0)*field_ft[ci][0]/(ksqr*hbar_by_m);
-				theta_ft[ci][1] =  (a_t/a)*f_ini*(a/a0)*(a/a0)*field_ft[ci][1]/(ksqr*hbar_by_m);
+				theta[ci][0] =  (a_t*Hi/a)*f_ini*(a/a0)*(a/a0)*field_ft[ci][0]/(ksqr*hbar_by_m);
+				theta_ft[ci][1] =  (a_t*Hi/a)*f_ini*(a/a0)*(a/a0)*field_ft[ci][1]/(ksqr*hbar_by_m);
+				//printf("Hi %lf\n",Hi);
 
 
 			}

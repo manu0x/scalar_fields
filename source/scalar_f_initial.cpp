@@ -3,11 +3,12 @@ double ini_power_spec(double ksqr)
 	return (1e-5);
 }
 
-void res_limits(double max_potn,double vmax,double dx,double a,double &dt_limit,double &len_res )
+double res_limits(double max_potn,double vmax,double dx,double a,double &dt_limit,double &len_res )
 {
 	//############ Uses constraints from May & Springel  2101.01828
-	double t_constrain_1,t_constrain_2,t_smaller_constrain;
-	len_res  = twopie*hbar_by_m/vmax;
+	double t_constrain_1,t_constrain_2,t_smaller_constrain,vmax_cap;
+	len_res  = M_PI*hbar_by_m/vmax;
+	vmax_cap  = M_PI*hbar_by_m/dx;
 
 	t_constrain_1 = (4.0/(3.0*M_PI))*H0*a*a*len_res*len_res/hbar_by_m;
 	t_constrain_2 = 2.0*M_PI*hbar_by_m*H0/fabs(max_potn);
@@ -22,7 +23,10 @@ void res_limits(double max_potn,double vmax,double dx,double a,double &dt_limit,
 	dt_limit = t_smaller_constrain;
 
 	printf("\nResolution Constraints @ z = %lf\n",(1.0/a)-1.0);
-	printf("\tt_constrain_1 %e\n\tt_constrain_2 %e\n\tdt_limit %e\n\tlen_res req. %e\n",t_constrain_1,t_constrain_2,dt_limit,len_res);
+	printf("\tt_constrain_1 %e\n\tt_constrain_2 %e\n\tdt_limit %e\n\tlen_res req. %e\n\tdx is %e\n\tvmax_cap is %e\n",
+							t_constrain_1,t_constrain_2,dt_limit,len_res,dx,vmax_cap);
+	
+	return vmax_cap;
 
 	
 
@@ -47,7 +51,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
       FILE *fpstoreini = fopen("initial.txt","w");
      
 
-      double L[3];
+      double L[3],boxlength;
       
            
       int tN = ind[0]*ind[1]*ind[2]; 
@@ -62,17 +66,20 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
       double potn;
       double k_nyq;
 
-      double max_potn=0.0,vmax=0.0;
+      double max_potn=0.0,vmax=0.0,vmax_cap;
       double dt_limit,len_res;
 	     
 	 
 	f_ini=dlogD_dloga(a);
 
 	//double kf = twopie*lenfac/(64.0);
-
-	dx[0] = 1.05; dx[1] =1.05; dx[2] = 1.05;
-        L[0] = dx[0]*((double) ind[0]);  L[1] = dx[1]*((double) (ind[1]));  L[2] = dx[2]*((double) (ind[2]));
-	dk = 1.0/L[0]; kbins = 0; printf("dk %lf\n",dk);
+	boxlength = 200.0;
+	
+        dx[0] = boxlength/((double)(ind[0]-1));	dx[1] = boxlength/((double)(ind[1]-1));	dx[2] = boxlength/((double)(ind[2]-1));
+	L[0] = boxlength;	L[1] = boxlength;	L[2] = boxlength;
+	dk = 1.0/boxlength;
+	kbins = 0;
+	printf("dk %lf\n",dk);
 	k_nyq = 0.5/(dx[0]);
 
 	
@@ -195,7 +202,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 		}
 
 	
-	ret = calculate_vel_from_psi(ind,dx,psi, vel,vmax);
+	ret = calculate_vel_from_psi(ind,dx,psi, vel,vmax,ai);
 	
 	for(i=0;i<n[0];++i)
 		{
@@ -231,16 +238,20 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	fclose(fpwr_spec);
 
 	
-	res_limits(max_potn, vmax, dx[0],ai,dt_limit, len_res);
+	vmax_cap=res_limits(max_potn, vmax, dx[0],ai,dt_limit, len_res);
 	
 
 	printf("\nInitialization Complete.\n");
+	printf("\n Length details\n");
+	printf("	L is %lf\n",L[0]);
+	printf("	dx is %lf req len res %lf\n",dx[0],len_res);
 	printf("\nK details:\n	dk is %lf  per MPc\n",dk/lenfac);
 	printf("	kmin %lf kmax %lf\n",sqrt(minkmagsqr),sqrt(maxkmagsqr));
 	printf("	k_nyquist is %.5lf\n",k_nyq);
 
 	printf("	kbins is %d   %d\n",kbins,(int)((sqrt(maxkmagsqr)-sqrt(minkmagsqr))/dk));
-	printf("	Max vel is %.10lf  /c\n",vmax);
+	printf("	Max vel is %e  /c\n",vmax);
+	printf("	Max vel cap is %e  /c\n",vmax_cap);
 	printf("	Max potential is %.10lf  /c^2\n",max_potn);
 
 

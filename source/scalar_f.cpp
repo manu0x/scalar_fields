@@ -30,7 +30,7 @@ int main()
 
 	
 
-	double a0,ai,Hi,omega_dm_ini;
+	double a0,ai,omega_dm_ini;
 	double k_grid[tN][3],dx[3],dk;
 	int kbins,kbin_grid[tN];
 	
@@ -38,7 +38,7 @@ int main()
 	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n",Hi,omega_dm_ini,ai);
 
 	initialise(ind,psi,phi,k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf);
-	printf("\ndk is %lf\n",dk);
+	//printf("\ndk is %lf\n",dk);
 	
 	/*if(use_omp)
 	 fail = evolve_kdk_openmp(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4);

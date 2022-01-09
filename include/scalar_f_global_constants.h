@@ -1,4 +1,4 @@
-double hbar_by_m,h,H0,lenfac;
+double hbar_by_m,h,H0,Hi,lenfac;
 double c_box,pc_box,hbar_box;
 
 #define twopie  2.0*M_PI

@@ -1,4 +1,4 @@
-int calculate_vel_from_psi(int *n,double *dx,fdm_psi psi,double v[][3],double &vmax)
+int calculate_vel_from_psi(int *n,double *dx,fdm_psi psi,double v[][3],double &vmax,double a)
 {	
 	int i,j,k,ci,tN,ind[3],cnt,ret =1;
 	double psi_ret[2];
