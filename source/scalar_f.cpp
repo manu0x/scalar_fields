@@ -40,11 +40,11 @@ int main()
 	initialise(ind,psi,phi,k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf);
 	printf("\ndk is %lf\n",dk);
 	
-	if(use_omp)
+	/*if(use_omp)
 	 fail = evolve_kdk_openmp(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4);
 	else
 	 fail = evolve_kdk(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4);
-
+	*/
 	printf("fail is %d\n",fail);
 	
 	

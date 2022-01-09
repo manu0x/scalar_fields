@@ -5,11 +5,12 @@ double ini_power_spec(double ksqr)
 
 void res_limits(double max_potn,double vmax,double dx,double a,double &dt_limit,double &len_res )
 {
-	
+	//############ Uses constraints from May & Springel  2101.01828
 	double t_constrain_1,t_constrain_2,t_smaller_constrain;
+	len_res  = twopie*hbar_by_m/vmax;
 
-	t_constrain_1 = (4.0/(3.0*M_PI))*H0*a*a*dx*dx/hbar_by_m;
-	t_constrain_2 = 2.0*M_PI*hbar_by_m*H0*a/fabs(max_potn);
+	t_constrain_1 = (4.0/(3.0*M_PI))*H0*a*a*len_res*len_res/hbar_by_m;
+	t_constrain_2 = 2.0*M_PI*hbar_by_m*H0/fabs(max_potn);
 
 	if (t_constrain_1<t_constrain_2)
 		t_smaller_constrain = t_constrain_1;
@@ -17,9 +18,11 @@ void res_limits(double max_potn,double vmax,double dx,double a,double &dt_limit,
 		t_smaller_constrain = t_constrain_2;
 
 	
-	len_res  = twopie*hbar_by_m/vmax;
+	
+	dt_limit = t_smaller_constrain;
 
-	printf("t_constrain_1 %lf\nt_constrain_2 %lf\nlen_res %lf\n",t_constrain_1,t_constrain_2,len_res);
+	printf("\nResolution Constraints @ z = %lf\n",(1.0/a)-1.0);
+	printf("\tt_constrain_1 %e\n\tt_constrain_2 %e\n\tdt_limit %e\n\tlen_res req. %e\n",t_constrain_1,t_constrain_2,dt_limit,len_res);
 
 	
 
@@ -32,7 +35,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
       
 
     
-      int ci,i,j,k;
+      int ci,i,j,k,ret;
       int xcntr[3]={-1,-1,-1};
       
       double ktmp,maxkmagsqr = 0.0,minkmagsqr = 1e10;
@@ -53,11 +56,14 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
       int n[3]{ind[0],ind[1],ind[2]};
       int loc_ind[3],err_hold;
 
-      double ini_dc[tN],ini_theta[tN],pwr_spec[tN];
+      double ini_dc[tN],ini_theta[tN],pwr_spec[tN],vel[tN][3];
       double psi_amp,psi_r_val,psi_i_val,poisson_rhs;
       double f_ini;
+      double potn;
+      double k_nyq;
 
       double max_potn=0.0,vmax=0.0;
+      double dt_limit,len_res;
 	     
 	 
 	f_ini=dlogD_dloga(a);
@@ -67,6 +73,10 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	dx[0] = 1.05; dx[1] =1.05; dx[2] = 1.05;
         L[0] = dx[0]*((double) ind[0]);  L[1] = dx[1]*((double) (ind[1]));  L[2] = dx[2]*((double) (ind[2]));
 	dk = 1.0/L[0]; kbins = 0; printf("dk %lf\n",dk);
+	k_nyq = 0.5/(dx[0]);
+
+	
+
 	
 	//ini_rand_field();
 	//  read_ini_rand_field();
@@ -152,6 +162,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	//ini_rand_field(ind,kmag_grid,ini_dc,ini_theta,a,a0,a_t,pk);
 
 	grf.gen(k_grid,ini_dc,ini_theta, pk,a_t,a,a0,f_ini);
+	
 	double ggg;
 	for(i=0;i<n[0];++i)
 		{
@@ -183,8 +194,9 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 
 		}
 
-	phi.solve_poisson(psi,k_grid);
-
+	
+	ret = calculate_vel_from_psi(ind,dx,psi, vel,vmax);
+	
 	for(i=0;i<n[0];++i)
 		{
 		  for(j=0;j<n[1];++j)
@@ -193,7 +205,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 		    {
 			ci = (n[2]*n[1])*i + n[2]*j + k;
 			loc_ind[0] = i;  loc_ind[1] = j;  loc_ind[2] = k;
-			double potn = phi.get_potential(ci);
+			potn = phi.get_potential(ci);
 			psi_amp = sqrt(omega_dm_ini*pow(a0/ai,3.0)*(1.0+ini_dc[ci]));
 			psi_r_val = psi_amp*cos(ini_theta[ci]);
 			psi_i_val = psi_amp*sin(ini_theta[ci]);
@@ -203,8 +215,8 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 
 			
 
-			fprintf(fpstoreini,"%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.15lf\t%.15lf\t%.15lf\n",
-							a,dx[0]*i,dx[1]*j,dx[2]*k,psi_r_val,psi_i_val,potn,ini_dc[ci],ini_theta[ci]);
+			fprintf(fpstoreini,"%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\n",
+							a,dx[0]*i,dx[1]*j,dx[2]*k,psi_r_val,psi_i_val,potn,ini_dc[ci],ini_theta[ci],vel[ci][0],vel[ci][1],vel[ci][2]);
 			//printf("ci %d   %.15lf\n",ci,potn);
 
 	            }
@@ -218,12 +230,20 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	cal_spectrum(ini_dc,kbin_grid, kbins,n,pwr_spec, dk,a/ai,fpwr_spec);
 	fclose(fpwr_spec);
 
+	
+	res_limits(max_potn, vmax, dx[0],ai,dt_limit, len_res);
+	
 
-	printf("Initialization Complete.\n");
+	printf("\nInitialization Complete.\n");
 	printf("\nK details:\n	dk is %lf  per MPc\n",dk/lenfac);
-	printf("kmin %lf kmax %lf\n",sqrt(minkmagsqr),sqrt(maxkmagsqr));
-	printf("dk is %lf\n",dk);
-	printf("kbins is %d   %d\n",kbins,(int)((sqrt(maxkmagsqr)-sqrt(minkmagsqr))/dk));
+	printf("	kmin %lf kmax %lf\n",sqrt(minkmagsqr),sqrt(maxkmagsqr));
+	printf("	k_nyquist is %.5lf\n",k_nyq);
+
+	printf("	kbins is %d   %d\n",kbins,(int)((sqrt(maxkmagsqr)-sqrt(minkmagsqr))/dk));
+	printf("	Max vel is %.10lf  /c\n",vmax);
+	printf("	Max potential is %.10lf  /c^2\n",max_potn);
+
+
 	/*printf("\n Nyquist Wavenumber is %lf",M_PI/dx[0]);
 	printf("\n	Min k_mag is %lf per MPc:: corr lmbda is %.16lf MPc",1.0/(dx[0]*lenfac*((double) n)),dx[0]*lenfac*((double) n));
 	printf("\n	Max k_mag is %lf per MPc:: corr lmbda is %.16lf Mpc",sqrt(maxkmagsqr)/lenfac,lenfac/sqrt(maxkmagsqr));

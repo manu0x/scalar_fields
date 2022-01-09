@@ -49,7 +49,7 @@ int calculate_vel_from_psi(int *n,double *dx,fdm_psi psi,double v[][3],double &v
 	}
 
 	
-
+	
 	for(i=0;i<n[0];++i)
 	{	ind_l1[0] = i;
 		ind_l2[0] = i;
@@ -78,8 +78,8 @@ int calculate_vel_from_psi(int *n,double *dx,fdm_psi psi,double v[][3],double &v
 	   		{
 	     
 	     
-	     			ind_l1[ci] = (n[ci]+ind[ci]-1)%n[i];
-	     			ind_l2[ci] = (n[ci]+ind[ci]-2)%n[i];
+	     			ind_l1[ci] = (n[ci]+ind[ci]-1)%n[ci];
+	     			ind_l2[ci] = (n[ci]+ind[ci]-2)%n[ci];
 
 	     			ind_r1[ci] = (ind[ci]+1)%n[ci];
 	     			ind_r2[ci] = (ind[ci]+2)%n[ci];
@@ -91,7 +91,7 @@ int calculate_vel_from_psi(int *n,double *dx,fdm_psi psi,double v[][3],double &v
 	       			m[2] = m[0] + m[1] ;
 		
 		
-	       			theta_x[ci] = m[2]/(dx[i]);
+	       			theta_x[ci] = m[2]/(dx[ci]);
 	      
 
 	    
@@ -117,7 +117,7 @@ int calculate_vel_from_psi(int *n,double *dx,fdm_psi psi,double v[][3],double &v
 
 	}
 
-
+	//printf("Hey vmax  %lf\n",vmax);
 	return(ret);	  
 
 }
