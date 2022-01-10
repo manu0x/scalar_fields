@@ -317,11 +317,11 @@ int evolve_kdk_openmp(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][
 	a = 0.5*(ak+a+a_t*dt);
 
  #pragma omp parallel for private(j,k,ci,ind,c1,potn,psi_vel,psi_k,psi_amp,poisson_rhs)
-	for(i=0;(i<n[0])&&(!fail);++i)
+	for(i=0;(i<n[0]);++i)
 	 {
-		  for(j=0;(j<n[1])&&(!fail);++j)
+		  for(j=0;(j<n[1]);++j)
 		  {
-		    for(k=0;(k<n[2])&&(!fail);++k)
+		    for(k=0;(k<n[2]);++k)
 		    {
 			ci = (n[2]*n[1])*i + n[2]*j + k;
 			ind[0] = i;ind[1] = j;ind[2] = k;

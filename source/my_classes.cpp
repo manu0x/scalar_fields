@@ -435,7 +435,7 @@ class ini_power_generator
 		FILE *fp = fopen(fname,"r");
 		while(fre!=EOF)
 		{
-			fre=fscanf(fp,"%lf\t%lf\n",&a,&b);
+			fre=fscanf(fp,"       %lf       %lf\n",&a,&b);
 
 			if(i==0)
 			{
@@ -460,7 +460,7 @@ class ini_power_generator
 			
 			if(fre!=EOF)
 			{
-			// printf("Reading %d %d %lf %.8lf\n",i,fre,a,b);
+			//printf("Reading %d %d %lf %.8lf\n",i,fre,a,b);
 			 ++i;
 			}
 
@@ -492,8 +492,13 @@ class ini_power_generator
 		}
 		
 		fclose(fp);
+		printf("	doing spline..\n");
 		
 		checkspl = spline(k,p,point_cnt,cload); 
+		if(checkspl)
+		 printf("\nALERT !!!! Spline fit failed....checkspl %d  %.10lf\n",checkspl,max_dx);
+		else
+		 printf("	spline done successfully..\n");
 	
 		for(i=0;i<point_cnt;++i)
 		{
@@ -505,8 +510,7 @@ class ini_power_generator
 		}
 
 		
-		if(checkspl)
-		printf("\nALERT !!!! Spline fit failed....checkspl %d  %.10lf\n",checkspl,max_dx);
+		
 	
 		
 
@@ -752,7 +756,7 @@ class gauss_rand_field_gen
 			}
 			else
 			{
-				pk_val = p_k.get_ini_spectrum(sqrt(ksqr));				
+				pk_val = p_k.test_spec(sqrt(ksqr));				
 					
 				field_ft[ci][0] = sqrt(pk_val)*field_ft[ci][0]/dtN;
 				field_ft[ci][1] = sqrt(pk_val)*field_ft[ci][1]/dtN;

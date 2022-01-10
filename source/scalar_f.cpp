@@ -22,8 +22,10 @@ int main()
 	int use_omp{1};
 	metric_potential phi(ind,true);
 
-	const char name[] = "ax_test_matterpower.dat";
+	const char name[] = "lcdm_00_pk.dat";
+	printf("\n Building pk...\n");
 	ini_power_generator pk(name);
+	pk.check(0.0);
 	gauss_rand_field_gen grf(ind);
 	
 	//gen.stats_check(3.1);
@@ -40,11 +42,11 @@ int main()
 	initialise(ind,psi,phi,k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf);
 	//printf("\ndk is %lf\n",dk);
 	
-	/*if(use_omp)
+	if(use_omp)
 	 fail = evolve_kdk_openmp(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4);
 	else
 	 fail = evolve_kdk(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4);
-	*/
+	//*/
 	printf("fail is %d\n",fail);
 	
 	

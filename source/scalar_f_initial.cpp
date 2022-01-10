@@ -73,7 +73,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	f_ini=dlogD_dloga(a);
 
 	//double kf = twopie*lenfac/(64.0);
-	boxlength = 200.0;
+	boxlength = 1.0/h;
 	
         dx[0] = boxlength/((double)(ind[0]-1));	dx[1] = boxlength/((double)(ind[1]-1));	dx[2] = boxlength/((double)(ind[2]-1));
 	L[0] = boxlength;	L[1] = boxlength;	L[2] = boxlength;
@@ -144,7 +144,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 			
 		if(ktmp>maxkmagsqr)
 		maxkmagsqr = (ktmp);
-		if((ktmp>0.0)&&(minkmagsqr>ktmp))
+		if((ktmp>=0.0)&&(minkmagsqr>ktmp))
 		minkmagsqr = ktmp;
 		
 
@@ -252,6 +252,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	printf("	kbins is %d   %d\n",kbins,(int)((sqrt(maxkmagsqr)-sqrt(minkmagsqr))/dk));
 	printf("	Max vel is %e  /c\n",vmax);
 	printf("	Max vel cap is %e  /c\n",vmax_cap);
+	printf("	de Broglie wave is %e\n",twopie*hbar_by_m/vmax);
 	printf("	Max potential is %.10lf  /c^2\n",max_potn);
 
 

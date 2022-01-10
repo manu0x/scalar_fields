@@ -1,7 +1,7 @@
 void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_ini)
 {
 	double z = 99.0;
-	double alpha = 1.0;// Mass in 10^(-22) eV;	
+	double alpha = 1.0;//0.175;// Mass in 10^(-22) eV;	
 
 	c_box = 2.99;
 	pc_box = 3.0857;
@@ -14,7 +14,7 @@ void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_ini)
 	
 	
 	H0 = lenfac*(h/c_box)*0.001;
-	printf("H0 %lf hbar_by_m  %.15lf\n",H0,hbar_by_m);
+	printf("H0 %lf hbar_by_m  %e\n",H0,hbar_by_m);
 	
 	
 	a0 = 1.0;

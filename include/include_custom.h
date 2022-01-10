@@ -5,6 +5,7 @@ using namespace std;
 #include <stdlib.h>
 #include <iostream>
 #include <string.h> 
+#include <omp.h>
 
 #include "../other_source/mt19937ar.c"
 #include <fftw3.h>
