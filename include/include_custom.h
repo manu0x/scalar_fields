@@ -9,6 +9,7 @@ using namespace std;
 
 #include "../other_source/mt19937ar.c"
 #include <fftw3.h>
+#include <hdf5.h>
 #include "../other_source/spline.c"
 
 

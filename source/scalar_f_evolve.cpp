@@ -390,3 +390,26 @@ int evolve_kdk_openmp(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][
 
 }
 
+
+void evolve_hdf5_write(int *ind,fdm_psi psi,metric_potential phi,hid_t filename,double *dc,double a3a03omega,double a,bool get_dc=false)
+{	
+	herr_t status_psi,status_phi,status;	
+	hid_t file,dtype,dspace;
+	hsize_t dim[3];
+	dim[0] = ind[0];
+	dim[1] = ind[1];
+	dim[2] = ind[2];
+
+
+	file = H5Fcreate("test.hdf5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+	//dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
+    	//status = H5Tset_order(H5T_NATIVE_DOUBLE, H5T_ORDER_LE);
+	//dspace = H5Screate_simple(3, dim, NULL);
+
+	//status_psi=psi.write_hdf5_psi(filename, dtype, dspace,dc,a3a03omega,a,get_dc);
+	
+	//status_phi=phi.write_hdf5_potn(filename, dtype);
+
+
+
+}

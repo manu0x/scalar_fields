@@ -158,6 +158,22 @@ class scalar_field_3d
 			}
 		
 	}
+		
+
+	herr_t write_hdf5(hid_t filename,const char *dset_name,hid_t dtype,hid_t dspace)
+	{
+		hid_t dataset;
+		herr_t status ;
+
+
+		
+		dataset = H5Dcreate(filename, dset_name, dtype, dspace,
+			H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+		status = H5Dwrite(dataset, dtype, H5S_ALL, H5S_ALL,
+		      				H5P_DEFAULT, f);
+		return status;
+
+	}
 
 };
 
@@ -280,6 +296,60 @@ class fdm_psi
 
 	}
 
+	herr_t write_hdf5_psi(hid_t filename,hid_t dtype,hid_t dspace,double *dc,double a3a03omega,double a,bool get_dc=false)
+	{
+
+		hid_t dataset;
+		herr_t status ;
+		int tN  = n[0]*n[1]*n[3];
+		int i,j,k,locind[3],ci;
+		double psi_r_val,psi_i_val,psi_amp2;
+		
+
+		status = psi_r.write_hdf5( filename,"psi_r", dtype, dspace);
+		
+		status = psi_i.write_hdf5( filename,"psi_i", dtype, dspace);
+
+
+		if(get_dc)
+		{for(i=0;i<n[0];++i)
+		   {
+			for(j=0;j<n[1];++j)
+			{
+				for(k=0;k<n[2];++k)
+				{	ci = (n[2]*n[1])*i + n[2]*j + k;
+					locind[0]=i; locind[1]=j; locind[2]=k;
+					psi_r_val=psi_r.get_field(locind,give_f);
+					psi_i_val=psi_i.get_field(locind,give_f);	
+							
+
+					
+					  psi_amp2 = psi_r_val*psi_r_val + psi_i_val*psi_i_val;		
+					  dc[ci]= a3a03omega*psi_amp2 - 1.0;
+					 
+
+				}
+	
+			}
+
+		  }
+		
+		dataset = H5Dcreate(filename, "dc", dtype, dspace,
+			H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+		status = H5Dwrite(dataset, dtype, H5S_ALL, H5S_ALL,
+		      				H5P_DEFAULT, dc);
+
+	      }
+
+
+		return(status);
+
+		
+
+	}
+
+	
+
 
 
 };
@@ -395,6 +465,30 @@ class metric_potential
 		}
 		
 		fprintf(fp_ptn,"\n\n\n\n");
+
+	}
+
+
+	herr_t write_hdf5_potn(hid_t filename,hid_t dtype)
+	{
+
+		hid_t dataset;
+		herr_t status;
+		hid_t  dataspace;
+		hsize_t     dim[2];
+		dim[0] = n[0]*n[1]*n[2]; dim[1]=2;
+
+		dataspace = H5Screate_simple(2, dim, NULL);
+    		status = H5Tset_order(dtype, H5T_ORDER_LE);
+
+
+		dataset = H5Dcreate(filename, "potential", dtype, dataspace,
+			H5P_DEFAULT,H5P_DEFAULT, H5P_DEFAULT);
+		status = H5Dwrite(dataset, dtype, H5S_ALL, H5S_ALL,
+		      				H5P_DEFAULT,fpGpsi);
+
+
+		return status;
 
 	}
 
