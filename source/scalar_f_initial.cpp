@@ -48,7 +48,8 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
       double a_t = a*Hi;
       double a_ti = ai*Hi;
 
-      FILE *fpstoreini = fopen("initial.txt","w");
+      FILE *fpstoreini = fopen("initial.txt","w");	
+      hid_t file;
      
 
       double L[3],boxlength;
@@ -60,7 +61,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
       int n[3]{ind[0],ind[1],ind[2]};
       int loc_ind[3],err_hold;
 
-      double ini_dc[tN],ini_theta[tN],pwr_spec[tN],vel[tN][3];
+      double ini_dc[tN],ini_theta[tN],pwr_spec[tN],vel[tN][3],dc[tN];
       double psi_amp,psi_r_val,psi_i_val,poisson_rhs;
       double f_ini;
       double potn;
@@ -68,6 +69,8 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 
       double max_potn=0.0,vmax=0.0,vmax_cap;
       double dt_limit,len_res;
+
+      double a3a03omega = pow(a/a0,3.0)/omega_dm_ini;
 	     
 	 
 	f_ini=dlogD_dloga(a);
@@ -81,6 +84,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	kbins = 0;
 	printf("dk %lf\n",dk);
 	k_nyq = 0.5/(dx[0]);
+	
 
 	
 
@@ -237,6 +241,8 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	cal_spectrum(ini_dc,kbin_grid, kbins,n,pwr_spec, dk,a/ai,fpwr_spec);
 	fclose(fpwr_spec);
 
+	file = H5Fcreate("test_initial.hdf5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+	initial_hdf5_write(n, psi, phi,file,dc,a3a03omega, ai,true);
 	
 	vmax_cap=res_limits(max_potn, vmax, dx[0],ai,dt_limit, len_res);
 	
@@ -271,6 +277,33 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	  
 
 }
+
+
+void initial_hdf5_write(int *ind,fdm_psi psi,metric_potential phi,hid_t filename,double *dc,double a3a03omega,double a,bool get_dc=false)
+{	
+	herr_t status_psi,status_phi,status;	
+	hid_t file,dtype,dspace;
+	hsize_t dim[3];
+	dim[0] = ind[0];
+	dim[1] = ind[1];
+	dim[2] = ind[2];
+
+
+	file = H5Fcreate("test.hdf5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+	dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
+    	status = H5Tset_order(dtype, H5T_ORDER_LE);
+	dspace = H5Screate_simple(3, dim, NULL);
+
+	status_psi=psi.write_hdf5_psi(filename, dtype, dspace,dc,a3a03omega,a,get_dc);
+	
+	status_phi=phi.write_hdf5_potn(filename, dtype);
+
+
+
+}
+
+
+
 ////////////// Alternative codes for ini field generation...Currently (Jan 3rd, 2022) not being used....######################################################
 
 void ini_rand_field(int * ind,double *kmag_grid,double * ini_dc,double * ini_theta_return,double a,double a0,double a_t,ini_power_generator gen)
