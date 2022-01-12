@@ -3,7 +3,7 @@ void ini_rand_field_2(int * ,double [][3],int *,int ,double,double *,double * ,d
 double res_limits(double ,double ,double ,double ,double &,double & );
 void initial_hdf5_write(int *,fdm_psi ,metric_potential ,hid_t ,double *,double ,double ,bool );
 
-void initialise(int * ,fdm_psi &,metric_potential &,double [][3],int[] ,double ,double ,double,double,double *,double &,int &,ini_power_generator,gauss_rand_field_gen);
+void initialise(int * ,fdm_psi &,metric_potential &,double [][3],int[] ,double ,double ,double,double,double *,double &,int &,ini_power_generator,gauss_rand_field_gen,bool);
 		   
 double ini_power_spec(double );
 

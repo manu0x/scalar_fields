@@ -20,6 +20,7 @@ int main()
 	int tN = ind[0]*ind[1]*ind[2];
 	fdm_psi psi(ind,true);
 	int use_omp{1};
+	bool use_hdf5_format{true};
 	metric_potential phi(ind,true);
 
 	const char name[] = "lcdm_00_pk.dat";
@@ -39,13 +40,13 @@ int main()
 	set_back_cosmo(a0,ai,Hi,omega_dm_ini);
 	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n",Hi,omega_dm_ini,ai);
 
-	initialise(ind,psi,phi,k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf);
+	initialise(ind,psi,phi,k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf,use_hdf5_format);
 	//printf("\ndk is %lf\n",dk);
 	
 	//if(use_omp)
-	// fail = evolve_kdk_openmp(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4);
+	// fail = evolve_kdk_openmp(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4,use_hdf5_format);
 	//else
-	// fail = evolve_kdk(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4);
+	// fail = evolve_kdk(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4,use_hdf5_format);
 	//*/
 	printf("fail is %d\n",fail);
 	

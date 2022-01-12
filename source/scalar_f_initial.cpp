@@ -34,7 +34,7 @@ double res_limits(double max_potn,double vmax,double dx,double a,double &dt_limi
 }
 
 
-void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],int kbin_grid[],double a0,double ai,double Hi,double omega_dm_ini,double *dx,double &dk,int & kbins,ini_power_generator pk,gauss_rand_field_gen grf)
+void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],int kbin_grid[],double a0,double ai,double Hi,double omega_dm_ini,double *dx,double &dk,int & kbins,ini_power_generator pk,gauss_rand_field_gen grf,bool use_hdf5_format)
 {
       
 

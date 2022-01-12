@@ -1,7 +1,7 @@
 
 
 int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],int kbin_grid[],
-					double a_final,double a_ini,double a0,double omega_dm_ini,double *dx,double dk,int kbins,double dt)
+					double a_final,double a_ini,double a0,double omega_dm_ini,double *dx,double dk,int kbins,double dt,bool use_hdf_format)
 {	printf("Yo\n");
 	double a,a_t,t,ak,a3a03omega,dti=dt;
 	double a_print;
@@ -22,6 +22,8 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],int 
 	FILE *fp_phi;
 
 	FILE *fpwr_spec ;
+	hid_t filename;
+	herr_t status;
 	//cal_spectrum(double *f,int *kbingrid,int kbins,int *s,double *pwspctrm,double dk,double abyai, FILE *fspwrite)
 	
 	
@@ -44,42 +46,67 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],int 
 		char fp_psi_name[20]("psi_z_");
 		char fp_phi_name[20]("phi_z_");
 		char fp_pwr_spec_name[20]("pwr_z_");
+		char fp_hdf5_name[20]("data_z_");
 		char fp_z_num[10];
 
 		
 		
 		printf("a %lf %lf\n",a,a3a03omega);
 		
+	     
+
 		if((z_cur<=z_print_list[prn])||(a==a_ini))
 		{ 
-			
-			sprintf(fp_z_num,"%.2lf",z_cur);
-			strcat(fp_psi_name,fp_z_num);
-			strcat(fp_phi_name,fp_z_num); 
-			strcat(fp_pwr_spec_name,fp_z_num); 
-			strcat(fp_psi_name,".txt"); 
-			strcat(fp_phi_name,".txt"); 
-			strcat(fp_pwr_spec_name,".txt"); 
+			if(use_hdf_format)
+			{
+				sprintf(fp_z_num,"%.2lf",z_cur);
+				strcat(fp_hdf5_name,fp_z_num); 
+				strcat(fp_pwr_spec_name,fp_z_num); 
+			  	strcat(fp_hdf5_name,".hdf5"); 
+			  	strcat(fp_pwr_spec_name,".txt"); 
+				
 
-			fp_psi = fopen(fp_psi_name,"w");
-			fp_phi = fopen(fp_phi_name,"w");
-			fpwr_spec = fopen(fp_pwr_spec_name,"w");
+			  
+			  	fpwr_spec = fopen(fp_pwr_spec_name,"w");
+		 		filename = H5Fcreate (fp_z_num, H5F_ACC_EXCL,H5P_DEFAULT, H5P_DEFAULT);
+				printf("hdf5 %s\n",fp_hdf5_name);
+				printf("pwr spec name %s\n",fp_pwr_spec_name);		
+				
+				evolve_hdf5_write(n,psi, phi,filename,dc,a3a03omega,a,true);
+				status=H5Fclose (filename);
+				cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
+				fclose(fpwr_spec);
 
-			printf("psi name %s\n",fp_psi_name);
-			printf("phi name %s\n",fp_phi_name);
-			printf("pwr spec name %s\n",fp_pwr_spec_name);
+			}
 
-			psi.write_psi(fp_psi,dc,dx,a3a03omega,a,true, true);
-			phi.write_potential(fp_phi,dx,a3a03omega,a);
-			cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
-			printf("\nWriting at z = %lf\n",z_cur);
-			++prn;
-			fclose(fp_psi);
-	 		fclose(fp_phi);
-			fclose(fpwr_spec);
+			else
+			{ sprintf(fp_z_num,"%.2lf",z_cur);
+			  strcat(fp_psi_name,fp_z_num);
+			  strcat(fp_phi_name,fp_z_num); 
+			  strcat(fp_pwr_spec_name,fp_z_num); 
+			  strcat(fp_psi_name,".txt"); 
+			  strcat(fp_phi_name,".txt"); 
+			  strcat(fp_pwr_spec_name,".txt"); 
+
+			  fp_psi = fopen(fp_psi_name,"w");
+			  fp_phi = fopen(fp_phi_name,"w");
+			  fpwr_spec = fopen(fp_pwr_spec_name,"w");
+
+			  printf("psi name %s\n",fp_psi_name);
+			  printf("phi name %s\n",fp_phi_name);
+			  printf("pwr spec name %s\n",fp_pwr_spec_name);
+
+			  psi.write_psi(fp_psi,dc,dx,a3a03omega,a,true, true);
+			  phi.write_potential(fp_phi,dx,a3a03omega,a);
+			  cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
+			  printf("\nWriting at z = %lf\n",z_cur);
+			  ++prn;
+			  fclose(fp_psi);
+	 		  fclose(fp_phi);
+			  fclose(fpwr_spec);
+			 }
 
 		}
-
 		
 		
 
@@ -169,33 +196,64 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],int 
 	char fp_psi_name[20]("psi_z_");
 	char fp_phi_name[20]("phi_z_");
 	char fp_pwr_spec_name[20]("pwr_z_");
+	char fp_hdf5_name[20]("data_z_");
 	char fp_z_num[10];
 
-	sprintf(fp_z_num,"%.2lf",z_cur);
-	strcat(fp_psi_name,fp_z_num);
-	strcat(fp_phi_name,fp_z_num); 
-	strcat(fp_pwr_spec_name,fp_z_num); 
-	strcat(fp_psi_name,".txt"); 
-	strcat(fp_phi_name,".txt"); 
-	strcat(fp_pwr_spec_name,".txt"); 
+		if(use_hdf_format)
+		{
+			sprintf(fp_z_num,"%.2lf",z_cur);
+			strcat(fp_hdf5_name,fp_z_num); 
+			strcat(fp_pwr_spec_name,fp_z_num); 
+		  	strcat(fp_hdf5_name,".hdf5"); 
+		  	strcat(fp_pwr_spec_name,".txt"); 
+			
 
-	fp_psi = fopen(fp_psi_name,"w");
-	fp_phi = fopen(fp_phi_name,"w");
-	fpwr_spec = fopen(fp_pwr_spec_name,"w");
+			  
+		  	fpwr_spec = fopen(fp_pwr_spec_name,"w");
+		 	filename = H5Fcreate (fp_z_num, H5F_ACC_EXCL,H5P_DEFAULT, H5P_DEFAULT);
+			printf("hdf5 %s\n",fp_hdf5_name);
+			printf("pwr spec name %s\n",fp_pwr_spec_name);		
+			
+			evolve_hdf5_write(n,psi, phi,filename,dc,a3a03omega,a,true);
+			status=H5Fclose (filename);
+			cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
+			fclose(fpwr_spec);
 
-	psi.write_psi(fp_psi,dc,dx,a3a03omega,a,true, true);
-	phi.write_potential(fp_phi,dx,a3a03omega,a);
-	cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
-	fclose(fp_psi);
-	fclose(fp_phi);
-	fclose(fpwr_spec);
+		}
+
+		else
+		{ sprintf(fp_z_num,"%.2lf",z_cur);
+		  strcat(fp_psi_name,fp_z_num);
+		  strcat(fp_phi_name,fp_z_num); 
+		  strcat(fp_pwr_spec_name,fp_z_num); 
+		  strcat(fp_psi_name,".txt"); 
+		  strcat(fp_phi_name,".txt"); 
+		  strcat(fp_pwr_spec_name,".txt"); 
+
+		  fp_psi = fopen(fp_psi_name,"w");
+		  fp_phi = fopen(fp_phi_name,"w");
+		  fpwr_spec = fopen(fp_pwr_spec_name,"w");
+
+		  printf("psi name %s\n",fp_psi_name);
+		  printf("phi name %s\n",fp_phi_name);
+		  printf("pwr spec name %s\n",fp_pwr_spec_name);
+
+		  psi.write_psi(fp_psi,dc,dx,a3a03omega,a,true, true);
+		  phi.write_potential(fp_phi,dx,a3a03omega,a);
+		  cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
+		  printf("\nWriting at z = %lf\n",z_cur);
+		  
+		  fclose(fp_psi);
+	 	  fclose(fp_phi);
+		  fclose(fpwr_spec);
+		 }
 
 	return(fail);
 
 }
 
 int evolve_kdk_openmp(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],int kbin_grid[],
-					double a_final,double a_ini,double a0,double omega_dm_ini,double *dx,double dk,int kbins,double dt)
+					double a_final,double a_ini,double a0,double omega_dm_ini,double *dx,double dk,int kbins,double dt,bool use_hdf_format)
 {	printf("Yo\n");
 	double a,a_t,t,ak,a3a03omega,dti=dt;
 	double a_print;
@@ -216,6 +274,8 @@ int evolve_kdk_openmp(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][
 	FILE *fp_phi;
 
 	FILE *fpwr_spec ;
+	hid_t filename;
+	herr_t status;
 	//cal_spectrum(double *f,int *kbingrid,int kbins,int *s,double *pwspctrm,double dk,double abyai, FILE *fspwrite)
 	
 	
@@ -238,41 +298,69 @@ int evolve_kdk_openmp(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][
 		char fp_psi_name[20]("psi_z_");
 		char fp_phi_name[20]("phi_z_");
 		char fp_pwr_spec_name[20]("pwr_z_");
+		char fp_hdf5_name[20]("data_z_");
 		char fp_z_num[10];
 
 		
 		
 		printf("a %lf %lf\n",a,a3a03omega);
 		
+	     
+
 		if((z_cur<=z_print_list[prn])||(a==a_ini))
 		{ 
-			
-			sprintf(fp_z_num,"%.2lf",z_cur);
-			strcat(fp_psi_name,fp_z_num);
-			strcat(fp_phi_name,fp_z_num); 
-			strcat(fp_pwr_spec_name,fp_z_num); 
-			strcat(fp_psi_name,".txt"); 
-			strcat(fp_phi_name,".txt"); 
-			strcat(fp_pwr_spec_name,".txt"); 
+			if(use_hdf_format)
+			{
+				sprintf(fp_z_num,"%.2lf",z_cur);
+				strcat(fp_hdf5_name,fp_z_num); 
+				strcat(fp_pwr_spec_name,fp_z_num); 
+			  	strcat(fp_hdf5_name,".hdf5"); 
+			  	strcat(fp_pwr_spec_name,".txt"); 
+				
 
-			fp_psi = fopen(fp_psi_name,"w");
-			fp_phi = fopen(fp_phi_name,"w");
-			fpwr_spec = fopen(fp_pwr_spec_name,"w");
+			  
+			  	fpwr_spec = fopen(fp_pwr_spec_name,"w");
+		 		filename = H5Fcreate (fp_z_num, H5F_ACC_EXCL,H5P_DEFAULT, H5P_DEFAULT);
+				printf("hdf5 %s\n",fp_hdf5_name);
+				printf("pwr spec name %s\n",fp_pwr_spec_name);		
+				
+				evolve_hdf5_write(n,psi, phi,filename,dc,a3a03omega,a,true);
+				status=H5Fclose (filename);
+				cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
+				fclose(fpwr_spec);
 
-			printf("psi name %s\n",fp_psi_name);
-			printf("phi name %s\n",fp_phi_name);
-			printf("pwr spec name %s\n",fp_pwr_spec_name);
+			}
 
-			psi.write_psi(fp_psi,dc,dx,a3a03omega,a,true, true);
-			phi.write_potential(fp_phi,dx,a3a03omega,a);
-			cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
-			printf("\nWriting at z = %lf\n",z_cur);
-			++prn;
-			fclose(fp_psi);
-	 		fclose(fp_phi);
-			fclose(fpwr_spec);
+			else
+			{ sprintf(fp_z_num,"%.2lf",z_cur);
+			  strcat(fp_psi_name,fp_z_num);
+			  strcat(fp_phi_name,fp_z_num); 
+			  strcat(fp_pwr_spec_name,fp_z_num); 
+			  strcat(fp_psi_name,".txt"); 
+			  strcat(fp_phi_name,".txt"); 
+			  strcat(fp_pwr_spec_name,".txt"); 
+
+			  fp_psi = fopen(fp_psi_name,"w");
+			  fp_phi = fopen(fp_phi_name,"w");
+			  fpwr_spec = fopen(fp_pwr_spec_name,"w");
+
+			  printf("psi name %s\n",fp_psi_name);
+			  printf("phi name %s\n",fp_phi_name);
+			  printf("pwr spec name %s\n",fp_pwr_spec_name);
+
+			  psi.write_psi(fp_psi,dc,dx,a3a03omega,a,true, true);
+			  phi.write_potential(fp_phi,dx,a3a03omega,a);
+			  cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
+			  printf("\nWriting at z = %lf\n",z_cur);
+			  ++prn;
+			  fclose(fp_psi);
+	 		  fclose(fp_phi);
+			  fclose(fpwr_spec);
+			 }
 
 		}
+
+		
 
 		
 		
@@ -365,26 +453,57 @@ int evolve_kdk_openmp(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][
 	char fp_psi_name[20]("psi_z_");
 	char fp_phi_name[20]("phi_z_");
 	char fp_pwr_spec_name[20]("pwr_z_");
+	char fp_hdf5_name[20]("data_z_");
 	char fp_z_num[10];
 
-	sprintf(fp_z_num,"%.2lf",z_cur);
-	strcat(fp_psi_name,fp_z_num);
-	strcat(fp_phi_name,fp_z_num); 
-	strcat(fp_pwr_spec_name,fp_z_num); 
-	strcat(fp_psi_name,".txt"); 
-	strcat(fp_phi_name,".txt"); 
-	strcat(fp_pwr_spec_name,".txt"); 
+		if(use_hdf_format)
+		{
+			sprintf(fp_z_num,"%.2lf",z_cur);
+			strcat(fp_hdf5_name,fp_z_num); 
+			strcat(fp_pwr_spec_name,fp_z_num); 
+		  	strcat(fp_hdf5_name,".hdf5"); 
+		  	strcat(fp_pwr_spec_name,".txt"); 
+			
 
-	fp_psi = fopen(fp_psi_name,"w");
-	fp_phi = fopen(fp_phi_name,"w");
-	fpwr_spec = fopen(fp_pwr_spec_name,"w");
+			  
+		  	fpwr_spec = fopen(fp_pwr_spec_name,"w");
+		 	filename = H5Fcreate (fp_z_num, H5F_ACC_EXCL,H5P_DEFAULT, H5P_DEFAULT);
+			printf("hdf5 %s\n",fp_hdf5_name);
+			printf("pwr spec name %s\n",fp_pwr_spec_name);		
+			
+			evolve_hdf5_write(n,psi, phi,filename,dc,a3a03omega,a,true);
+			status=H5Fclose (filename);
+			cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
+			fclose(fpwr_spec);
 
-	psi.write_psi(fp_psi,dc,dx,a3a03omega,a,true, true);
-	phi.write_potential(fp_phi,dx,a3a03omega,a);
-	cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
-	fclose(fp_psi);
-	fclose(fp_phi);
-	fclose(fpwr_spec);
+		}
+
+		else
+		{ sprintf(fp_z_num,"%.2lf",z_cur);
+		  strcat(fp_psi_name,fp_z_num);
+		  strcat(fp_phi_name,fp_z_num); 
+		  strcat(fp_pwr_spec_name,fp_z_num); 
+		  strcat(fp_psi_name,".txt"); 
+		  strcat(fp_phi_name,".txt"); 
+		  strcat(fp_pwr_spec_name,".txt"); 
+
+		  fp_psi = fopen(fp_psi_name,"w");
+		  fp_phi = fopen(fp_phi_name,"w");
+		  fpwr_spec = fopen(fp_pwr_spec_name,"w");
+
+		  printf("psi name %s\n",fp_psi_name);
+		  printf("phi name %s\n",fp_phi_name);
+		  printf("pwr spec name %s\n",fp_pwr_spec_name);
+
+		  psi.write_psi(fp_psi,dc,dx,a3a03omega,a,true, true);
+		  phi.write_potential(fp_phi,dx,a3a03omega,a);
+		  cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
+		  printf("\nWriting at z = %lf\n",z_cur);
+		  
+		  fclose(fp_psi);
+	 	  fclose(fp_phi);
+		  fclose(fpwr_spec);
+		 }
 
 	return(fail);
 
