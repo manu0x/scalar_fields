@@ -242,7 +242,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	fclose(fpwr_spec);
 
 	file = H5Fcreate("test_initial.hdf5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-	initial_hdf5_write(n, psi, phi,file,dc,a3a03omega, ai,true);
+	initial_hdf5_write(n, psi, phi,file,dc,k_grid,a3a03omega, ai,true);
 	H5Fclose(file);
 	
 	vmax_cap=res_limits(max_potn, vmax, dx[0],ai,dt_limit, len_res);
@@ -280,15 +280,16 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 }
 
 
-void initial_hdf5_write(int *ind,fdm_psi psi,metric_potential phi,hid_t filename,double *dc,double a3a03omega,double a,bool get_dc=true)
+void initial_hdf5_write(int *ind,fdm_psi psi,metric_potential phi,hid_t filename,double *dc,double k_grid[][3],double a3a03omega,double a,bool get_dc=true)
 {	
 	herr_t status_psi,status_phi,status;	
-	hid_t file,dtype,dspace;
-	hsize_t dim[3];
+	hid_t file,dtype,dspace,dataset;
+	hsize_t dim[3],odim[2];
 	dim[0] = ind[0];
 	dim[1] = ind[1];
 	dim[2] = ind[2];
-
+	odim[0] = ind[0]*ind[1]*ind[2];
+	odim[1] = 3;
 
 	
 	dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
@@ -298,6 +299,20 @@ void initial_hdf5_write(int *ind,fdm_psi psi,metric_potential phi,hid_t filename
 	status_psi=psi.write_hdf5_psi(filename, dtype, dspace,dc,a3a03omega,a,get_dc);
 	
 	status_phi=phi.write_hdf5_potn(filename, dtype);
+
+	H5Sclose(dspace);
+	H5Tclose(dtype);
+
+	dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
+    	status = H5Tset_order(dtype, H5T_ORDER_LE);
+	dspace = H5Screate_simple(2, odim, NULL);
+	dataset = H5Dcreate(filename, "k_grid", dtype, dspace,
+			H5P_DEFAULT,H5P_DEFAULT, H5P_DEFAULT);
+	status = H5Dwrite(dataset, dtype, H5S_ALL, H5S_ALL,
+		      				H5P_DEFAULT,k_grid);
+	H5Dclose(dataset);
+
+	
 
 	H5Sclose(dspace);
 	H5Tclose(dtype);
