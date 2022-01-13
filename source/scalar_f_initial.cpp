@@ -57,6 +57,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
            
       int tN = ind[0]*ind[1]*ind[2]; 
       int kbin_count[tN];
+	double x_grid[tN][3];
    //   double kmag_grid[tN];
       int n[3]{ind[0],ind[1],ind[2]};
       int loc_ind[3],err_hold;
@@ -134,7 +135,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 				}
 		
 			 
-			
+			x_grid[ci][j] = ((double)xcntr[j])*dx[j];
 			
 		
 		}
@@ -242,7 +243,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	fclose(fpwr_spec);
 
 	file = H5Fcreate("test_initial.hdf5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-	initial_hdf5_write(n, psi, phi,file,dc,k_grid,a3a03omega, ai,true);
+	initial_hdf5_write(n, psi, phi,file,dc,k_grid,x_grid,a3a03omega, ai,true);
 	H5Fclose(file);
 	
 	vmax_cap=res_limits(max_potn, vmax, dx[0],ai,dt_limit, len_res);
@@ -280,7 +281,8 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 }
 
 
-void initial_hdf5_write(int *ind,fdm_psi psi,metric_potential phi,hid_t filename,double *dc,double k_grid[][3],double a3a03omega,double a,bool get_dc=true)
+void initial_hdf5_write(int *ind,fdm_psi psi,metric_potential phi,hid_t filename,double *dc,double k_grid[][3],double x_grid[][3],
+													double a3a03omega,double a,bool get_dc=true)
 {	
 	herr_t status_psi,status_phi,status;	
 	hid_t file,dtype,dspace,dataset;
@@ -310,6 +312,20 @@ void initial_hdf5_write(int *ind,fdm_psi psi,metric_potential phi,hid_t filename
 			H5P_DEFAULT,H5P_DEFAULT, H5P_DEFAULT);
 	status = H5Dwrite(dataset, dtype, H5S_ALL, H5S_ALL,
 		      				H5P_DEFAULT,k_grid);
+	H5Dclose(dataset);
+
+	
+
+	H5Sclose(dspace);
+	H5Tclose(dtype);
+
+	dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
+    	status = H5Tset_order(dtype, H5T_ORDER_LE);
+	dspace = H5Screate_simple(2, odim, NULL);
+	dataset = H5Dcreate(filename, "x_grid", dtype, dspace,
+			H5P_DEFAULT,H5P_DEFAULT, H5P_DEFAULT);
+	status = H5Dwrite(dataset, dtype, H5S_ALL, H5S_ALL,
+		      				H5P_DEFAULT,x_grid);
 	H5Dclose(dataset);
 
 	
