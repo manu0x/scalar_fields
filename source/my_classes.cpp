@@ -171,6 +171,7 @@ class scalar_field_3d
 			H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 		status = H5Dwrite(dataset, dtype, H5S_ALL, H5S_ALL,
 		      				H5P_DEFAULT, f);
+		H5Dclose(dataset);
 		return status;
 
 	}
@@ -338,6 +339,7 @@ class fdm_psi
 			H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 		status = H5Dwrite(dataset, dtype, H5S_ALL, H5S_ALL,
 		      				H5P_DEFAULT, dc);
+		H5Dclose(dataset);
 
 	      }
 
@@ -486,7 +488,8 @@ class metric_potential
 			H5P_DEFAULT,H5P_DEFAULT, H5P_DEFAULT);
 		status = H5Dwrite(dataset, dtype, H5S_ALL, H5S_ALL,
 		      				H5P_DEFAULT,fpGpsi);
-
+		H5Dclose(dataset);
+		H5Sclose(dataspace);
 
 		return status;
 

@@ -68,7 +68,7 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],int 
 
 			  
 			  	fpwr_spec = fopen(fp_pwr_spec_name,"w");
-		 		filename = H5Fcreate (fp_z_num, H5F_ACC_EXCL,H5P_DEFAULT, H5P_DEFAULT);
+		 		filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC,H5P_DEFAULT, H5P_DEFAULT);
 				printf("hdf5 %s\n",fp_hdf5_name);
 				printf("pwr spec name %s\n",fp_pwr_spec_name);		
 				
@@ -210,7 +210,7 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],int 
 
 			  
 		  	fpwr_spec = fopen(fp_pwr_spec_name,"w");
-		 	filename = H5Fcreate (fp_z_num, H5F_ACC_EXCL,H5P_DEFAULT, H5P_DEFAULT);
+		 	filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC,H5P_DEFAULT, H5P_DEFAULT);
 			printf("hdf5 %s\n",fp_hdf5_name);
 			printf("pwr spec name %s\n",fp_pwr_spec_name);		
 			
@@ -320,14 +320,16 @@ int evolve_kdk_openmp(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][
 
 			  
 			  	fpwr_spec = fopen(fp_pwr_spec_name,"w");
-		 		filename = H5Fcreate (fp_z_num, H5F_ACC_EXCL,H5P_DEFAULT, H5P_DEFAULT);
+		 		filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC,H5P_DEFAULT, H5P_DEFAULT);
 				printf("hdf5 %s\n",fp_hdf5_name);
 				printf("pwr spec name %s\n",fp_pwr_spec_name);		
 				
 				evolve_hdf5_write(n,psi, phi,filename,dc,a3a03omega,a,true);
-				status=H5Fclose (filename);
+				status=H5Fclose(filename);
 				cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
-				fclose(fpwr_spec);
+				fclose(fpwr_spec);	
+				
+				++prn;
 
 			}
 
@@ -467,12 +469,12 @@ int evolve_kdk_openmp(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][
 
 			  
 		  	fpwr_spec = fopen(fp_pwr_spec_name,"w");
-		 	filename = H5Fcreate (fp_z_num, H5F_ACC_EXCL,H5P_DEFAULT, H5P_DEFAULT);
+		 	filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC,H5P_DEFAULT, H5P_DEFAULT);
 			printf("hdf5 %s\n",fp_hdf5_name);
 			printf("pwr spec name %s\n",fp_pwr_spec_name);		
 			
 			evolve_hdf5_write(n,psi, phi,filename,dc,a3a03omega,a,true);
-			status=H5Fclose (filename);
+			status=H5Fclose(filename);
 			cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
 			fclose(fpwr_spec);
 
@@ -522,12 +524,15 @@ void evolve_hdf5_write(int *ind,fdm_psi psi,metric_potential phi,hid_t filename,
 
 	
 	dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
-    	status = H5Tset_order(H5T_NATIVE_DOUBLE, H5T_ORDER_LE);
+    	status = H5Tset_order(dtype, H5T_ORDER_LE);
 	dspace = H5Screate_simple(3, dim, NULL);
 
 	status_psi=psi.write_hdf5_psi(filename, dtype, dspace,dc,a3a03omega,a,get_dc);
 	
 	status_phi=phi.write_hdf5_potn(filename, dtype);
+
+	H5Sclose(dspace);
+	H5Tclose(dtype);
 
 
 
