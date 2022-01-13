@@ -43,10 +43,10 @@ int main()
 	initialise(ind,psi,phi,k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf,use_hdf5_format);
 	//printf("\ndk is %lf\n",dk);
 	
-	//if(use_omp)
-	// fail = evolve_kdk_openmp(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4,use_hdf5_format);
-	//else
-	// fail = evolve_kdk(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4,use_hdf5_format);
+	if(use_omp)
+	fail = evolve_kdk_openmp(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4,use_hdf5_format);
+	else
+	fail = evolve_kdk(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4,use_hdf5_format);
 	
 	printf("fail is %d\n",fail);
 	
