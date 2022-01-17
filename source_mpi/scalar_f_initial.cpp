@@ -49,7 +49,7 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
       double a_ti = ai*Hi;
 
       FILE *fpstoreini = fopen("initial.txt","w");	
-      hid_t file;
+      
      
 
       double L[3],boxlength;
@@ -72,10 +72,17 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
       double dt_limit,len_res;
 
       double a3a03omega = pow(a/a0,3.0)/omega_dm_ini;
+
+/////////////////////////	MPI and hdf5 variables	///////////////////////////////
 	
-	int my_corank;
+	int my_corank,mpi_check;
       
 	MPI_Comm_rank(cart_comm,&my_corank);
+
+	MPI_Info info  = MPI_INFO_NULL;
+
+	hid_t file;
+	hid_t plist_id;
 	     
 	 
 	f_ini=dlogD_dloga(a);
@@ -92,7 +99,7 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
 	
 ////////////////////// For MPI ////////////////////////////////
 	xcntr[0] = cum_lin_ind -1;
-////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	//ini_rand_field();
 	//  read_ini_rand_field();
@@ -212,6 +219,8 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
 
 	
 	ret = calculate_vel_from_psi(ind_loc,dx,psi, vel,vmax,ai);
+
+	
 	
 	for(i=0;i<n[0];++i)
 		{
@@ -239,6 +248,19 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
 		  }
 
 		}
+
+	mpi_check = psi.mpi_send_recv();
+	
+	plist_id = H5Pcreate(H5P_FILE_ACCESS);
+        H5Pset_fapl_mpio(plist_id, cart_comm, info);
+
+	file = H5Fcreate("test_initial.hdf5", H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+	H5Pclose(plist_id);
+	initial_hdf5_write_mpi(n, psi, phi,file,dc,k_grid,x_grid,a3a03omega, ai,cum_lin_ind,true);
+	H5Fclose(file);
+	
+	
+
 	//fclose(fpstoreini);
 /*
 	FILE *fpwr_spec = fopen("spec_test.txt","w");
@@ -246,9 +268,8 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
 	cal_spectrum(ini_dc,kbin_grid, kbins,n,pwr_spec, dk,a/ai,fpwr_spec);
 	fclose(fpwr_spec);
 
-	file = H5Fcreate("test_initial.hdf5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-	initial_hdf5_write(n, psi, phi,file,dc,k_grid,x_grid,a3a03omega, ai,true);
-	H5Fclose(file);
+	
+	
 	
 	vmax_cap=res_limits(max_potn, vmax, dx[0],ai,dt_limit, len_res);
 	
@@ -285,28 +306,78 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
 }
 
 
-void initial_hdf5_write(int *ind,fdm_psi_mpi psi,metric_potential_mpi phi,hid_t filename,double *dc,double k_grid[][3],double x_grid[][3],
-													double a3a03omega,double a,bool get_dc=true)
+void initial_hdf5_write_mpi(int *ind,fdm_psi_mpi psi,metric_potential_mpi phi,hid_t filename,double *dc,double k_grid[][3],double x_grid[][3],
+													double a3a03omega,double a,int cum_lin_ind,bool get_dc=true)
 {	
-	herr_t status_psi,status_phi,status;	
-	hid_t file,dtype,dspace,dataset;
-	hsize_t dim[3],odim[2];
+	herr_t status_psi,status_phi,status,plist_id;	
+	hid_t file,dtype,dspace_glbl_psi,dspace_glbl_potn,dspace_glbl_grid,dspace,dset_glbl_k,dset_glbl_x;
+	hsize_t dim[3],odim[2],gdim[2];
 	dim[0] = ind[0];
 	dim[1] = ind[1];
 	dim[2] = ind[2];
 	odim[0] = ind[0]*ind[1]*ind[2];
-	odim[1] = 3;
+	odim[1] = 2;
 
 	
 	dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
     	status = H5Tset_order(dtype, H5T_ORDER_LE);
-	dspace = H5Screate_simple(3, dim, NULL);
+	dspace_glbl_psi = H5Screate_simple(3, dim, NULL);
+	dspace_glbl_potn = H5Screate_simple(2, odim, NULL);
 
-	status_psi=psi.write_hdf5_psi(filename, dtype, dspace,dc,a3a03omega,a,get_dc);
 	
-	status_phi=phi.write_hdf5_potn(filename, dtype);
 
+	status_psi = psi.write_hdf5_psi_mpi(filename, dtype, dspace_glbl_psi,dc,a3a03omega,a,cum_lin_ind,get_dc);
+
+	H5Sclose(dspace_glbl_psi);
+
+	status_phi = phi.write_hdf5_potn_mpi(filename, dtype, dspace_glbl_potn);
+
+	H5Sclose(dspace_glbl_potn);
+
+
+	gdim[0] = ind[0]*ind[1]*ind[2];
+	gdim[1] = 3;
+
+	dspace_glbl_grid = H5Screate_simple(2, gdim, NULL);
+
+	dset_glbl_k = H5Dcreate(file_name, "k_grid", dtype, dspace_glbl_grid,
+						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+	hsize_t count[2]{gdim[0],gdim[1]},offset[2]{cum_lin_ind,0};
+
+	dspace = H5Screate_simple(2, count, NULL);
+
+	H5Sselect_hyperslab(dspace_glbl_k, H5S_SELECT_SET, offset, NULL, count, NULL);
+	plist_id = H5Pcreate(H5P_DATASET_XFER);
+    	H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+	status = H5Dwrite(dset_glbl_k, dtype, dspace, dspace_glbl,
+		      				plist_id, k_grid);
+
+	H5Dclose(dset_glbl_k);
+	H5Pclose(plist_id);
 	H5Sclose(dspace);
+
+	dset_glbl_x = H5Dcreate(file_name, "x_grid", dtype, dspace_glbl_grid,
+						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+	dspace = H5Screate_simple(2, count, NULL);
+
+	H5Sselect_hyperslab(dspace_glbl_x, H5S_SELECT_SET, offset, NULL, count, NULL);
+	plist_id = H5Pcreate(H5P_DATASET_XFER);
+    	H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+	status = H5Dwrite(dset_glbl_x, dtype, dspace, dspace_glbl,
+		      				plist_id,xk_grid);
+
+	H5Dclose(dset_glbl_x);
+	H5Pclose(plist_id);
+	H5Sclose(dspace);
+
+	H5Sclose(dspace_glbl_grid);
+
+
+	
+
+	/*
 	H5Tclose(dtype);
 
 	dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
@@ -335,6 +406,8 @@ void initial_hdf5_write(int *ind,fdm_psi_mpi psi,metric_potential_mpi phi,hid_t 
 	
 
 	H5Sclose(dspace);
+
+*/
 	H5Tclose(dtype);
 
 

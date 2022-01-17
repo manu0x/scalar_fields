@@ -177,7 +177,7 @@ MPI_Status stdn,stup;
 	int tN = n_axis[0]*n_axis[1]*n_axis[2];
 	int tN_loc = n_axis_loc[0]*n_axis_loc[1]*n_axis_loc[2];
 
-	fdm_psi_mpi psi(n_axis_loc,true);
+	fdm_psi_mpi psi(n_axis_loc,cum_lin_ind,true);
 	metric_potential_mpi phi(n_axis,n_axis_loc,true);
 
 	int use_omp{1};
@@ -202,6 +202,7 @@ MPI_Status stdn,stup;
 	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n",Hi,omega_dm_ini,ai);
 
 	initialise_mpi(n_axis,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf,use_hdf5_format,cum_lin_ind);
+	psi.mpi_send_recv();
 	
 	//printf("\ndk is %lf\n",dk);
 	

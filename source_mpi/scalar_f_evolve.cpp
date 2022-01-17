@@ -16,6 +16,7 @@ int evolve_kdk(int *n,fdm_psi_mpi &psi,metric_potential_mpi &phi,double k_grid[]
 	
 	int prn=0;	
 	
+	int mpi_check;
 	
 	
 	FILE *fp_psi;
@@ -144,7 +145,7 @@ int evolve_kdk(int *n,fdm_psi_mpi &psi,metric_potential_mpi &phi,double k_grid[]
 		   }
 	}
 	phi.solve_poisson(psi,k_grid);
-
+	mpi_check=psi.mpi_send_recv();
 	
 	a_t = ak*sqrt(omega_dm_ini*pow(a0/ak,3.0)+ (1.0-omega_dm_ini));
 	a = 0.5*(ak+a+a_t*dt);
@@ -181,7 +182,7 @@ int evolve_kdk(int *n,fdm_psi_mpi &psi,metric_potential_mpi &phi,double k_grid[]
 	}
 
 	phi.solve_poisson(psi,k_grid);
-
+	mpi_check=psi.mpi_send_recv();
 
 	
 	 if(isnan(a))
@@ -268,7 +269,7 @@ int evolve_kdk_openmp(int *n,fdm_psi_mpi &psi,metric_potential_mpi &phi,double k
 	
 	int prn=0;	
 	
-	
+	int mpi_check;
 	
 	FILE *fp_psi;
 	FILE *fp_phi;
@@ -401,6 +402,7 @@ int evolve_kdk_openmp(int *n,fdm_psi_mpi &psi,metric_potential_mpi &phi,double k
 		   }
 	}
 	phi.solve_poisson(psi,k_grid);
+	mpi_check=psi.mpi_send_recv();
 
 	
 	a_t = ak*sqrt(omega_dm_ini*pow(a0/ak,3.0)+ (1.0-omega_dm_ini));
@@ -440,7 +442,7 @@ int evolve_kdk_openmp(int *n,fdm_psi_mpi &psi,metric_potential_mpi &phi,double k
 	}
 
 	phi.solve_poisson(psi,k_grid);
-
+	mpi_check=psi.mpi_send_recv();
 
 	
 	 if(isnan(a))

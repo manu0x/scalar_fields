@@ -6,14 +6,15 @@ class scalar_field_3d_mpi
 
 	protected:
 	 double ***f,***f_t,****f_x,***f_lap;
-         int n[3];
+         int n[3],cum_lin_ind;
 
 
 	public:
 
-	scalar_field_3d_mpi(int *n_arr,bool need_lap=false,bool need_space_grads=false)
+	scalar_field_3d_mpi(int *n_arr,int cum_lin_ind_arr,bool need_lap=false,bool need_space_grads=false)
 	{
 	   int i,j;
+	   cum_lin_ind = cum_lin_ind_arr;
 	   n[0] = n_arr[0];	n[1] = n_arr[1];	n[2] = n_arr[2];
 	   f = new double** [n[0]+4] ;
 	   f_t = new double** [n[0]+4] ;
@@ -171,21 +172,68 @@ class scalar_field_3d_mpi
 	}
 		
 
-	herr_t write_hdf5(hid_t filename,const char *dset_name,hid_t dtype,hid_t dspace)
+	herr_t write_hdf5_mpi(hid_t filename,hid_t dtype,hid_t dset_glbl)
 	{
-		hid_t dataset;
+		hid_t plist_id;
+		hid_t dspace,dspace_glbl;
 		herr_t status ;
+		hsize_t count[3],offset[3];
+		count[0] = n[0]; count[1] = n[1]; count[2] = n[2];
+		offset[0] = cum_lin_ind; offset[1] = 0; offset[2] = 0;
 
+		dspace = H5Screate_simple(3, count, NULL);
+		
+
+		dspace_glbl = H5Dget_space(dset_glbl);
+
+
+		H5Sselect_hyperslab(dspace_glbl, H5S_SELECT_SET, offset, NULL, count, NULL);
+		plist_id = H5Pcreate(H5P_DATASET_XFER);
+    		H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+		
+		
+		status = H5Dwrite(dset_glbl, dtype, dspace, dspace_glbl,
+		      				plist_id, &f[2][0][0]);
+
+	
+    		H5Sclose(dspace);
+    		H5Sclose(dspace_glbl);
+    		H5Pclose(plist_id);
+  
+ 
 
 		
-		dataset = H5Dcreate(filename, dset_name, dtype, dspace,
-			H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-		status = H5Dwrite(dataset, dtype, H5S_ALL, H5S_ALL,
-		      				H5P_DEFAULT, f);
-		H5Dclose(dataset);
 		return status;
 
 	}
+
+	int mpi_send_recv()
+	{
+		int mpi_check = 0;	
+	
+	
+		int left_rank,right_rank,my_cart_rank;
+		MPI_Status status;
+		mpi_check=MPI_Cart_shift(cart_comm,0,+1,&my_cart_rank,&right_rank);
+		mpi_check=MPI_Cart_shift(cart_comm,0,-1,&my_cart_rank,&left_rank);
+
+		int sendtag = 1,recvtag = 1;
+
+		mpi_check = MPI_Sendrecv_replace(&f[0][0][0], 2, c_x_plain,
+                         left_rank, sendtag, left_rank, recvtag,
+                         cart_comm, &status);
+
+		
+
+		mpi_check = MPI_Sendrecv_replace(&f[n[0]][0][0], 2, c_x_plain,
+                         right_rank, sendtag, right_rank, recvtag,
+                         cart_comm, &status);
+
+		printf("sending done for cart rank %d\n",my_cart_rank);
+		
+		return(mpi_check);
+	}
+
 
 };
 
@@ -198,7 +246,7 @@ class fdm_psi_mpi
 	
 	public:  
 	//int n[3];
-	fdm_psi_mpi(int *ind,bool lb=false,bool sgb=false):psi_r(ind,lb,sgb),psi_i(ind,lb,sgb)
+	fdm_psi_mpi(int *ind,int cum_lin_ind,bool lb=false,bool sgb=false):psi_r(ind,cum_lin_ind,lb,sgb),psi_i(ind,cum_lin_ind,lb,sgb)
 	{
 		n[0] = ind[0];  n[1] = ind[1];  n[2] = ind[2];
 	}
@@ -265,6 +313,16 @@ class fdm_psi_mpi
 
 	}
 
+	int mpi_send_recv()
+	{
+		int mpi_check;
+		mpi_check=psi_r.mpi_send_recv();
+		mpi_check=psi_i.mpi_send_recv();
+		return(mpi_check);
+
+
+	}
+
 
 	void write_psi(FILE *fp_psi,double *dc,double *dx,double a3a03omega,double a,bool get_dc=false, bool get_psi=true)
 	{	//printf("a3  %.10lf\n",a3a03omega);
@@ -308,19 +366,32 @@ class fdm_psi_mpi
 
 	}
 
-	herr_t write_hdf5_psi(hid_t filename,hid_t dtype,hid_t dspace,double *dc,double a3a03omega,double a,bool get_dc=false)
+	herr_t write_hdf5_psi_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,double *dc,double a3a03omega,double a,int cum_lin_ind,bool get_dc=false)
 	{
 
-		hid_t dataset;
+		hid_t dataset,dset_glbl_r,dset_glbl_i;
 		herr_t status ;
 		int tN  = n[0]*n[1]*n[3];
 		int i,j,k,locind[3],ci;
 		double psi_r_val,psi_i_val,psi_amp2;
+
 		
 
-		status = psi_r.write_hdf5( filename,"psi_r", dtype, dspace);
 		
-		status = psi_i.write_hdf5( filename,"psi_i", dtype, dspace);
+
+    /*
+     * Create the dataset with default properties and close filespace.
+     */
+   		dset_glbl_r = H5Dcreate(filename, "psi_r", dtype, dspace_glbl,
+						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+		dset_glbl_i = H5Dcreate(filename, "psi_i", dtype, dspace_glbl,
+						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);    		
+		
+
+		status = psi_r.write_hdf5_mpi( filename,dtype,dset_glbl_r);
+		
+		
+		status = psi_i.write_hdf5_mpi( filename,dtype,dset_glbl_i);
 
 
 		if(get_dc)
@@ -346,10 +417,29 @@ class fdm_psi_mpi
 
 		  }
 		
-		dataset = H5Dcreate(filename, "dc", dtype, dspace,
-			H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-		status = H5Dwrite(dataset, dtype, H5S_ALL, H5S_ALL,
-		      				H5P_DEFAULT, dc);
+
+
+		dataset = H5Dcreate(filename, "dc", dtype, dspace_glbl,
+						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+		
+
+		hsize_t count[3],offset[3];
+		count[0] = n[0]; count[1] = n[1]; count[2] = n[2];
+		offset[0] = cum_lin_ind; offset[1] = 0; offset[2] = 0;
+
+		dspace = H5Screate_simple(3, count, NULL);
+
+
+		H5Sselect_hyperslab(dspace_glbl, H5S_SELECT_SET, offset, NULL, count, NULL);
+		plist_id = H5Pcreate(H5P_DATASET_XFER);
+    		H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+		
+		
+		status = H5Dwrite(dset_glbl, dtype, dspace, dspace_glbl,
+		      				plist_id,dc);
+
+
 		H5Dclose(dataset);
 
 	      }
@@ -499,25 +589,41 @@ class metric_potential_mpi
 	}
 
 
-	herr_t write_hdf5_potn(hid_t filename,hid_t dtype)
+	herr_t write_hdf5_potn_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl)
 	{
 
-		hid_t dataset;
+		hid_t dset_glbl;
 		herr_t status;
-		hid_t  dataspace;
+		hid_t  dspace,plist_id;
 		hsize_t     dim[2];
 		dim[0] = n_loc[0]*n_loc[1]*n_loc[2]; dim[1]=2;
 
-		dataspace = H5Screate_simple(2, dim, NULL);
-    		status = H5Tset_order(dtype, H5T_ORDER_LE);
+		
+    		status = H5Tset_order(dtype, H5T_ORDER_LE);	
+
+		dset_glbl = H5Dcreate(file_name, "potential", dtype, dspace_glbl,
+						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
 
-		dataset = H5Dcreate(filename, "potential", dtype, dataspace,
-			H5P_DEFAULT,H5P_DEFAULT, H5P_DEFAULT);
-		status = H5Dwrite(dataset, dtype, H5S_ALL, H5S_ALL,
-		      				H5P_DEFAULT,fpGpsi);
-		H5Dclose(dataset);
-		H5Sclose(dataspace);
+		hsize_t count[2]{dim[0],2},offset[2]{cum_lin_ind,0};
+
+		dspace = H5Screate_simple(2, count, NULL);
+
+
+
+		H5Sselect_hyperslab(dspace_glbl, H5S_SELECT_SET, offset, NULL, count, NULL);
+		plist_id = H5Pcreate(H5P_DATASET_XFER);
+    		H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+		
+		
+		status = H5Dwrite(dset_glbl, dtype, dspace, dspace_glbl,
+		      				plist_id, fpGpsi);
+
+	
+    		H5Sclose(dspace);
+    		H5Pclose(plist_id);
+
+
 
 		return status;
 
