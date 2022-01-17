@@ -15,38 +15,38 @@ class scalar_field_3d_mpi
 	{
 	   int i,j;
 	   n[0] = n_arr[0];	n[1] = n_arr[1];	n[2] = n_arr[2];
-	   f = new double** [n[0]] ;
-	   f_t = new double** [n[0]] ;
+	   f = new double** [n[0]+4] ;
+	   f_t = new double** [n[0]+4] ;
 	   if(need_lap)
 	   f_lap = new double** [n[0]] ;
 	   if(need_space_grads)
 	   { f_x = new double *** [3];
-	     f_x[0] = new double** [n[0]-4];
-	     f_x[1] = new double** [n[0]-4];
-	     f_x[2] = new double** [n[0]-4];  
+	     f_x[0] = new double** [n[0]];
+	     f_x[1] = new double** [n[0]];
+	     f_x[2] = new double** [n[0]];  
 	   }
 
-	   for(i=0;i<n[0];++i)
+	   for(i=0;i<(n[0]+4);++i)
 	   {
 		f[i] = new double* [n[1]];
 		f_t[i] = new double* [n[1]];
-		if(need_lap)
-		f_lap[i] = new double* [n[1]-4];
-		if(need_space_grads)
-		{ f_x[0][i] = new double* [n[1]-4];
-		  f_x[1][i] = new double* [n[1]-4];
-		 f_x[2][i] = new double* [n[1]-4];
+		if((need_lap)&&(i<n[0]))
+		f_lap[i] = new double* [n[1]];
+		if((need_space_grads)&&(i<n[0]))
+		{ f_x[0][i] = new double* [n[1]];
+		  f_x[1][i] = new double* [n[1]];
+		 f_x[2][i] = new double* [n[1]];
 		}
 		for(int j=0;j<n[1];++j)
 	     	{
 		  f[i][j] = new  double[n[2]] ;
 		  f_t[i][j] = new  double[n[2]] ;
-		  if(need_lap)
-		   f_lap[i][j] = new  double[n[2]-4] ;
-		  if(need_space_grads)
-		  { f_x[0][i][j] = new  double[n[2]-4] ;
-		     f_x[1][i][j] = new  double[n[2]-4] ;
-		     f_x[2][i][j] = new  double[n[2]-4] ;
+		  if((need_lap)&&(i<n[0]))
+		   f_lap[i][j] = new  double[n[2]] ;
+		  if((need_space_grads)&&(i<n[0]))
+		  { f_x[0][i][j] = new  double[n[2]] ;
+		     f_x[1][i][j] = new  double[n[2]] ;
+		     f_x[2][i][j] = new  double[n[2]] ;
 		  }
 	
 
@@ -80,13 +80,22 @@ class scalar_field_3d_mpi
 	   for(i=0;i<3;++i)
 	   {
 	     
-	     
-	     ind_l1[i] = (n[i]+ind_lw[i]-1)%n[i];
-	     ind_l2[i] = (n[i]+ind_lw[i]-2)%n[i];
+	     if(i>0)
+	     {	ind_l1[i] = (n[i]+ind_lw[i]-1)%n[i];
+	     	ind_l2[i] = (n[i]+ind_lw[i]-2)%n[i];
 
-	     ind_r1[i] = (ind_lw[i]+1)%n[i];
-	     ind_r2[i] = (ind_lw[i]+2)%n[i];
+	     	ind_r1[i] = (ind_lw[i]+1)%n[i];
+	     	ind_r2[i] = (ind_lw[i]+2)%n[i];
+	      }
+	    else
 
+	      {	ind_l1[i] = (n[i]+ind_lw[i]-1);
+	     	ind_l2[i] = (n[i]+ind_lw[i]-2);
+
+	     	ind_r1[i] = (ind_lw[i]+1);
+	     	ind_r2[i] = (ind_lw[i]+2);
+	      }
+		
 	    
 	     if(spt_grad==true)
 	     {

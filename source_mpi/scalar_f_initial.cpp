@@ -211,7 +211,7 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
 		}
 
 	
-	ret = calculate_vel_from_psi(ind,dx,psi, vel,vmax,ai);
+	ret = calculate_vel_from_psi(ind_loc,dx,psi, vel,vmax,ai);
 	
 	for(i=0;i<n[0];++i)
 		{

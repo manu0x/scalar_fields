@@ -62,7 +62,7 @@ MPI_Status stdn,stup;
 //////////////////////////////////////////	MPI related....	/////////////////////////////////
 	n_axis[0]=ind[0];
 	n_axis[1]=ind[1];
-	n_axis[2]=ind[3];
+	n_axis[2]=ind[2];
 
 
 	mpicheck = MPI_Init(&argc,&argv);
@@ -109,7 +109,8 @@ MPI_Status stdn,stup;
 		if(i<nd_cart)
 		{
 		   double temp_naxis = (((double) n_axis[i])/ ((double) dims[i]));
-		   n_axis_loc[i] = (int) (temp_naxis);
+		   n_axis_loc[i] =  (int)(ceill(temp_naxis));
+
 		
 		   
 
@@ -117,8 +118,8 @@ MPI_Status stdn,stup;
 		   {
 			
 			cum_lin_ind = my_coords[i]*n_axis_loc[i];
-			//if(my_coords[i]==(dims[i]-1))
-				//cum_lin_ind+=(n_axis[i]-dims[i]*n_axis_loc[i]);
+			 if(my_coords[i]==(dims[i]-1))
+				cum_lin_ind=((dims[i]-1)*n_axis_loc[i]);
 
 	           }
 	
@@ -137,7 +138,16 @@ MPI_Status stdn,stup;
 		}
 
 		else
-			n_axis_loc[i] = n_axis[i]; 
+		   n_axis_loc[i] = n_axis[i]; 
+
+		if(num_p==1)
+		{
+			n_axis_loc[i] = n_axis[i];
+			if(i==0)
+			cum_lin_ind = 0;
+
+		}
+		
 
 		n_axis_loc_act[i] = n_axis_loc[i]+4;
 
@@ -145,15 +155,14 @@ MPI_Status stdn,stup;
 
 	}
 	
-		printf("cO_RANK %d with nloc %d and cum_ind %d\n",my_corank,n_axis_loc[0],cum_lin_ind);
+		printf("cO_RANK %d cords %d with nloc 0  %d and cum_ind %d\n",my_coords[i],my_corank,n_axis_loc[0],cum_lin_ind);
+		
 
 
-
-
-	MPI_Type_vector(n_axis_loc[1],n_axis_loc[2],n_axis_loc[2]+4,MPI_DOUBLE,&c_x_plain);
+ 	MPI_Type_vector(n_axis_loc[1],n_axis_loc[2],n_axis_loc[2]+4,MPI_DOUBLE,&c_x_plain);
   	MPI_Type_commit(&c_x_plain);
   
-  	MPI_Type_vector(n_axis_loc[0],n_axis_loc[2],(n_axis_loc[2]+4)*(n_axis_loc[1]+4),MPI_DOUBLE,&c_y_plain);
+ 	MPI_Type_vector(n_axis_loc[0],n_axis_loc[2],(n_axis_loc[2]+4)*(n_axis_loc[1]+4),MPI_DOUBLE,&c_y_plain);
  	MPI_Type_commit(&c_y_plain);
   
  	MPI_Type_vector(n_axis_loc[0]*n_axis_loc[1],1,n_axis_loc[2]+4,MPI_DOUBLE,&c_z_plain);
@@ -163,12 +172,12 @@ MPI_Status stdn,stup;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-/*	int c1=1,c2=1,fail=0;
+	int c1=1,c2=1,fail=0;
 		
 	int tN = n_axis[0]*n_axis[1]*n_axis[2];
 	int tN_loc = n_axis_loc[0]*n_axis_loc[1]*n_axis_loc[2];
 
-	fdm_psi_mpi psi(n_axis_loc_act,true);
+	fdm_psi_mpi psi(n_axis_loc,true);
 	metric_potential_mpi phi(n_axis,n_axis_loc,true);
 
 	int use_omp{1};
@@ -192,10 +201,11 @@ MPI_Status stdn,stup;
 	set_back_cosmo(a0,ai,Hi,omega_dm_ini);
 	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n",Hi,omega_dm_ini,ai);
 
-	initialise_mpi(n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf,use_hdf5_format,n_axis_loc);
+	initialise_mpi(n_axis,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf,use_hdf5_format,cum_lin_ind);
+	
 	//printf("\ndk is %lf\n",dk);
 	
-	if(use_omp)
+/*	if(use_omp)
 	fail = evolve_kdk_openmp(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4,use_hdf5_format);
 	else
 	fail = evolve_kdk(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4,use_hdf5_format);
