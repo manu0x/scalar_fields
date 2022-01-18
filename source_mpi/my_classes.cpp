@@ -7,17 +7,20 @@ class scalar_field_3d_mpi
 	protected:
 	 double ***f,***f_t,****f_x,***f_lap;
          int n[3],cum_lin_ind;
+         char ini_status{'N'};
 
 
 	public:
 
 	scalar_field_3d_mpi(int *n_arr,int cum_lin_ind_arr,bool need_lap=false,bool need_space_grads=false)
 	{
-	   int i,j;
+	   int i,j,nx;
 	   cum_lin_ind = cum_lin_ind_arr;
 	   n[0] = n_arr[0];	n[1] = n_arr[1];	n[2] = n_arr[2];
-	   f = new double** [n[0]+4] ;
-	   f_t = new double** [n[0]+4] ;
+	   ini_status = 'I';
+	   nx = n[0]+4;
+	   f = new double** [nx] ;
+	   f_t = new double** [nx] ;
 	   if(need_lap)
 	   f_lap = new double** [n[0]] ;
 	   if(need_space_grads)
@@ -27,7 +30,7 @@ class scalar_field_3d_mpi
 	     f_x[2] = new double** [n[0]];  
 	   }
 
-	   for(i=0;i<(n[0]+4);++i)
+	   for(i=0;i<(nx);++i)
 	   {
 		f[i] = new double* [n[1]];
 		f_t[i] = new double* [n[1]];
@@ -57,10 +60,10 @@ class scalar_field_3d_mpi
 	if((need_lap)||(need_space_grads))
 	  {	
 		if((need_lap)&&(need_space_grads))
- 		 cout<<"Field allocated with arrays for space der and laplacian\n";
+ 		 printf("Field allocated with arrays for space der and laplacian %d %d %d\n",n[0],n[1],n[2]);
 		else
 		  if(need_lap)
-			cout<<"Field allocated with array for laplacian\n";	
+			printf("Field allocated with array for laplacian %d %d %d %d\n",n[0],n[1],n[2],nx);	
 		  else
 			cout<<"Field allocated with arrays for space der\n";
 
@@ -68,6 +71,63 @@ class scalar_field_3d_mpi
 	else
 	   cout<<"Field allocated withOUT arrays for space der and laplacian\n";
 		
+
+	}
+
+
+	double get_field(int *ind,code1 c)
+	{
+		double h;
+		switch(c){
+				case give_f:
+					//printf("ind  %d %d %d\n",ind[0]+2,ind[1],ind[2]);
+					if(ind[2]>63)
+					printf("HHHHHHHHHHHHHHHHHHHHHHHHHH\njjjjjjjjjjjjjjj %d \n ",ind[0]);
+					h = f[33][ind[1]][ind[2]];
+					return(h);
+				case give_f_t:
+					cout<<"Reddd\n";
+					return(f_t[ind[0]+2][ind[1]][ind[2]]);
+				case give_f_x:
+					cout<<"Green\n";
+					return(f_x[0][ind[0]][ind[1]][ind[2]]);
+				case give_f_y:
+					return(f_x[1][ind[0]][ind[1]][ind[2]]);
+				case give_f_z:
+					return(f_x[2][ind[0]][ind[1]][ind[2]]);
+				case give_f_lap:
+					return(f_lap[ind[0]][ind[1]][ind[2]]);
+				default:
+					return(f[ind[0]+2][ind[1]][ind[2]]);
+
+			}
+		
+	}
+		
+
+	void test_ind()
+	{
+		int i,j,k,l[3];
+		double h;
+		printf("ff %d %d %d\n",n[0],n[1],n[2]);
+		for(i=0;i<(n[0]);++i)
+		{
+			for(j=0;j<n[1];++j)
+			{
+				for(k=0;k<(n[2]);++k)
+				{
+					l[0] = i; l[1] = j;l[2] = k;
+					h = get_field(l,give_f);//f[l[0]+2][l[1]][l[2]];
+					//printf("ijk %lf %d %d %d\n",h,i,j,k);
+
+				}
+
+			}
+
+
+
+		}
+		printf("\ntest_ind SUCCESS\n");
 
 	}
 
@@ -146,31 +206,7 @@ class scalar_field_3d_mpi
 
 	}
 
-	double get_field(int *ind,code1 c)
-	{
-		
-		switch(c){
-				case give_f:
-					return(f[ind[0]+2][ind[1]][ind[2]]);
-				case give_f_t:
-					cout<<"Reddd\n";
-					return(f_t[ind[0]+2][ind[1]][ind[2]]);
-				case give_f_x:
-					cout<<"Green\n";
-					return(f_x[0][ind[0]][ind[1]][ind[2]]);
-				case give_f_y:
-					return(f_x[1][ind[0]][ind[1]][ind[2]]);
-				case give_f_z:
-					return(f_x[2][ind[0]][ind[1]][ind[2]]);
-				case give_f_lap:
-					return(f_lap[ind[0]][ind[1]][ind[2]]);
-				default:
-					return(f[ind[0]+2][ind[1]][ind[2]]);
-
-			}
-		
-	}
-		
+	
 
 	herr_t write_hdf5_mpi(hid_t filename,hid_t dtype,hid_t dset_glbl)
 	{
@@ -225,11 +261,11 @@ class scalar_field_3d_mpi
 
 		
 
-		mpi_check = MPI_Sendrecv_replace(&f[n[0]][0][0], 2, c_x_plain,
+		mpi_check = MPI_Sendrecv_replace(&f[n[0]+2][0][0], 2, c_x_plain,
                          right_rank, sendtag, right_rank, recvtag,
-                         cart_comm, &status);
+                        cart_comm, &status);
 
-		printf("sending done for cart rank %d\n",my_cart_rank);
+		printf("sending done for cart rank %d %d\n",my_cart_rank,n[0]);
 		
 		return(mpi_check);
 	}
@@ -251,7 +287,33 @@ class fdm_psi_mpi
 		n[0] = ind[0];  n[1] = ind[1];  n[2] = ind[2];
 	}
 	
+	void test_ind()
+	{
+		psi_r.test_ind();
+
+	}
+
+
+	void test_ind2()
+	{   int locind[3],i,j,k,ci;
+		double psi_r_val;
+		for(i=0;i<n[0];++i)
+		{
+			for(j=0;j<n[1];++j)
+			{
+				for(k=0;k<n[2];++k)
+				{	ci = (n[2]*n[1])*i + n[2]*j + k;
+					locind[0]=i; locind[1]=j; locind[2]=k;
+						psi_r_val=psi_r.get_field(locind,give_f);
+
+				}
+			}
+		}
+
+		printf("\nTTTTTTTTTESSST 222 Done\n");
 	
+
+	}
 
 	int calc_vel(int * ind,double *v,double potn,double a,double a_t,double *dx)
 	{
@@ -373,7 +435,7 @@ class fdm_psi_mpi
 		herr_t status ;
 		int tN  = n[0]*n[1]*n[3];
 		int i,j,k,locind[3],ci;
-		double psi_r_val,psi_i_val,psi_amp2;
+		double psi_r_val,psi_i_val,psi_amp2,h;
 
 		
 
@@ -393,21 +455,27 @@ class fdm_psi_mpi
 		
 		status = psi_i.write_hdf5_mpi( filename,dtype,dset_glbl_i);
 
-
+		 FILE *test0; FILE *test1;
 		if(get_dc)
-		{for(i=0;i<n[0];++i)
+		{	
+
+		 
+			
+		 for(i=0;i<n[0];++i)
 		   {
 			for(j=0;j<n[1];++j)
 			{
 				for(k=0;k<n[2];++k)
 				{	ci = (n[2]*n[1])*i + n[2]*j + k;
 					locind[0]=i; locind[1]=j; locind[2]=k;
+					
+						
 					psi_r_val=psi_r.get_field(locind,give_f);
 					psi_i_val=psi_i.get_field(locind,give_f);	
 							
 
 					
-					  psi_amp2 = psi_r_val*psi_r_val + psi_i_val*psi_i_val;		
+					 psi_amp2 = psi_r_val*psi_r_val + psi_i_val*psi_i_val;		
 					  dc[ci]= a3a03omega*psi_amp2 - 1.0;
 					 
 
@@ -424,11 +492,11 @@ class fdm_psi_mpi
 
 		
 
-		hsize_t count[3],offset[3];
-		count[0] = n[0]; count[1] = n[1]; count[2] = n[2];
-		offset[0] = cum_lin_ind; offset[1] = 0; offset[2] = 0;
+		hsize_t count[1],offset[1];
+		count[0] = n[0]*n[1]*n[2];
+		offset[0] = cum_lin_ind*n[1]*n[2]; 
 
-		dspace = H5Screate_simple(3, count, NULL);
+		dspace = H5Screate_simple(1, count, NULL);
 
 
 		H5Sselect_hyperslab(dspace_glbl, H5S_SELECT_SET, offset, NULL, count, NULL);
@@ -436,20 +504,67 @@ class fdm_psi_mpi
     		H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
 		
 		
-		status = H5Dwrite(dataset, dtype, dspace, dspace_glbl,
-		      				plist_id,dc);
+		//status = H5Dwrite(dataset, dtype, dspace, dspace_glbl,
+		      		//		plist_id,dc);
 
-
+		H5Sclose(dspace);
 		H5Dclose(dataset);
 
 	      }
 
-
+		H5Dclose(dset_glbl_r);
+		H5Dclose(dset_glbl_i);
 		return(status);
 
 		
 
 	}
+
+
+
+	void write_hdf5_psi_test()
+	{
+
+		
+		int i,j,k,locind[3],ci;
+		double psi_r_val,psi_i_val,psi_amp2,h;
+
+
+		printf("gg %d %d %d\n",n[0],n[1],n[2]);	
+
+		  
+			
+		 for(i=0;i<n[0];++i)
+		   {
+			for(j=0;j<n[1];++j)
+			{
+				for(k=0;k<n[2];++k)
+				{	ci = (n[2]*n[1])*i + n[2]*j + k;
+					locind[0]=i; locind[1]=j; locind[2]=k;
+					//if(cum_lin_ind==0)
+					//fprintf(test0,"%d %d %d %d\n",i,locind[0],j,k);
+					//else
+					//fprintf(test1,"%d %d %d %d\n",i,locind[0],j,k);
+						
+					psi_r_val=psi_r.get_field(locind,give_f);
+					//psi_i_val=psi_i.get_field(locind,give_f);	
+							
+
+					
+					 // psi_amp2 = psi_r_val*psi_r_val + psi_i_val*psi_i_val;		
+					 // dc[ci]= a3a03omega*psi_amp2 - 1.0;
+					 
+
+				}
+	
+			}
+
+		  }
+
+		printf("bfjkbkbw TESTING DONE\n");
+
+	}
+
 
 	
 

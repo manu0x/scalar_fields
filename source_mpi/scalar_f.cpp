@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 
 
 	int i;
-      	int ind[3]{256,256,256};
+      	int ind[3]{64,64,64};
 	
 	fftw_mpi_init();
 ////////////////////////////////	MPI related...	/////////////////////////////
@@ -179,6 +179,9 @@ MPI_Status stdn,stup;
 
 	fdm_psi_mpi psi(n_axis_loc,cum_lin_ind,true);
 	metric_potential_mpi phi(n_axis,n_axis_loc,cum_lin_ind,true);
+	//psi.test_ind();
+	//psi.test_ind2();
+	
 
 	int use_omp{1};
 	bool use_hdf5_format{true};
