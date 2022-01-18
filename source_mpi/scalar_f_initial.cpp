@@ -340,33 +340,34 @@ void initial_hdf5_write_mpi(int *ind,fdm_psi_mpi psi,metric_potential_mpi phi,hi
 
 	dspace_glbl_grid = H5Screate_simple(2, gdim, NULL);
 
-	dset_glbl_k = H5Dcreate(file_name, "k_grid", dtype, dspace_glbl_grid,
+	dset_glbl_k = H5Dcreate(filename, "k_grid", dtype, dspace_glbl_grid,
 						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-	hsize_t count[2]{gdim[0],gdim[1]},offset[2]{cum_lin_ind,0};
+	hsize_t count[2],offset[2];
+	count[0] = gdim[0]; count[1] = gdim[1]; offset[0] = cum_lin_ind; offset[1] = 0;
 
 	dspace = H5Screate_simple(2, count, NULL);
 
-	H5Sselect_hyperslab(dspace_glbl_k, H5S_SELECT_SET, offset, NULL, count, NULL);
+	H5Sselect_hyperslab(dspace_glbl_grid, H5S_SELECT_SET, offset, NULL, count, NULL);
 	plist_id = H5Pcreate(H5P_DATASET_XFER);
     	H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
-	status = H5Dwrite(dset_glbl_k, dtype, dspace, dspace_glbl,
+	status = H5Dwrite(dset_glbl_k, dtype, dspace, dspace_glbl_grid,
 		      				plist_id, k_grid);
 
 	H5Dclose(dset_glbl_k);
 	H5Pclose(plist_id);
 	H5Sclose(dspace);
 
-	dset_glbl_x = H5Dcreate(file_name, "x_grid", dtype, dspace_glbl_grid,
+	dset_glbl_x = H5Dcreate(filename, "x_grid", dtype, dspace_glbl_grid,
 						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
 	dspace = H5Screate_simple(2, count, NULL);
 
-	H5Sselect_hyperslab(dspace_glbl_x, H5S_SELECT_SET, offset, NULL, count, NULL);
+	H5Sselect_hyperslab(dspace_glbl_grid, H5S_SELECT_SET, offset, NULL, count, NULL);
 	plist_id = H5Pcreate(H5P_DATASET_XFER);
     	H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
-	status = H5Dwrite(dset_glbl_x, dtype, dspace, dspace_glbl,
-		      				plist_id,xk_grid);
+	status = H5Dwrite(dset_glbl_x, dtype, dspace, dspace_glbl_grid,
+		      				plist_id,x_grid);
 
 	H5Dclose(dset_glbl_x);
 	H5Pclose(plist_id);

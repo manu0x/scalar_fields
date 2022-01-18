@@ -178,7 +178,7 @@ MPI_Status stdn,stup;
 	int tN_loc = n_axis_loc[0]*n_axis_loc[1]*n_axis_loc[2];
 
 	fdm_psi_mpi psi(n_axis_loc,cum_lin_ind,true);
-	metric_potential_mpi phi(n_axis,n_axis_loc,true);
+	metric_potential_mpi phi(n_axis,n_axis_loc,cum_lin_ind,true);
 
 	int use_omp{1};
 	bool use_hdf5_format{true};
@@ -206,15 +206,14 @@ MPI_Status stdn,stup;
 	
 	//printf("\ndk is %lf\n",dk);
 	
-/*	if(use_omp)
-	fail = evolve_kdk_openmp(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4,use_hdf5_format);
+	if(use_omp)
+	fail = evolve_kdk_openmp(ind,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4,use_hdf5_format);
 	else
-	fail = evolve_kdk(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4,use_hdf5_format);
+	fail = evolve_kdk(ind,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4,use_hdf5_format);
 	
 	printf("fail is %d\n",fail);
-
 	fftw_mpi_cleanup();
-*/	
+	
 
 	MPI_Finalize();
 	

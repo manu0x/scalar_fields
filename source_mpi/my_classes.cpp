@@ -369,7 +369,7 @@ class fdm_psi_mpi
 	herr_t write_hdf5_psi_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,double *dc,double a3a03omega,double a,int cum_lin_ind,bool get_dc=false)
 	{
 
-		hid_t dataset,dset_glbl_r,dset_glbl_i;
+		hid_t dataset,dset_glbl_r,dset_glbl_i,dspace,plist_id;
 		herr_t status ;
 		int tN  = n[0]*n[1]*n[3];
 		int i,j,k,locind[3],ci;
@@ -436,7 +436,7 @@ class fdm_psi_mpi
     		H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
 		
 		
-		status = H5Dwrite(dset_glbl, dtype, dspace, dspace_glbl,
+		status = H5Dwrite(dataset, dtype, dspace, dspace_glbl,
 		      				plist_id,dc);
 
 
@@ -464,6 +464,7 @@ class metric_potential_mpi
 	private:
 	int n[3];
 	int n_loc[3];
+	int cum_lin_ind;
 	//scalar_field_3d phi;
 
 	fftw_complex *fpGpsi;
@@ -476,11 +477,13 @@ class metric_potential_mpi
 	
 	public:
 	
-	metric_potential_mpi(int *ind,int *ind_loc,bool lb=false,bool sgb=false)//:phi(ind,lb,sgb)
+	metric_potential_mpi(int *ind,int *ind_loc,int cum_lin_ind_ar,bool lb=false,bool sgb=false)//:phi(ind,lb,sgb)
 	{
 		int l = ind[0]*ind[1]*ind[2];
 		n[0]=ind[0];n[1]=ind[1];n[2]=ind[2];
 		n_loc[0]=ind_loc[0];n_loc[1]=ind_loc[1];n_loc[2]=ind_loc[2];
+
+		cum_lin_ind = cum_lin_ind_ar;
 
 
 		const ptrdiff_t n0 = n[0];
@@ -601,11 +604,12 @@ class metric_potential_mpi
 		
     		status = H5Tset_order(dtype, H5T_ORDER_LE);	
 
-		dset_glbl = H5Dcreate(file_name, "potential", dtype, dspace_glbl,
+		dset_glbl = H5Dcreate(filename, "potential", dtype, dspace_glbl,
 						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
 
-		hsize_t count[2]{dim[0],2},offset[2]{cum_lin_ind,0};
+		hsize_t count[2],offset[2];
+		count[0] = dim[0]; count[1] = 2; offset[0] = cum_lin_ind; offset[1] = 0;
 
 		dspace = H5Screate_simple(2, count, NULL);
 

@@ -1,6 +1,6 @@
 
 
-int evolve_kdk(int *n,fdm_psi_mpi &psi,metric_potential_mpi &phi,double k_grid[][3],int kbin_grid[],
+int evolve_kdk(int *n,int *n_loc,fdm_psi_mpi &psi,metric_potential_mpi &phi,double k_grid[][3],int kbin_grid[],
 					double a_final,double a_ini,double a0,double omega_dm_ini,double *dx,double dk,int kbins,double dt,bool use_hdf_format)
 {	printf("Yo\n");
 	double a,a_t,t,ak,a3a03omega,dti=dt;
@@ -253,7 +253,7 @@ int evolve_kdk(int *n,fdm_psi_mpi &psi,metric_potential_mpi &phi,double k_grid[]
 
 }
 
-int evolve_kdk_openmp(int *n,fdm_psi_mpi &psi,metric_potential_mpi &phi,double k_grid[][3],int kbin_grid[],
+int evolve_kdk_openmp(int *n,int *n_loc,fdm_psi_mpi &psi,metric_potential_mpi &phi,double k_grid[][3],int kbin_grid[],
 					double a_final,double a_ini,double a0,double omega_dm_ini,double *dx,double dk,int kbins,double dt,bool use_hdf_format)
 {	printf("Yo\n");
 	double a,a_t,t,ak,a3a03omega,dti=dt;
@@ -476,6 +476,8 @@ int evolve_kdk_openmp(int *n,fdm_psi_mpi &psi,metric_potential_mpi &phi,double k
 			printf("pwr spec name %s\n",fp_pwr_spec_name);		
 			
 			evolve_hdf5_write(n,psi, phi,filename,dc,a3a03omega,a,true);
+
+	
 			status=H5Fclose(filename);
 			cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
 			fclose(fpwr_spec);
@@ -517,23 +519,31 @@ int evolve_kdk_openmp(int *n,fdm_psi_mpi &psi,metric_potential_mpi &phi,double k
 void evolve_hdf5_write(int *ind,fdm_psi_mpi psi,metric_potential_mpi phi,hid_t filename,double *dc,double a3a03omega,double a,bool get_dc=false)
 {	
 	herr_t status_psi,status_phi,status;	
-	hid_t file,dtype,dspace;
-	hsize_t dim[3];
+	hid_t file,dtype,dspace_psi,dspace_potn;
+	hsize_t dim[3],pdim[2];
 	dim[0] = ind[0];
 	dim[1] = ind[1];
 	dim[2] = ind[2];
+
+	
+
+	int tN = ind[0]*ind[1]*ind[0];
+	pdim[0]= tN; pdim[1] = 2;
 
 
 	
 	dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
     	status = H5Tset_order(dtype, H5T_ORDER_LE);
-	dspace = H5Screate_simple(3, dim, NULL);
+	dspace_psi = H5Screate_simple(3, dim, NULL);
+	dspace_potn = H5Screate_simple(2, pdim, NULL);
 
-	status_psi=psi.write_hdf5_psi(filename, dtype, dspace,dc,a3a03omega,a,get_dc);
+	status_psi=psi.write_hdf5_psi_mpi(filename, dtype, dspace_psi,dc,a3a03omega,a,get_dc);
 	
-	status_phi=phi.write_hdf5_potn(filename, dtype);
+	
+	status_phi=phi.write_hdf5_potn_mpi(filename, dtype,dspace_potn);
 
-	H5Sclose(dspace);
+	H5Sclose(dspace_psi);
+	H5Sclose(dspace_potn);
 	H5Tclose(dtype);
 
 
