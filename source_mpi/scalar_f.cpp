@@ -205,7 +205,7 @@ MPI_Status stdn,stup;
 	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n",Hi,omega_dm_ini,ai);
 
 	initialise_mpi(n_axis,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf,use_hdf5_format,cum_lin_ind);
-	psi.mpi_send_recv();
+	//psi.mpi_send_recv();
 	
 	//printf("\ndk is %lf\n",dk);
 	/*

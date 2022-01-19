@@ -146,6 +146,7 @@ int evolve_kdk(int *n,int *n_loc,fdm_psi_mpi &psi,metric_potential_mpi &phi,doub
 	}
 	phi.solve_poisson(psi,k_grid);
 	mpi_check=psi.mpi_send_recv();
+	mpi_check = MPI_Barrier(cart_comm);
 	
 	a_t = ak*sqrt(omega_dm_ini*pow(a0/ak,3.0)+ (1.0-omega_dm_ini));
 	a = 0.5*(ak+a+a_t*dt);

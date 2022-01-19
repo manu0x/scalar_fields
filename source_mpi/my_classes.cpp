@@ -80,10 +80,7 @@ class scalar_field_3d_mpi
 		double h;
 		switch(c){
 				case give_f:
-					//printf("ind  %d %d %d\n",ind[0]+2,ind[1],ind[2]);
-					if(ind[2]>63)
-					printf("HHHHHHHHHHHHHHHHHHHHHHHHHH\njjjjjjjjjjjjjjj %d \n ",ind[0]);
-					h = f[33][ind[1]][ind[2]];
+					h = f[ind[0]+2][ind[1]][ind[2]];
 					return(h);
 				case give_f_t:
 					cout<<"Reddd\n";
@@ -246,6 +243,7 @@ class scalar_field_3d_mpi
 	int mpi_send_recv()
 	{
 		int mpi_check = 0;	
+		MPI_Request send_req,recv_req;
 	
 	
 		int left_rank,right_rank,my_cart_rank;
@@ -255,7 +253,15 @@ class scalar_field_3d_mpi
 
 		int sendtag = 1,recvtag = 1;
 
-		mpi_check = MPI_Sendrecv_replace(&f[0][0][0], 2, c_x_plain,
+
+		mpi_check = MPI_Isend(&f[0][0][0],2, c_x_plain, left_rank,sendtag, cart_comm,&send_req);
+		mpi_check = MPI_Irecv(&f[n[0]+2][0][0], 2, c_x_plain,right_rank , recvtag,cart_comm, &recv_req);
+
+
+
+
+
+	/*	mpi_check = MPI_Sendrecv_replace(&f[0][0][0], 2, c_x_plain,
                          left_rank, sendtag, left_rank, recvtag,
                          cart_comm, &status);
 
@@ -264,7 +270,7 @@ class scalar_field_3d_mpi
 		mpi_check = MPI_Sendrecv_replace(&f[n[0]+2][0][0], 2, c_x_plain,
                          right_rank, sendtag, right_rank, recvtag,
                         cart_comm, &status);
-
+*/
 		printf("sending done for cart rank %d %d\n",my_cart_rank,n[0]);
 		
 		return(mpi_check);
@@ -526,13 +532,13 @@ class fdm_psi_mpi
 	{
 
 		
-		int i,j,k,locind[3],ci;
+		int i,j,k,locind[3],ci,my_corank;
 		double psi_r_val,psi_i_val,psi_amp2,h;
 
 
 		printf("gg %d %d %d\n",n[0],n[1],n[2]);	
 
-		  
+		  MPI_Comm_rank(cart_comm,&my_corank);
 			
 		 for(i=0;i<n[0];++i)
 		   {
@@ -547,12 +553,12 @@ class fdm_psi_mpi
 					//fprintf(test1,"%d %d %d %d\n",i,locind[0],j,k);
 						
 					psi_r_val=psi_r.get_field(locind,give_f);
-					//psi_i_val=psi_i.get_field(locind,give_f);	
+					psi_i_val=psi_i.get_field(locind,give_f);	
 							
 
 					
-					 // psi_amp2 = psi_r_val*psi_r_val + psi_i_val*psi_i_val;		
-					 // dc[ci]= a3a03omega*psi_amp2 - 1.0;
+					 psi_amp2 = psi_r_val*psi_r_val + psi_i_val*psi_i_val;		
+					 h= psi_amp2 - 1.0;
 					 
 
 				}
