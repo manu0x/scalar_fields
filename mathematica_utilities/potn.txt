@@ -1,0 +1,1 @@
+((a_t)^2*(3 - 6*ϵ*phi[ci]) + 2*((a^2*G*Pi*λ)/πG + ϵ*(lap_z)*_pot[ci] + ϵ*((lap_x) + (lap_y))*Blank[λ/(8*πG)][ci] + (2^(3 - alpha)*a^2*G*Pi*(-2*a^2*alpha + a[t]^2)*(-1 + 2*alpha*ϵ*phi[ci])*((a[t]^2*(f_t)[ci]^2)/a^2)^alpha)/(m*a[t]^2)))/(6*a*ϵ*(a_t))
