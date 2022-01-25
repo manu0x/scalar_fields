@@ -581,6 +581,22 @@ class metric_potential_approx_1_t
 
 	}
 
+
+	int get_potn_spt_der(int *ind,double der[3])
+	{
+		int c1;
+		
+	
+		
+		c1 = potn.get_field_spt_der(ind,der); 
+		
+		retur c1;
+	
+
+
+
+	}
+
 	int mpi_send_recv()
 	{
 		int mpi_check;
