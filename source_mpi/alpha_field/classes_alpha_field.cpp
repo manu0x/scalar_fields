@@ -296,6 +296,162 @@ class scalar_field_3d_mpi
 
 
 
+class metric_potential_approx_1_t_mpi
+{
+	private:
+	scalar_field_3d_mpi potn;
+	
+	int n[3];
+	
+	public:  
+	//int n[3];
+	metric_potential_approx_1_t_mpi(int *ind,int cum_lin_ind,bool lb=false,bool sgb=false):potn(ind,cum_lin_ind,lb,sgb)
+	{
+		n[0] = ind[0];  n[1] = ind[1];  n[2] = ind[2];
+	}
+	
+
+
+	int calc_vel(int * ind,double &potn_vel,double f_t,double a,double a_t,double *dx)
+	{
+		int c1;		
+		double potn_val,lap_potn;
+		
+		
+		c1 = potn.cal_spt_grads(ind,dx,true);
+		lap_potn = potn.get_field(ind,give_f_lap);
+		potn_val = potn.get_field(ind,give_f);
+		
+		
+		potn_vel = potn_approx_vel(a,a_t,potn_val,lap_potn,f_t);
+		
+		
+		if(isnan(potn_vel))
+			return (-1);
+		else
+			return(1);
+	}
+
+
+	int update(int * ind,double potn_val)
+	{
+		int c1;
+		c1 = potn.update_field(ind,potn_val);
+		
+		
+		return (c1);
+	}
+
+	double get_potential(int *ind,code1 c = give_f)
+	{
+		double potn_val;		
+		
+		potn_val= potn.get_field(ind,c);
+		
+
+		return potn_val;
+
+
+
+
+	}
+
+
+	int get_potn_spt_der(int *ind,double der[3])
+	{
+		int c1;
+		
+	
+		
+		c1 = potn.get_field_spt_der(ind,der); 
+		
+		return c1;
+	
+
+
+
+	}
+
+	int mpi_send_recv()
+	{
+		int mpi_check;
+
+		mpi_check=potn.mpi_send_recv();
+	
+		return(mpi_check);
+
+
+	}
+
+
+	void write_potential(FILE *fp_potn,double *dx,double a3a03omega,double a)  
+	{	//printf("a3  %.10lf\n",a3a03omega);
+		int i,j,k,locind[3],ci;
+		double potn_val;
+		for(i=0;i<n[0];++i)
+		{
+			for(j=0;j<n[1];++j)
+			{
+				for(k=0;k<n[2];++k)
+				{	ci = (n[2]*n[1])*i + n[2]*j + k;
+					locind[0]=i; locind[1]=j; locind[2]=k;
+					potn_val = potn.get_field(locind,give_f);
+					
+					
+					  fprintf(fp_potn,"%lf\t%lf\t%lf\t%lf\t%lf\n",a,dx[0]*i,dx[1]*j,dx[2]*k,potn_val);
+
+
+					
+
+
+				}
+	
+			}
+
+		}
+		
+		fprintf(fp_potn,"\n\n\n\n");
+
+	}
+
+
+	
+
+	herr_t write_hdf5_potn_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl)
+	{
+
+		hid_t dataset,dset_glbl_potn,plist_id;
+		herr_t status ;
+		
+		
+		
+
+		
+
+ 	   /*
+     	* Create the dataset with default properties and close filespace.
+     		*/
+   		dset_glbl_potn = H5Dcreate(filename, "potn_alpha", dtype, dspace_glbl,
+						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+		
+
+		status = potn.write_hdf5_mpi( filename,dtype,dset_glbl_potn);
+		
+		
+		
+
+		H5Dclose(dset_glbl_potn);
+		
+		return(status);
+
+	}
+
+
+};
+
+
+
+
 class field_alpha_mpi
 {
 	private:
@@ -421,14 +577,61 @@ class field_alpha_mpi
 
 
 
-	herr_t write_hdf5_f_alpha_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,double *dc,double a3a03omega,double a,double phi,int cum_lin_ind,bool get_dc=false)
+
+	void write_f_alpha(FILE *fp_falpha,double *dc,double *dx,double a3a03omega,double a,bool get_dc=false, bool get_psi=true)
+	{	//printf("a3  %.10lf\n",a3a03omega);
+		int i,j,k,locind[3],ci;
+		double f_val,f_t_val;
+		for(i=0;i<n[0];++i)
+		{
+			for(j=0;j<n[1];++j)
+			{
+				for(k=0;k<n[2];++k)
+				{	ci = (n[2]*n[1])*i + n[2]*j + k;
+					locind[0]=i; locind[1]=j; locind[2]=k;
+					f_val = f_alpha.get_field(locind,give_f);
+					f_t_val = f_alpha.get_field(locind,give_f);	
+							
+
+					if(get_dc)
+					{
+					 // psi_amp2 = psi_r_val*psi_r_val + psi_i_val*psi_i_val;		
+					  //dc[ci]= a3a03omega*psi_amp2 - 1.0;
+					  //fprintf(fp_psi,
+						//"%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\n",
+						//	a,dx[0]*i,dx[1]*j,dx[2]*k,psi_r_val,psi_i_val,psi_amp2,dc[ci],a3a03omega);
+					}
+
+					else
+					{
+					  fprintf(fp_falpha,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",a,dx[0]*i,dx[1]*j,dx[2]*k,f_val,f_t_val);
+
+
+					}
+
+
+				}
+	
+			}
+
+		}
+		
+		fprintf(fp_falpha,"\n\n\n\n");
+
+	}
+
+
+
+
+	herr_t write_hdf5_f_alpha_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,double *dc,double a3a03omega,double a,
+							metric_potential_approx_1_t_mpi phi,int cum_lin_ind,bool get_dc=false)
 	{
 
 		hid_t dataset,dset_glbl_r,dset_glbl_i,dspace,plist_id;
 		herr_t status ;
 		int tN  = n[0]*n[1]*n[3];
 		int i,j,k,locind[3],ci;
-		double fa_val,fa_t_val,x4val,rho_fa;
+		double fa_val,fa_t_val,x4val,rho_fa,phival;
 
 		
 
@@ -462,10 +665,10 @@ class field_alpha_mpi
 				{	ci = (n[2]*n[1])*i + n[2]*j + k;
 					locind[0]=i; locind[1]=j; locind[2]=k;
 					
-						
+					phival = phi.get_potential(locind);	
 					
 
-					x4val = cal_X_4vel(locind,a,phi);	
+					x4val = cal_X_4vel(locind,a,phival);	
 							
 
 					rho_fa = (2.0*alpha-1.0)*x4val*pow(x4val/(Mfield*Mfield*Mfield*Mfield),alpha-1.0);
@@ -523,127 +726,6 @@ class field_alpha_mpi
 };
 
 
-class metric_potential_approx_1_t_mpi
-{
-	private:
-	scalar_field_3d_mpi potn;
-	
-	int n[3];
-	
-	public:  
-	//int n[3];
-	metric_potential_approx_1_t_mpi(int *ind,int cum_lin_ind,bool lb=false,bool sgb=false):potn(ind,cum_lin_ind,lb,sgb)
-	{
-		n[0] = ind[0];  n[1] = ind[1];  n[2] = ind[2];
-	}
-	
-
-
-	int calc_vel(int * ind,double &potn_vel,double f_t,double a,double a_t,double *dx)
-	{
-		int c1;		
-		double potn_val,lap_potn;
-		
-		
-		c1 = potn.cal_spt_grads(ind,dx,true);
-		lap_potn = potn.get_field(ind,give_f_lap);
-		potn_val = potn.get_field(ind,give_f);
-		
-		
-		potn_vel = potn_approx_vel(a,a_t,potn_val,lap_potn,f_t);
-		
-		
-		if(isnan(potn_vel))
-			return (-1);
-		else
-			return(1);
-	}
-
-
-	int update(int * ind,double potn_val)
-	{
-		int c1;
-		c1 = potn.update_field(ind,potn_val);
-		
-		
-		return (c1);
-	}
-
-	double get_potential(int *ind,code1 c = give_f)
-	{
-		double potn_val;		
-		
-		potn_val= potn.get_field(ind,c);
-		
-
-		return potn_val;
-
-
-
-
-	}
-
-
-	int get_potn_spt_der(int *ind,double der[3])
-	{
-		int c1;
-		
-	
-		
-		c1 = potn.get_field_spt_der(ind,der); 
-		
-		return c1;
-	
-
-
-
-	}
-
-	int mpi_send_recv()
-	{
-		int mpi_check;
-
-		mpi_check=potn.mpi_send_recv();
-	
-		return(mpi_check);
-
-
-	}
-
-
-	
-
-	herr_t write_hdf5_potn_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl)
-	{
-
-		hid_t dataset,dset_glbl_potn,plist_id;
-		herr_t status ;
-		
-		
-		
-
-		
-
- 	   /*
-     	* Create the dataset with default properties and close filespace.
-     		*/
-   		dset_glbl_potn = H5Dcreate(filename, "potn_alpha", dtype, dspace_glbl,
-						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-		
-
-		status = potn.write_hdf5_mpi( filename,dtype,dset_glbl_potn);
-		
-		
-		
-
-		H5Dclose(dset_glbl_potn);
-		
-		return(status);
-
-	}
-
-
-};
 
 
 class metric_potential_poisson_mpi
