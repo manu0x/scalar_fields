@@ -300,12 +300,12 @@ class field_alpha_mpi
 {
 	private:
 	scalar_field_3d_mpi f_alpha;
-	scalar_field_3d_mpi f_t_alpha;
+	scalar_field_3d_mpi f_alpha_t;
 	int n[3];
 	
 	public:  
 	//int n[3];
-	field_alpha_mpi(int *ind,int cum_lin_ind,bool lb=false,bool sgb=false):f_alpha(ind,cum_lin_ind,lb,sgb),f_t_alpha(ind,cum_lin_ind,lb,sgb)
+	field_alpha_mpi(int *ind,int cum_lin_ind,bool lb=false,bool sgb=false):f_alpha(ind,cum_lin_ind,lb,sgb),f_alpha_t(ind,cum_lin_ind,lb,sgb)
 	{
 		n[0] = ind[0];  n[1] = ind[1];  n[2] = ind[2];
 	}
@@ -338,6 +338,8 @@ class field_alpha_mpi
 
 	}
 
+
+	
 	int calc_acc(int * ind,double &acc,double potn,double potn_t,double potn_x[3],double a,double a_t,double *dx)
 	{
 		int c1;		
@@ -354,9 +356,9 @@ class field_alpha_mpi
 		c1 = f_alpha_t.get_field_spt_der(ind,fa_t_der);  
 
 		
-		acc = field_acc_approx(fa_t,fa_der, fa_t_der,potn,potn_t, potn_x);
+		acc = field_acc_approx(fa_t,fa_der, fa_t_der,fa_lap,potn,potn_t, potn_x,a,a_t);
 
-
+		
 		if(isnan(acc))
 			return (-1);
 		else
@@ -397,7 +399,7 @@ class field_alpha_mpi
 		
 		fa_t_val = f_alpha_t.get_field(ind,give_f);
 
-		c1 = get_field_spt_der(ind,s_der);
+		c1 = f_alpha.get_field_spt_der(ind,s_der);
 
 		
 		X = fa_t_val*fa_t_val/(1.0+phi)  - (s_der[0]*s_der[0]+s_der[1]*s_der[1]+s_der[2]*s_der[2])/(a*a*(1.0+phi));
@@ -466,7 +468,7 @@ class field_alpha_mpi
 					x4val = cal_X_4vel(locind,a,phi);	
 							
 
-					rho_fa = (2.0*alpha-1.0)*x4val*pow(x4val/(m*m*m*m),alpha-1.0);
+					rho_fa = (2.0*alpha-1.0)*x4val*pow(x4val/(Mfield*Mfield*Mfield*Mfield),alpha-1.0);
 					 
 
 				}
@@ -521,7 +523,7 @@ class field_alpha_mpi
 };
 
 
-class metric_potential_approx_1_t
+class metric_potential_approx_1_t_mpi
 {
 	private:
 	scalar_field_3d_mpi potn;
@@ -530,7 +532,7 @@ class metric_potential_approx_1_t
 	
 	public:  
 	//int n[3];
-	metric_potential_approx_1_t(int *ind,int cum_lin_ind,bool lb=false,bool sgb=false):potn(ind,cum_lin_ind,lb,sgb)
+	metric_potential_approx_1_t_mpi(int *ind,int cum_lin_ind,bool lb=false,bool sgb=false):potn(ind,cum_lin_ind,lb,sgb)
 	{
 		n[0] = ind[0];  n[1] = ind[1];  n[2] = ind[2];
 	}
@@ -567,7 +569,7 @@ class metric_potential_approx_1_t
 		return (c1);
 	}
 
-	double get_potn(int *ind,code1 c = give_f)
+	double get_potential(int *ind,code1 c = give_f)
 	{
 		double potn_val;		
 		
@@ -590,7 +592,7 @@ class metric_potential_approx_1_t
 		
 		c1 = potn.get_field_spt_der(ind,der); 
 		
-		retur c1;
+		return c1;
 	
 
 
@@ -622,9 +624,9 @@ class metric_potential_approx_1_t
 
 		
 
-    /*
-     * Create the dataset with default properties and close filespace.
-     */
+ 	   /*
+     	* Create the dataset with default properties and close filespace.
+     		*/
    		dset_glbl_potn = H5Dcreate(filename, "potn_alpha", dtype, dspace_glbl,
 						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 		
@@ -644,6 +646,195 @@ class metric_potential_approx_1_t
 };
 
 
+class metric_potential_poisson_mpi
+{
+
+	private:
+	int n[3];
+	int n_loc[3];
+	int cum_lin_ind;
+	//scalar_field_3d phi;
+
+	fftw_complex *fpGpsi;
+	fftw_complex *fpGpsi_ft;
+
+	fftw_plan plan_pois_f;
+	fftw_plan plan_pois_b;
+	
+	ptrdiff_t alloc_local, local_n0, local_0_start;
+	
+	public:
+	
+	metric_potential_poisson_mpi(int *ind,int *ind_loc,int cum_lin_ind_ar,bool lb=false,bool sgb=false)//:phi(ind,lb,sgb)
+	{
+		int l = ind[0]*ind[1]*ind[2];
+		n[0]=ind[0];n[1]=ind[1];n[2]=ind[2];
+		n_loc[0]=ind_loc[0];n_loc[1]=ind_loc[1];n_loc[2]=ind_loc[2];
+
+		cum_lin_ind = cum_lin_ind_ar;
+
+
+		const ptrdiff_t n0 = n[0];
+		const ptrdiff_t n1 = n[1];
+		const ptrdiff_t n2 = n[2];
+	
+		alloc_local = fftw_mpi_local_size_3d(n0, n1, n2,
+                                 cart_comm,
+                                 &local_n0, &local_0_start);
+		
+		fpGpsi = fftw_alloc_complex(alloc_local);
+		fpGpsi_ft = fftw_alloc_complex(alloc_local);
+
+
+		plan_pois_f = fftw_mpi_plan_dft_3d(n0, n1,  n2,
+                               fpGpsi, fpGpsi_ft,
+                              cart_comm, FFTW_FORWARD, FFTW_ESTIMATE);
+		plan_pois_b = fftw_mpi_plan_dft_3d(n0, n1,  n2,
+                               fpGpsi_ft, fpGpsi,
+                              cart_comm, FFTW_BACKWARD, FFTW_ESTIMATE);
+
+	}
+
+
+	void solve_poisson(double k_grid[][3])
+	{
+		int i,j,k,ci,ind[3]{0,0,0},r;
+		double k2fac;
+		fftw_execute(plan_pois_f);
+		double sqrt_tN = sqrt((double)(n[0]*n[1]*n[2])); 
+
+		for(i=0;i<n_loc[0];++i)
+		{
+		  for(j=0;j<n_loc[1];++j)
+		  {
+		    for(k=0;k<n_loc[2];++k)
+		    {
+			ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;			
+			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
+			
+			if(k2fac>0.0)
+			{fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/(k2fac*sqrt_tN*sqrt_tN);
+			 fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/(k2fac*sqrt_tN*sqrt_tN);
+				
+			}	
+			else
+			{fpGpsi_ft[ci][0] = 0.0;
+			 fpGpsi_ft[ci][1] = 0.0;
+			}
+
+			
+
+		    }
+
+		  }
+
+		}
+		
+		fftw_execute(plan_pois_b);
+	
+
+	}
+
+
+	void update_4pieGpsi(int ci,double val)
+	{
+		
+		fpGpsi[ci][0] = val;
+		fpGpsi[ci][1] = 0.0;
+	
+	}
+
+
+	double get_potential(int ci)
+	{
+
+		return (fpGpsi[ci][0]);	
+
+	}
+
+	void write_potential(FILE *fp_ptn,double *dx,double a3a03omega,double a)
+	{	
+		int i,j,k,ci;
+		
+		for(i=0;i<n_loc[0];++i)
+		{
+			for(j=0;j<n_loc[1];++j)
+			{
+				for(k=0;k<n_loc[2];++k)
+				{
+					 ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;
+				
+					  fprintf(fp_ptn,"%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\n",a,dx[0]*i,dx[1]*j,dx[2]*k,fpGpsi[ci][0]);
+				
+
+
+
+				}
+	
+			}
+
+		}
+		
+		fprintf(fp_ptn,"\n\n\n\n");
+
+	}
+
+
+	herr_t write_hdf5_potn_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl)
+	{
+
+		hid_t dset_glbl;
+		herr_t status;
+		hid_t  dspace,plist_id;
+		hsize_t     dim[2];
+		dim[0] = n_loc[0]*n_loc[1]*n_loc[2]; dim[1]=2;
+
+		
+    		status = H5Tset_order(dtype, H5T_ORDER_LE);	
+
+		dset_glbl = H5Dcreate(filename, "potential", dtype, dspace_glbl,
+						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+
+		hsize_t count[2],offset[2];
+		count[0] = dim[0]; count[1] = 2; offset[0] = cum_lin_ind; offset[1] = 0;
+
+		dspace = H5Screate_simple(2, count, NULL);
+
+
+
+		H5Sselect_hyperslab(dspace_glbl, H5S_SELECT_SET, offset, NULL, count, NULL);
+		plist_id = H5Pcreate(H5P_DATASET_XFER);
+    		H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+		
+		
+		status = H5Dwrite(dset_glbl, dtype, dspace, dspace_glbl,
+		      				plist_id, fpGpsi);
+
+	
+    		H5Sclose(dspace);
+    		H5Pclose(plist_id);
+
+
+
+		return status;
+
+	}
+
+
+
+/*	int update(int * ind,double phi_val)
+	{
+		int c1;
+		c1 = phi.update_field(ind,phi_val);
+		
+		return (c1);
+	}
+
+*/
+
+
+};
 
 
 
@@ -879,8 +1070,7 @@ class gauss_rand_field_gen_mpi
 	fftw_complex *field;
 	fftw_complex *field_ft;
 
-	fftw_complex *theta;
-	fftw_complex *theta_ft;
+
 
 	fftw_plan plan_grf_f;
 	fftw_plan plan_grf_b;
@@ -910,8 +1100,7 @@ class gauss_rand_field_gen_mpi
 		field = fftw_alloc_complex(alloc_local);
 		field_ft = fftw_alloc_complex(alloc_local);
 
-		theta = fftw_alloc_complex(alloc_local);
-		theta_ft = fftw_alloc_complex(alloc_local);
+		
 
 		plan_grf_f = fftw_mpi_plan_dft_3d(n0, n1,  n2,
                                field, field_ft, 
@@ -920,8 +1109,7 @@ class gauss_rand_field_gen_mpi
 		plan_grf_b = fftw_mpi_plan_dft_3d(n0, n1,  n2,
                                field_ft, field,  cart_comm, FFTW_BACKWARD, FFTW_ESTIMATE); 
 
-		plan_grf_theta_b = fftw_mpi_plan_dft_3d(n0, n1,  n2,
-                               	   theta_ft, theta, cart_comm, FFTW_BACKWARD, FFTW_ESTIMATE);
+		
 
 
 
@@ -957,7 +1145,7 @@ class gauss_rand_field_gen_mpi
 	}
 
 
-	void gen(double k_grid[][3],double *ini_dc,double *ini_theta, ini_power_generator p_k,double a_t,double a,double a0,double f_ini)
+	void gen(double k_grid[][3],double *ini_dc, ini_power_generator p_k,double a_t,double a,double a0,double f_ini)
 	{	int i,j,k,ci;
 		double ksqr,pk_val,dtN;
 
@@ -1000,8 +1188,7 @@ class gauss_rand_field_gen_mpi
 			{field_ft[ci][0] = 0.0;
 			 field_ft[ci][1] = 0.0;
 
-			 theta_ft[ci][0] = 0.0;
-			 theta_ft[ci][1] = 0.0;
+			
 			}
 			else
 			{
@@ -1010,9 +1197,7 @@ class gauss_rand_field_gen_mpi
 				field_ft[ci][0] = sqrt(pk_val)*field_ft[ci][0]/dtN;
 				field_ft[ci][1] = sqrt(pk_val)*field_ft[ci][1]/dtN;
 
-				theta[ci][0] =  (a_t*Hi/a)*f_ini*(a/a0)*(a/a0)*field_ft[ci][0]/(ksqr*hbar_by_m);
-				theta_ft[ci][1] =  (a_t*Hi/a)*f_ini*(a/a0)*(a/a0)*field_ft[ci][1]/(ksqr*hbar_by_m);
-				//printf("Hi %lf\n",Hi);
+				
 
 
 			}
@@ -1040,7 +1225,7 @@ class gauss_rand_field_gen_mpi
 		    {
 			ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;			
 			ini_dc[ci] = field[ci][0];
-			ini_theta[ci] = theta[ci][0];
+			
 			
 
 		    }
@@ -1053,12 +1238,11 @@ class gauss_rand_field_gen_mpi
 
 	fftw_free(field);
 	fftw_free(field_ft);
-	fftw_free(theta);
-	fftw_free(theta_ft);
+	
 	
 	fftw_destroy_plan(plan_grf_f);
 	fftw_destroy_plan(plan_grf_b);
-	fftw_destroy_plan(plan_grf_theta_b);	
+	
 	}
 
 

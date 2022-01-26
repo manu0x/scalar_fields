@@ -1,7 +1,7 @@
 
-double field_acc_approx(double f_t,double f_sx[3],double f_t_x[3],double phi,double phi_t,double phi_sx[3])
+double field_acc_approx(double f_t,double f_sx[3],double f_t_x[3],double lap_f,double phi,double phi_t,double phi_sx[3],double a,double a_t)
 {
-	double acc,phi_x,phi_x,phi_y,phi_z,phi_x,f_x,f_y,f_z,f_tx,f_ty,f_tz;    
+	double acc,phi_x,phi_y,phi_z,f_x,f_y,f_z,f_tx,f_ty,f_tz;    
 	
 	phi_x = phi_sx[0];	phi_y = phi_sx[1];	phi_z = phi_sx[2];
 	f_x = f_sx[0];	f_y = f_sx[1];	f_z = f_sx[2];

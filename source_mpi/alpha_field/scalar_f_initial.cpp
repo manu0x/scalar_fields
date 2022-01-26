@@ -2,7 +2,7 @@ double ini_power_spec(double ksqr)
 {
 	return (1e-5);
 }
-
+/*
 double res_limits(double max_potn,double vmax,double dx,double a,double &dt_limit,double &len_res )
 {
 	//############ Uses constraints from May & Springel  2101.01828
@@ -33,8 +33,10 @@ double res_limits(double max_potn,double vmax,double dx,double a,double &dt_limi
 
 }
 
-
-void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi &phi,double k_grid[][3],int kbin_grid[],double a0,double ai,double Hi,double omega_dm_ini,double *dx,double &dk,int & kbins,ini_power_generator pk,gauss_rand_field_gen_mpi grf,bool use_hdf5_format,int cum_lin_ind)
+*/
+void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potential_approx_1_t_mpi &phi,metric_potential_poisson_mpi poisson_phi,
+				double k_grid[][3],int kbin_grid[],double a0,double ai,double Hi,double omega_dm_ini,double *dx,double &dk,int & kbins,
+								ini_power_generator pk,gauss_rand_field_gen_mpi grf,bool use_hdf5_format,int cum_lin_ind)
 {
       
 
@@ -62,8 +64,8 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
       int n[3]{ind_loc[0],ind_loc[1],ind_loc[2]};
       int loc_ind[3],err_hold;
 
-      double ini_dc[tN],ini_theta[tN],pwr_spec[tN],vel[tN][3],dc[tN];
-      double psi_amp,psi_r_val,psi_i_val,poisson_rhs;
+      double ini_dc[tN],pwr_spec[tN];
+      double poisson_rhs;
       double f_ini;
       double potn;
       double k_nyq;
@@ -71,7 +73,7 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
       double max_potn=0.0,vmax=0.0,vmax_cap;
       double dt_limit,len_res;
 
-      double a3a03omega = pow(a/a0,3.0)/omega_dm_ini;
+      double a3a03omega = pow(a/a0,3.0*(1.0+w))/omega_dm_ini;
 
 /////////////////////////	MPI and hdf5 variables	///////////////////////////////
 	
@@ -88,7 +90,7 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
 	f_ini=dlogD_dloga(a);
 
 	//double kf = twopie*lenfac/(64.0);
-	boxlength = 1.0/h;
+	boxlength = 1.0*space_mpc_to_dimless;
 	
         dx[0] = boxlength/((double)(ind[0]-1));	dx[1] = boxlength/((double)(ind[1]-1));	dx[2] = boxlength/((double)(ind[2]-1));
 	L[0] = boxlength;	L[1] = boxlength;	L[2] = boxlength;
@@ -184,9 +186,9 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
 	//					ini_dc,ini_theta,a,a0,a_t,pk);
 	//ini_rand_field(ind,kmag_grid,ini_dc,ini_theta,a,a0,a_t,pk);
 
-	grf.gen(k_grid,ini_dc,ini_theta, pk,a_t,a,a0,f_ini);
+	grf.gen(k_grid,ini_dc, pk,a_t,a,a0,f_ini);
 	
-	double ggg;
+	double pow_arg,fa_t_val;
 	for(i=0;i<n[0];++i)
 		{
 		  for(j=0;j<n[1];++j)
@@ -195,20 +197,20 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
 		    {
 			ci = (n[2]*n[1])*i + n[2]*j + k;
 			loc_ind[0] = i;  loc_ind[1] = j;  loc_ind[2] = k;
-			psi_amp = sqrt(omega_dm_ini*pow(a0/ai,3.0)*(1.0+ini_dc[ci]));
-			psi_r_val = psi_amp*cos(ini_theta[ci]);
-			psi_i_val = psi_amp*sin(ini_theta[ci]);
+			pow_arg = 3.0*Hi*Hi*Mfield*Mfield*Mfield*Mfield*(omega_dm_ini*pow(a0/ai,3.0*(1.0+w))*(1.0+ini_dc[ci]))/(4.0*twopie*G*(2.0*alpha-1.0));
+			fa_t_val = pow(pow_arg,1.0/alpha);
+			
 
-			err_hold =  psi.update(loc_ind, psi_r_val, psi_i_val);
+			err_hold =  falpha.update(loc_ind, 1.0, fa_t_val);
 
 			//ggg = 1.5*H0*H0*a*a*omega_dm_ini*pow(a0/ai,3.0)*(ini_dc[ci]);
 
 			
 
-			poisson_rhs = 1.5*H0*H0*a*a*(psi_amp*psi_amp - omega_dm_ini*pow(a0/ai,3.0));
+			//poisson_rhs = 1.5*H0*H0*a*a*(psi_amp*psi_amp - omega_dm_ini*pow(a0/ai,3.0));
 
 			//printf("P rhs %.15lf %.15lf %.10lf %.10lf %.10lf\n",poisson_rhs,ggg,1.5*H0*H0,psi_i_val,ini_theta[ci]);
-			phi.update_4pieGpsi(ci,poisson_rhs);
+			poisson_phi.update_4pieGpsi(ci,poisson_rhs);
 			
 
 
@@ -218,10 +220,9 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
 		}
 
 	
-	ret = calculate_vel_from_psi(ind_loc,dx,psi, vel,vmax,ai);
-
 	
 	
+	int chk; double fa[2];
 	for(i=0;i<n[0];++i)
 		{
 		  for(j=0;j<n[1];++j)
@@ -230,27 +231,25 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
 		    {
 			ci = (n[2]*n[1])*i + n[2]*j + k;
 			loc_ind[0] = i;  loc_ind[1] = j;  loc_ind[2] = k;
-			potn = phi.get_potential(ci);
-			psi_amp = sqrt(omega_dm_ini*pow(a0/ai,3.0)*(1.0+ini_dc[ci]));
-			psi_r_val = psi_amp*cos(ini_theta[ci]);
-			psi_i_val = psi_amp*sin(ini_theta[ci]);
+			potn = poisson_phi.get_potential(ci);
+			chk = phi.update( loc_ind,potn);
+			chk = falpha.get_field_alpha(loc_ind,fa);
 			
 			if(fabs(potn)>=max_potn)
 				max_potn = fabs(potn);
 
 			
 
-			//fprintf(fpstoreini,"%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\n",
-			//				a,dx[0]*i,dx[1]*j,dx[2]*k,psi_r_val,psi_i_val,potn,ini_dc[ci],ini_theta[ci],vel[ci][0],vel[ci][1],vel[ci][2]);
-			//printf("ci %d   %.15lf\n",ci,potn);
+			fprintf(fpstoreini,"%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.15lf\t%.15lf\n",
+							a,dx[0]*i,dx[1]*j,dx[2]*k,fa[0],fa[1],potn,ini_dc[ci]);
 
 	            }
 		  }
 
 		}
 
-	mpi_check = psi.mpi_send_recv();
-	psi.write_hdf5_psi_test();
+	mpi_check = falpha.mpi_send_recv();
+/*	psi.write_hdf5_psi_test();
 	
 	plist_id = H5Pcreate(H5P_FILE_ACCESS);
         H5Pset_fapl_mpio(plist_id, cart_comm, info);
@@ -260,7 +259,7 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
 	initial_hdf5_write_mpi(ind,ind_loc, psi, phi,file,dc,k_grid,x_grid,a3a03omega, ai,cum_lin_ind,true);
 	H5Fclose(file);
 
-	
+*/	
 	
 	
 
@@ -309,7 +308,7 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
 }
 
 
-void initial_hdf5_write_mpi(int *ind,int *ind_loc,fdm_psi_mpi psi,metric_potential_mpi phi,hid_t filename,double *dc,double k_grid[][3],double x_grid[][3],
+void initial_hdf5_write_mpi(int *ind,int *ind_loc,field_alpha_mpi falpha,metric_potential_approx_1_t_mpi phi,hid_t filename,double *dc,double k_grid[][3],double x_grid[][3],
 													double a3a03omega,double a,int cum_lin_ind,bool get_dc=true)
 {	
 	herr_t status_psi,status_phi,status;	
@@ -387,34 +386,6 @@ void initial_hdf5_write_mpi(int *ind,int *ind_loc,fdm_psi_mpi psi,metric_potenti
 
 
 
-	/*	dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
-    	status = H5Tset_order(dtype, H5T_ORDER_LE);
-	dspace = H5Screate_simple(2, odim, NULL);
-	dataset = H5Dcreate(filename, "k_grid", dtype, dspace,
-			H5P_DEFAULT,H5P_DEFAULT, H5P_DEFAULT);
-	status = H5Dwrite(dataset, dtype, H5S_ALL, H5S_ALL,
-		      				H5P_DEFAULT,k_grid);
-	H5Dclose(dataset);
-
-	
-
-	H5Sclose(dspace);
-	H5Tclose(dtype);
-
-	dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
-    	status = H5Tset_order(dtype, H5T_ORDER_LE);
-	dspace = H5Screate_simple(2, odim, NULL);
-	dataset = H5Dcreate(filename, "x_grid", dtype, dspace,
-			H5P_DEFAULT,H5P_DEFAULT, H5P_DEFAULT);
-	status = H5Dwrite(dataset, dtype, H5S_ALL, H5S_ALL,
-		      				H5P_DEFAULT,x_grid);
-	H5Dclose(dataset);
-
-	
-
-	H5Sclose(dspace);
-
-*/
 	H5Tclose(dtype);
 
 
@@ -423,289 +394,6 @@ void initial_hdf5_write_mpi(int *ind,int *ind_loc,fdm_psi_mpi psi,metric_potenti
 }
 
 
-
-////////////// Alternative codes for ini field generation...Currently (Jan 3rd, 2022) not being used....######################################################
-
-void ini_rand_field(int * ind,double *kmag_grid,double * ini_dc,double * ini_theta_return,double a,double a0,double a_t,ini_power_generator gen)
-{	init_genrand(time(0));
-	int i,cnt,tN; 
-	double ksqr,muk,sigk;
-	double a1,a2,b1,b2,a_rand,b_rand;
-	double f_ini;
-	
-
-
-	FILE *fpinirand = fopen("initial_rand_field.txt","w");
-
-	
-	
-	tN = ind[0]*ind[1]*ind[2];
-
-	fftw_plan ini_del_plan;
-	fftw_plan ini_theta_plan;
-
-	fftw_complex *F_ini_del;
-	fftw_complex *ini_del;
-	fftw_complex *F_ini_theta;
-	fftw_complex *ini_theta;
-
-	F_ini_del = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) *tN);
-	ini_del = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) *tN);
-	F_ini_theta = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) *tN);
-	ini_theta = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) *tN);
-
-	init_genrand(time(0));
-
-	f_ini  = dlogD_dloga(a);
-	
-	for(cnt=0;cnt<tN;++cnt)
-	{	
-		 	    ksqr = kmag_grid[cnt];
-			   // sigk  = sqrt(ini_power_spec(sqrt(ksqr)));
-			if(ksqr>0.0)	
-			    {sigk  = gen.test_spec(sqrt(ksqr));}// printf("jhfhfbsfbn %lf %lf\n",h*sqrt(ksqr),h);}
-			     muk = sqrt(sigk)/pow(twopie,1.5);
-		 	     a1 = genrand_res53();
- 			     a2 = genrand_res53(); 
-			   // b1 = genrand_res53();
- 			  //  b2 = genrand_res53();
-			     a_rand = (muk*(sqrt(-2.0*log(a1))*cos(2.0*M_PI*a2)));
-			     b_rand = (muk*(sqrt(-2.0*log(a1))*sin(2.0*M_PI*a2)));
-				
-			    
-			    if(ksqr>0.0)
-			    { 
-			      F_ini_del[cnt][0] = a_rand;	F_ini_del[cnt][1] = b_rand;
-			      F_ini_theta[cnt][0] =  (a_t/a)*f_ini*(a/a0)*(a/a0)*F_ini_del[cnt][0]/(ksqr*hbar_by_m);
-			      F_ini_theta[cnt][1] =  (a_t/a)*f_ini*(a/a0)*(a/a0)*F_ini_del[cnt][1]/(ksqr*hbar_by_m);
-			     
-			    }	
-			    else
-			    { F_ini_theta[cnt][0] =  0.0;
-			      F_ini_theta[cnt][1]  = 0.0;
-			      F_ini_del[cnt][0] = 0.0;
-			      F_ini_del[cnt][1] = 0.0;
-			    }	
-
-
-
-	}
-
-
-
-
-	ini_del_plan = fftw_plan_dft_3d(ind[0],ind[1],ind[2], F_ini_del, ini_del, FFTW_BACKWARD, FFTW_ESTIMATE);
-	ini_theta_plan = fftw_plan_dft_3d(ind[0],ind[1],ind[2], F_ini_theta, ini_theta, FFTW_BACKWARD, FFTW_ESTIMATE);
-	
-	
-
-	fftw_execute(ini_del_plan);
-	fftw_execute(ini_theta_plan);
-	
-
-	
-	for(cnt=0;cnt<tN;++cnt)
-	{
-		
-		ini_del[cnt][0] = ini_del[cnt][0]/(tN); ini_del[cnt][1] = ini_del[cnt][1]/(tN); 
-		ini_theta[cnt][0] = ini_theta[cnt][0]/(tN); ini_theta[cnt][1] = ini_theta[cnt][1]/(tN); 
-		ini_dc[cnt] = ini_del[cnt][0];
-		ini_theta_return[cnt] = ini_theta[cnt][0];
-		
-
-		fprintf(fpinirand,"%d\t%.16lf\t%.16lf\t%.16lf\n",
-					cnt,kmag_grid[cnt]*sqrt(kmag_grid[cnt]),ini_del[cnt][0],ini_theta[cnt][0]);
-
-
-		
-
-	}
-    
-
-	 fftw_free(F_ini_del);
-	 fftw_free(ini_del);
-	 fftw_destroy_plan(ini_del_plan);
-	
-	 fftw_free(F_ini_theta);
-	 fftw_free(ini_theta);
-	 fftw_destroy_plan(ini_theta_plan);
-	
-
-	
-}
-
-
-
-
-double unit_normal()
-{
-
-		double a1,a2,r;
-		a1 = genrand_res53();
- 		a2 = genrand_res53(); 
-		r = (sqrt(-2.0*log(a1))*cos(2.0*M_PI*a2));
-
-		return(r);
-
-
-}
-
-
-
-void ini_rand_field_2(int * ind,double k_grid[][3],int *kbin_grid,int kbins,double dk,
-						double * ini_dc,double * ini_theta_return,double a,double a0,double a_t,ini_power_generator pk)
-{	init_genrand(time(0));
-	int i,cnt,tN; 
-	double ksqr,pk_val;
-	double a1,a2,b1,b2,a_rand,b_rand;
-	double f_ini;
-	double pwr_spec[kbins+1];	
-	double dtN;
-	
-
-
-
-
-
-
-	FILE *fpinirand = fopen("initial_rand_field.txt","w");
-	FILE *fppwr = fopen("ini_power.txt","w");
-	FILE *fppwr_check = fopen("ini_power_check.txt","w");
-
-	
-	
-	tN = ind[0]*ind[1]*ind[2];
-	dtN = (double)tN;
-
-	fftw_plan ini_del_f_plan;
-	fftw_plan ini_del_b_plan;
-	fftw_plan ini_theta_b_plan;
-
-	fftw_complex *F_ini_del;
-	fftw_complex *ini_del;
-	fftw_complex *F_ini_theta;
-	fftw_complex *ini_theta;
-
-	F_ini_del = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) *tN);
-	ini_del = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) *tN);
-	F_ini_theta = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) *tN);
-	ini_theta = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) *tN);
-
-	ini_del_f_plan = fftw_plan_dft_3d(ind[0],ind[1],ind[2], ini_del, F_ini_del, FFTW_FORWARD, FFTW_ESTIMATE);
-	ini_del_b_plan = fftw_plan_dft_3d(ind[0],ind[1],ind[2],  F_ini_del,ini_del, FFTW_BACKWARD, FFTW_ESTIMATE);
-	ini_theta_b_plan = fftw_plan_dft_3d(ind[0],ind[1],ind[2],  F_ini_theta,ini_theta, FFTW_BACKWARD, FFTW_ESTIMATE);
-
-	init_genrand(time(0));
-
-	for(cnt=0;cnt<tN;++cnt)
-	{
-		ini_del[cnt][0] = unit_normal();
-		ini_del[cnt][1] = 0.0;
-	}
-	
-	fftw_execute(ini_del_f_plan);
-
-	f_ini  = dlogD_dloga(a);
-	
-	for(cnt=0;cnt<tN;++cnt)
-	{	
-		 	    
-
-			ksqr = (k_grid[cnt][0]*k_grid[cnt][0]+k_grid[cnt][1]*k_grid[cnt][1]+k_grid[cnt][2]*k_grid[cnt][2]);
-
-			pk_val = pk.test_spec(sqrt(ksqr));	
-		
-			if(ksqr<=0.0)
-			{
-			  F_ini_del[cnt][0] = 0.0;
-			  F_ini_del[cnt][1] = 0.0;
-
-			  F_ini_theta[cnt][0] =  0.0;
-			  F_ini_theta[cnt][1]  = 0.0;
-			}
-			else
-			{
-
-				F_ini_del[cnt][0] = F_ini_del[cnt][0]/sqrt(pow(twopie,3.0));
-				F_ini_del[cnt][1] = F_ini_del[cnt][1]/sqrt(pow(twopie,3.0));
-
-				F_ini_theta[cnt][0] =  (a_t/a)*f_ini*(a/a0)*(a/a0)*F_ini_del[cnt][0]/(ksqr*hbar_by_m);
-			        F_ini_theta[cnt][1] =  (a_t/a)*f_ini*(a/a0)*(a/a0)*F_ini_del[cnt][1]/(ksqr*hbar_by_m);
-
-			}
-
-
-
-	}
-
-
-
-	fftw_execute(ini_del_b_plan);
-	fftw_execute(ini_theta_b_plan);
-	
-
-	
-	for(cnt=0;cnt<tN;++cnt)
-	{
-		
-		ini_del[cnt][0] = ini_del[cnt][0]/(dtN); ini_del[cnt][1] = ini_del[cnt][1]/(dtN); 
-		ini_theta[cnt][0] = ini_theta[cnt][0]/(dtN); ini_theta[cnt][1] = ini_theta[cnt][1]/(dtN); 
-		ini_dc[cnt] = ini_del[cnt][0];
-		ini_theta_return[cnt] = ini_theta[cnt][0];
-
-		ksqr = (k_grid[cnt][0]*k_grid[cnt][0]+k_grid[cnt][1]*k_grid[cnt][1]+k_grid[cnt][2]*k_grid[cnt][2]);
-		pk_val = pk.test_spec(sqrt(ksqr));
-
-		
-
-		fprintf(fpinirand,"%d\t%.16lf\t%.16lf\t%.16lf\n",
-					cnt,ksqr,ini_del[cnt][0],ini_theta[cnt][0]);
-
-
-		
-
-	}
-
-
-	cal_spectrum(ini_dc,kbin_grid, kbins,ind,pwr_spec, dk,1.0,fppwr);
-
-	for(cnt=0;cnt<=kbins;++cnt)
-	{
-		
-		
-
-		ksqr = ((double)(cnt+1))*dk*(0.5);
-		pk_val = pk.test_spec(ksqr);
-
-		
-
-		fprintf(fppwr_check,"%d\t%.16lf\t%.16lf\t%.16lf\n",
-					cnt,ksqr,pwr_spec[cnt],pk_val);
-
-
-		
-
-	}
-
-
-	fclose(fpinirand);
-	fclose(fppwr);
-	fclose(fppwr_check);
-    
-
-	 fftw_free(F_ini_del);
-	 fftw_free(ini_del);
-	 fftw_free(F_ini_theta);
-	 fftw_free(ini_theta);
-
-	 fftw_destroy_plan(ini_del_f_plan);
-	 fftw_destroy_plan(ini_del_b_plan);
-	 fftw_destroy_plan(ini_theta_b_plan);
-
-	
-
-	
-}
 
 
 
