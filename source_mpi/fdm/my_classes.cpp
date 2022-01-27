@@ -153,22 +153,14 @@ class scalar_field_3d_mpi
 	   for(i=0;i<3;++i)
 	   {
 	     
-	     if(i>0)
-	     {	ind_l1[i] = (n[i]+ind_lw[i]-1)%n[i];
+	  
+	     	ind_l1[i] = (n[i]+ind_lw[i]-1)%n[i];
 	     	ind_l2[i] = (n[i]+ind_lw[i]-2)%n[i];
 
 	     	ind_r1[i] = (ind_lw[i]+1)%n[i];
 	     	ind_r2[i] = (ind_lw[i]+2)%n[i];
-	      }
-	    else
-
-	      {	ind_l1[i] = (n[i]+ind_lw[i]-1);
-	     	ind_l2[i] = (n[i]+ind_lw[i]-2);
-
-	     	ind_r1[i] = (ind_lw[i]+1);
-	     	ind_r2[i] = (ind_lw[i]+2);
-	      }
-		
+	      
+	    
 	    
 	     if(spt_grad==true)
 	     {
@@ -269,8 +261,15 @@ class scalar_field_3d_mpi
 		int sendtag = 1,recvtag = 1;
 
 
-		mpi_check = MPI_Isend(&f[0][0][0],2, c_x_plain, left_rank,sendtag, cart_comm,&send_req);
+		mpi_check = MPI_Isend(&f[2][0][0],2, c_x_plain, left_rank,sendtag, cart_comm,&send_req);
 		mpi_check = MPI_Irecv(&f[n[0]+2][0][0], 2, c_x_plain,right_rank , recvtag,cart_comm, &recv_req);
+
+
+		mpi_check = MPI_Isend(&f[n[0]][0][0],2, c_x_plain, right_rank,sendtag, cart_comm,&send_req);
+		mpi_check = MPI_Irecv(&f[0][0][0], 2, c_x_plain,left_rank , recvtag,cart_comm, &recv_req);
+
+		printf("FF %d  %lf\n",my_cart_rank,*(&f[2][0][0]));
+		printf("GG %d  %lf\n",my_cart_rank,*(&f[n[0]+2][0][0]));
 
 
 
@@ -286,7 +285,7 @@ class scalar_field_3d_mpi
                          right_rank, sendtag, right_rank, recvtag,
                         cart_comm, &status);
 */
-		printf("sending done for cart rank %d %d\n",my_cart_rank,n[0]);
+		//printf("sending done for cart rank %d %d\n",my_cart_rank,n[0]);
 		
 		return(mpi_check);
 	}
@@ -1039,6 +1038,7 @@ class gauss_rand_field_gen_mpi
 		int l = ind[0]*ind[1]*ind[2];
 		ntN = l;
 		n[0]=ind[0];n[1]=ind[1];n[2]=ind[2];
+		n_loc[0]=ind_loc[0];n_loc[1]=ind_loc[1];n_loc[2]=ind_loc[2];
 
 
 		const ptrdiff_t n0 = n[0];
@@ -1103,7 +1103,7 @@ class gauss_rand_field_gen_mpi
 	{	int i,j,k,ci;
 		double ksqr,pk_val,dtN;
 
-		
+		printf("ini_dc %lf %d %d %d\n",ini_dc[ci],n_loc[0],n_loc[1],n_loc[2]);
 		dtN = (double)(n[0]*n[1]*n[2]);
 
 		for(i=0;i<n_loc[0];++i)
@@ -1172,7 +1172,7 @@ class gauss_rand_field_gen_mpi
 		
 		fftw_execute(plan_grf_b);
 		fftw_execute(plan_grf_theta_b);
-
+		
 
 		for(i=0;i<n_loc[0];++i)
 		{
@@ -1183,6 +1183,7 @@ class gauss_rand_field_gen_mpi
 			ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;			
 			ini_dc[ci] = field[ci][0];
 			ini_theta[ci] = theta[ci][0];
+			
 			
 
 		    }

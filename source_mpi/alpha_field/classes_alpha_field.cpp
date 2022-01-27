@@ -778,12 +778,13 @@ class metric_potential_poisson_mpi
 	}
 
 
-	void solve_poisson(double k_grid[][3])
+	void solve_poisson(double k_grid[][3],double a,double Hc)
 	{
 		int i,j,k,ci,ind[3]{0,0,0},r;
 		double k2fac;
 		fftw_execute(plan_pois_f);
 		double sqrt_tN = sqrt((double)(n[0]*n[1]*n[2])); 
+		double dtN = (double)(n[0]*n[1]*n[2]);
 
 		for(i=0;i<n_loc[0];++i)
 		{
@@ -795,8 +796,11 @@ class metric_potential_poisson_mpi
 			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
 			
 			if(k2fac>0.0)
-			{fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/(k2fac*sqrt_tN*sqrt_tN);
-			 fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/(k2fac*sqrt_tN*sqrt_tN);
+			{fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/((k2fac/(a*a*H0*H0)) -3.0*Hc*Hc);
+			 fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/((k2fac/(a*a*H0*H0)) -3.0*Hc*Hc);
+		
+			 fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/(dtN);
+			 fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/(dtN);
 				
 			}	
 			else
@@ -874,7 +878,7 @@ class metric_potential_poisson_mpi
 		
     		status = H5Tset_order(dtype, H5T_ORDER_LE);	
 
-		dset_glbl = H5Dcreate(filename, "potential", dtype, dspace_glbl,
+		dset_glbl = H5Dcreate(filename, "potential_poisson", dtype, dspace_glbl,
 						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
 
@@ -1156,7 +1160,7 @@ class gauss_rand_field_gen_mpi
 
 	fftw_plan plan_grf_f;
 	fftw_plan plan_grf_b;
-	fftw_plan plan_grf_theta_b;
+	
 
 	ptrdiff_t alloc_local, local_n0, local_0_start;
 
@@ -1169,6 +1173,7 @@ class gauss_rand_field_gen_mpi
 		int l = ind[0]*ind[1]*ind[2];
 		ntN = l;
 		n[0]=ind[0];n[1]=ind[1];n[2]=ind[2];
+		n_loc[0]=ind_loc[0];n_loc[1]=ind_loc[1];n_loc[2]=ind_loc[2];
 
 
 		const ptrdiff_t n0 = n[0];
@@ -1252,10 +1257,10 @@ class gauss_rand_field_gen_mpi
 		  }
 
 		}
-
+		
 		fftw_execute(plan_grf_f);
 
-
+		
 		for(i=0;i<n_loc[0];++i)
 		{
 		  for(j=0;j<n_loc[1];++j)
@@ -1296,7 +1301,7 @@ class gauss_rand_field_gen_mpi
 		}
 		
 		fftw_execute(plan_grf_b);
-		fftw_execute(plan_grf_theta_b);
+		
 
 
 		for(i=0;i<n_loc[0];++i)

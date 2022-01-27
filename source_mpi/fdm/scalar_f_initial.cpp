@@ -88,7 +88,7 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
 	f_ini=dlogD_dloga(a);
 
 	//double kf = twopie*lenfac/(64.0);
-	boxlength = 1.0/h;
+	boxlength = 1.0;
 	
         dx[0] = boxlength/((double)(ind[0]-1));	dx[1] = boxlength/((double)(ind[1]-1));	dx[2] = boxlength/((double)(ind[2]-1));
 	L[0] = boxlength;	L[1] = boxlength;	L[2] = boxlength;
@@ -146,7 +146,7 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
 				}
 		
 			 
-			x_grid[ci][j] = ((double)xcntr[j])*dx[j];
+			x_grid[ci][j] = ((double)(xcntr[j]%n[j]))*dx[j];
 			
 		
 		}
@@ -240,8 +240,8 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
 
 			
 
-			//fprintf(fpstoreini,"%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\n",
-			//				a,dx[0]*i,dx[1]*j,dx[2]*k,psi_r_val,psi_i_val,potn,ini_dc[ci],ini_theta[ci],vel[ci][0],vel[ci][1],vel[ci][2]);
+			fprintf(fpstoreini,"%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\n",
+							a,dx[0]*i,dx[1]*j,dx[2]*k,psi_r_val,psi_i_val,potn,ini_dc[ci],ini_theta[ci],vel[ci][0],vel[ci][1],vel[ci][2]);
 			//printf("ci %d   %.15lf\n",ci,potn);
 
 	            }
@@ -264,21 +264,22 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
 	
 	
 
-	//fclose(fpstoreini);
+	fclose(fpstoreini);
 /*
 	FILE *fpwr_spec = fopen("spec_test.txt","w");
 	//cal_spectrum(double *f,int *kbingrid,int kbins,int *s,double *pwspctrm,double dk,double abyai, FILE *fspwrite)
 	cal_spectrum(ini_dc,kbin_grid, kbins,n,pwr_spec, dk,a/ai,fpwr_spec);
 	fclose(fpwr_spec);
 
+*/	
 	
 	
+  if(my_corank==0)	
+    {	vmax_cap=res_limits(max_potn, vmax, dx[0],ai,dt_limit, len_res);
 	
-	vmax_cap=res_limits(max_potn, vmax, dx[0],ai,dt_limit, len_res);
-	
-*/
+
 	printf("\nInitialization Complete from rank %d.\n",my_corank);
-	/*printf("\n Length details\n");
+	printf("\n Length details\n");
 	printf("	L is %lf\n",L[0]);
 	printf("	dx is %lf req len res %lf\n",dx[0],len_res);
 	printf("\nK details:\n	dk is %lf  per MPc\n",dk/lenfac);
@@ -290,7 +291,7 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
 	printf("	Max vel cap is %e  /c\n",vmax_cap);
 	printf("	de Broglie wave is %e\n",twopie*hbar_by_m/vmax);
 	printf("	Max potential is %.10lf  /c^2\n",max_potn);
-
+     }
 
 	/*printf("\n Nyquist Wavenumber is %lf",M_PI/dx[0]);
 	printf("\n	Min k_mag is %lf per MPc:: corr lmbda is %.16lf MPc",1.0/(dx[0]*lenfac*((double) n)),dx[0]*lenfac*((double) n));

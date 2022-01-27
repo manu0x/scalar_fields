@@ -1,6 +1,6 @@
 
 
-int evolve_kdk(int *n,int *n_loc,fdm_psi_mpi &psi,metric_potential_mpi &phi,double k_grid[][3],int kbin_grid[],
+int evolve_kdk(int *n_glbl,int *n,fdm_psi_mpi &psi,metric_potential_mpi &phi,double k_grid[][3],int kbin_grid[],
 					double a_final,double a_ini,double a0,double omega_dm_ini,double *dx,double dk,int kbins,double dt,bool use_hdf_format)
 {	printf("Yo\n");
 	double a,a_t,t,ak,a3a03omega,dti=dt;
@@ -25,6 +25,9 @@ int evolve_kdk(int *n,int *n_loc,fdm_psi_mpi &psi,metric_potential_mpi &phi,doub
 	FILE *fpwr_spec ;
 	hid_t filename;
 	herr_t status;
+	MPI_Info info  = MPI_INFO_NULL;
+	hid_t plist_id;
+
 	//cal_spectrum(double *f,int *kbingrid,int kbins,int *s,double *pwspctrm,double dk,double abyai, FILE *fspwrite)
 	
 	
@@ -69,12 +72,22 @@ int evolve_kdk(int *n,int *n_loc,fdm_psi_mpi &psi,metric_potential_mpi &phi,doub
 
 			  
 			  	fpwr_spec = fopen(fp_pwr_spec_name,"w");
-		 		filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC,H5P_DEFAULT, H5P_DEFAULT);
+
+		 		plist_id = H5Pcreate(H5P_FILE_ACCESS);
+        			H5Pset_fapl_mpio(plist_id, cart_comm, info);
+
+		
+		 		filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+				H5Pclose(plist_id);
+						
+				
+				//evolve_hdf5_write(n_glbl,psi, phi,filename,dc,a3a03omega,a,true);
+				status=H5Fclose(filename);
+
 				printf("hdf5 %s\n",fp_hdf5_name);
 				printf("pwr spec name %s\n",fp_pwr_spec_name);		
 				
-				evolve_hdf5_write(n,psi, phi,filename,dc,a3a03omega,a,true);
-				status=H5Fclose (filename);
+				
 				cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
 				fclose(fpwr_spec);
 
@@ -212,12 +225,22 @@ int evolve_kdk(int *n,int *n_loc,fdm_psi_mpi &psi,metric_potential_mpi &phi,doub
 
 			  
 		  	fpwr_spec = fopen(fp_pwr_spec_name,"w");
-		 	filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC,H5P_DEFAULT, H5P_DEFAULT);
+
+		 	plist_id = H5Pcreate(H5P_FILE_ACCESS);
+        		H5Pset_fapl_mpio(plist_id, cart_comm, info);
+
+		
+		 	filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+			H5Pclose(plist_id);
+						
+				
+			//evolve_hdf5_write(n_glbl,psi, phi,filename,dc,a3a03omega,a,true);
+			status=H5Fclose(filename);
+
 			printf("hdf5 %s\n",fp_hdf5_name);
 			printf("pwr spec name %s\n",fp_pwr_spec_name);		
 			
-			evolve_hdf5_write(n,psi, phi,filename,dc,a3a03omega,a,true);
-			status=H5Fclose (filename);
+		
 			cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
 			fclose(fpwr_spec);
 
@@ -254,7 +277,7 @@ int evolve_kdk(int *n,int *n_loc,fdm_psi_mpi &psi,metric_potential_mpi &phi,doub
 
 }
 
-int evolve_kdk_openmp(int *n,int *n_loc,fdm_psi_mpi &psi,metric_potential_mpi &phi,double k_grid[][3],int kbin_grid[],
+int evolve_kdk_openmp(int *n_glbl,int *n,fdm_psi_mpi &psi,metric_potential_mpi &phi,double k_grid[][3],int kbin_grid[],
 					double a_final,double a_ini,double a0,double omega_dm_ini,double *dx,double dk,int kbins,double dt,bool use_hdf_format)
 {	printf("Yo\n");
 	double a,a_t,t,ak,a3a03omega,dti=dt;
@@ -278,6 +301,10 @@ int evolve_kdk_openmp(int *n,int *n_loc,fdm_psi_mpi &psi,metric_potential_mpi &p
 	FILE *fpwr_spec ;
 	hid_t filename;
 	herr_t status;
+	
+	MPI_Info info  = MPI_INFO_NULL;
+	hid_t plist_id;
+
 	//cal_spectrum(double *f,int *kbingrid,int kbins,int *s,double *pwspctrm,double dk,double abyai, FILE *fspwrite)
 	
 	
@@ -322,15 +349,24 @@ int evolve_kdk_openmp(int *n,int *n_loc,fdm_psi_mpi &psi,metric_potential_mpi &p
 
 			  
 			  	fpwr_spec = fopen(fp_pwr_spec_name,"w");
-		 		filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC,H5P_DEFAULT, H5P_DEFAULT);
-				printf("hdf5 %s\n",fp_hdf5_name);
-				printf("pwr spec name %s\n",fp_pwr_spec_name);		
+
+				plist_id = H5Pcreate(H5P_FILE_ACCESS);
+        			H5Pset_fapl_mpio(plist_id, cart_comm, info);
+
+		
+		 		filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+				H5Pclose(plist_id);
+						
 				
-				evolve_hdf5_write(n,psi, phi,filename,dc,a3a03omega,a,true);
+				//evolve_hdf5_write(n_glbl,psi, phi,filename,dc,a3a03omega,a,true);
 				status=H5Fclose(filename);
-				cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
+			
+				printf("hdf5 %s\n",fp_hdf5_name);
+				printf("pwr spec name %s\n",fp_pwr_spec_name);
+	
+				//cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
 				fclose(fpwr_spec);	
-				
+				 
 				++prn;
 
 			}
@@ -371,7 +407,7 @@ int evolve_kdk_openmp(int *n,int *n_loc,fdm_psi_mpi &psi,metric_potential_mpi &p
 
 	  }
 	a_t = a*sqrt(omega_dm_ini*pow(a0/a,3.0)+ (1.0-omega_dm_ini));
-	  
+	 
 	ak = a+a_t*dt;
  #pragma omp parallel for private(j,k,ci,ind,c1,potn,psi_vel,psi_k,psi_amp,poisson_rhs)
 	 for(i=0;i<n[0];++i)
@@ -472,15 +508,25 @@ int evolve_kdk_openmp(int *n,int *n_loc,fdm_psi_mpi &psi,metric_potential_mpi &p
 
 			  
 		  	fpwr_spec = fopen(fp_pwr_spec_name,"w");
-		 	filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC,H5P_DEFAULT, H5P_DEFAULT);
+
+		 	plist_id = H5Pcreate(H5P_FILE_ACCESS);
+        		H5Pset_fapl_mpio(plist_id, cart_comm, info);
+
+		
+		 	filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+			H5Pclose(plist_id);
+						
+				
+			//evolve_hdf5_write(n_glbl,psi, phi,filename,dc,a3a03omega,a,true);
+			status=H5Fclose(filename);
 			printf("hdf5 %s\n",fp_hdf5_name);
 			printf("pwr spec name %s\n",fp_pwr_spec_name);		
 			
-			evolve_hdf5_write(n,psi, phi,filename,dc,a3a03omega,a,true);
+			
 
 	
-			status=H5Fclose(filename);
-			cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
+			
+			//cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
 			fclose(fpwr_spec);
 
 		}

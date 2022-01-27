@@ -64,7 +64,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
       int n[3]{ind_loc[0],ind_loc[1],ind_loc[2]};
       int loc_ind[3],err_hold;
 
-      double ini_dc[tN],pwr_spec[tN];
+      double ini_dc[tN],pwr_spec[tN],dc[tN];
       double poisson_rhs;
       double f_ini;
       double potn;
@@ -90,9 +90,10 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 	f_ini=dlogD_dloga(a);
 
 	//double kf = twopie*lenfac/(64.0);
-	boxlength = 1.0*space_mpc_to_dimless;
+	boxlength = 1.0;
 	
-        dx[0] = boxlength/((double)(ind[0]-1));	dx[1] = boxlength/((double)(ind[1]-1));	dx[2] = boxlength/((double)(ind[2]-1));
+        dx[0] = boxlength*space_mpc_to_dimless/((double)(ind[0]-1));	dx[1] = boxlength*space_mpc_to_dimless/((double)(ind[1]-1));	
+	dx[2] = boxlength*space_mpc_to_dimless/((double)(ind[2]-1));
 	L[0] = boxlength;	L[1] = boxlength;	L[2] = boxlength;
 	dk = 1.0/boxlength;
 	kbins = 0;
@@ -148,7 +149,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 				}
 		
 			 
-			x_grid[ci][j] = ((double)xcntr[j])*dx[j];
+			x_grid[ci][j] = ((double)(xcntr[j]%n[j]))*dx[j];
 			
 		
 		}
@@ -185,7 +186,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 	//ini_rand_field_2(ind,k_grid,kbin_grid,kbins, dk,
 	//					ini_dc,ini_theta,a,a0,a_t,pk);
 	//ini_rand_field(ind,kmag_grid,ini_dc,ini_theta,a,a0,a_t,pk);
-
+	
 	grf.gen(k_grid,ini_dc, pk,a_t,a,a0,f_ini);
 	
 	double pow_arg,fa_t_val;
@@ -207,7 +208,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 
 			
 
-			//poisson_rhs = 1.5*H0*H0*a*a*(psi_amp*psi_amp - omega_dm_ini*pow(a0/ai,3.0));
+			 poisson_rhs = -1.5*omega_dm_ini*pow(a0/ai,3.0*(1.0+w))*ini_dc[ci];
 
 			//printf("P rhs %.15lf %.15lf %.10lf %.10lf %.10lf\n",poisson_rhs,ggg,1.5*H0*H0,psi_i_val,ini_theta[ci]);
 			poisson_phi.update_4pieGpsi(ci,poisson_rhs);
@@ -221,7 +222,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 
 	
 	
-	
+	poisson_phi.solve_poisson(k_grid, ai, Hi);
 	int chk; double fa[2];
 	for(i=0;i<n[0];++i)
 		{
@@ -249,21 +250,22 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 		}
 
 	mpi_check = falpha.mpi_send_recv();
-/*	psi.write_hdf5_psi_test();
+	
 	
 	plist_id = H5Pcreate(H5P_FILE_ACCESS);
         H5Pset_fapl_mpio(plist_id, cart_comm, info);
 
 	file = H5Fcreate("test_initial.hdf5", H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
 	H5Pclose(plist_id);
-	initial_hdf5_write_mpi(ind,ind_loc, psi, phi,file,dc,k_grid,x_grid,a3a03omega, ai,cum_lin_ind,true);
+	initial_hdf5_write_mpi(ind,ind_loc, falpha, phi,file,dc,k_grid,x_grid,a3a03omega, ai,cum_lin_ind,true);
+
 	H5Fclose(file);
 
-*/	
+	
 	
 	
 
-	//fclose(fpstoreini);
+	fclose(fpstoreini);
 /*
 	FILE *fpwr_spec = fopen("spec_test.txt","w");
 	//cal_spectrum(double *f,int *kbingrid,int kbins,int *s,double *pwspctrm,double dk,double abyai, FILE *fspwrite)

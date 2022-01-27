@@ -9,11 +9,11 @@ using namespace std;
 #include <mpi.h>
 #include <time.h>
 
-#include "../other_source/mt19937ar.c"
+#include "../../other_source/mt19937ar.c"
 #include <fftw3.h>
 #include <fftw3-mpi.h>
 #include <hdf5.h>
-#include "../other_source/spline.c"
+#include "../../other_source/spline.c"
 
 
 enum code1 {give_f,give_f_t,give_f_x,give_f_y,give_f_z,give_f_lap};
@@ -23,7 +23,7 @@ enum code1 {give_f,give_f_t,give_f_x,give_f_y,give_f_z,give_f_lap};
 
 bool hdf5_format;
 
-#include "../source_mpi/my_classes.cpp"
+#include "../../source_mpi/fdm/my_classes.cpp"
 
 #include "utilities.h"
 #include "scalar_f_initial.h"

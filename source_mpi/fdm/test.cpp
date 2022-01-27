@@ -1,4 +1,5 @@
 using namespace std;
+using namespace std;
 #include "../../include_mpi/fdm/include_custom.h"
 
 
@@ -28,7 +29,7 @@ int main(int argc, char **argv)
 
 
 	int i;
-      	int ind[3]{128,128,128};
+      	int ind[3]{6,3,3};
 	
 	fftw_mpi_init();
 ////////////////////////////////	MPI related...	/////////////////////////////
@@ -177,42 +178,108 @@ MPI_Status stdn,stup;
 	int tN = n_axis[0]*n_axis[1]*n_axis[2];
 	int tN_loc = n_axis_loc[0]*n_axis_loc[1]*n_axis_loc[2];
 
-	fdm_psi_mpi psi(n_axis_loc,cum_lin_ind,true);
-	metric_potential_mpi phi(n_axis,n_axis_loc,cum_lin_ind,true);
-	//psi.test_ind();
-	//psi.test_ind2();
-	
-
 	int use_omp{1};
 	bool use_hdf5_format{true};
 	
 
-	const char name[] = "lcdm_00_pk.dat";
-	printf("\n Building pk...\n");
-	ini_power_generator pk(name);
-	pk.check(0.0);
-	gauss_rand_field_gen_mpi grf(n_axis,n_axis_loc);
 	
-	//gen.stats_check(3.1);
+	scalar_field_3d_mpi f(n_axis_loc, cum_lin_ind,false,false);
+
+	int ind_loc[3];
+	double fv;
+	FILE *fp1,*fp2;
+	if(my_corank==0)
+	fp1 = fopen("testONE.txt","w");
+	else
+	fp2 = fopen("testTWO.txt","w");
+
+	int j,k;
+	
+
+
+
+	 for(i=0;i<n_axis_loc[0];++i)
+	 {
+		  for(j=0;j<n_axis_loc[1];++j)
+		  {
+		    for(k=0;k<n_axis_loc[2];++k)
+		    {
+
+			ind_loc[0] = i; ind_loc[1] = j; ind_loc[2] = k;
+			f.update_field(ind_loc,(double)(i+1));	
+
+
+		    }
+
+		   }
+	}
+
+
+	for(i=-2;i<n_axis_loc[0]+2;++i)
+	 {
+		  for(j=0;j<n_axis_loc[1];++j)
+		  {
+		    for(k=0;k<n_axis_loc[2];++k)
+		    {
+
+			ind_loc[0] = i; ind_loc[1] = j; ind_loc[2] = k;
+			fv =  f.get_field(ind_loc,give_f);	
+			if(my_corank==0)
+			fprintf(fp1,"%lf\t",fv);
+			else
+			fprintf(fp2,"%lf\t",fv);
+
+
+		    }
+			if(my_corank==0)
+			fprintf(fp1,"\n");
+			else
+			fprintf(fp2,"\n");
+		   }
+
+		if(my_corank==0)
+		fprintf(fp1,"\n\n\n");
+		else
+		fprintf(fp2,"\n\n\n");
+	}
+	
+	if(my_corank==0)
+	fprintf(fp1,"\n###############################################\n");
+	else
+	fprintf(fp2,"\n###############################################\n");
+	
+	f.mpi_send_recv();
+
+	for(i=-2;i<n_axis_loc[0]+2;++i)
+	 {
+		  for(j=0;j<n_axis_loc[1];++j)
+		  {
+		    for(k=0;k<n_axis_loc[2];++k)
+		    {
+
+			ind_loc[0] = i; ind_loc[1] = j; ind_loc[2] = k;
+			fv =  f.get_field(ind_loc,give_f);	
+			if(my_corank==0)
+			fprintf(fp1,"%lf\t",fv);
+			else
+			fprintf(fp2,"%lf\t",fv);
+
+
+		    }
+			if(my_corank==0)
+			fprintf(fp1,"\n");
+			else
+			fprintf(fp2,"\n");
+		   }
+
+		if(my_corank==0)
+		fprintf(fp1,"\n\n\n");
+		else
+		fprintf(fp2,"\n\n\n");
+	}
 
 	
-
-	double a0,ai,omega_dm_ini;
-	double k_grid[tN_loc][3],dx[3],dk;
-	int kbins,kbin_grid[tN_loc];
 	
-	set_back_cosmo(a0,ai,Hi,omega_dm_ini);
-	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n",Hi,omega_dm_ini,ai);
-
-	initialise_mpi(n_axis,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf,use_hdf5_format,cum_lin_ind);
-	//psi.mpi_send_recv();
-	
-	//printf("\ndk is %lf\n",dk);
-
-	//if(use_omp)
-	//fail = evolve_kdk_openmp(ind,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4,use_hdf5_format);
-	//else
-	//fail = evolve_kdk(ind,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4,use_hdf5_format);
 	
 	
 	printf("fail is %d\n",fail);
@@ -222,6 +289,13 @@ MPI_Status stdn,stup;
 	MPI_Finalize();
 	
 }
+
+
+
+
+
+
+
 
 
 

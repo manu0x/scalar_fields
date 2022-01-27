@@ -7,4 +7,4 @@ void initialise_mpi(int * ,int *,fdm_psi_mpi &,metric_potential_mpi &,double [][
 		   
 double ini_power_spec(double );
 
-#include "../source_mpi/scalar_f_initial.cpp"
+#include "../../source_mpi/fdm/scalar_f_initial.cpp"
