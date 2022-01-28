@@ -182,7 +182,7 @@ int evolve_kdk(int *n_glbl,int *n,fdm_psi_mpi &psi,metric_potential_mpi &phi,dou
 			psi_amp = sqrt(psi_k[0]*psi_k[0] + psi_k[1]*psi_k[1]);
 			if(isnan(psi_amp))
 			{	fail=1;
-				printf("FAIL %d %d %d\n",i,j,k);break;
+				//printf("FAIL %d %d %d\n",i,j,k);break;
 			}
 
 			poisson_rhs = 1.5*H0*H0*a*a*(psi_amp*psi_amp - omega_dm_ini*pow(a0/a,3.0));
@@ -465,7 +465,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_psi_mpi &psi,metric_potential_mpi &
 			psi_amp = sqrt(psi_k[0]*psi_k[0] + psi_k[1]*psi_k[1]);
 			if(isnan(psi_amp))
 			{	fail=1;
-				printf("FAIL %d %d %d\n",i,j,k);break;
+				//printf("FAIL %d %d %d\n",i,j,k);break;
 			}
 
 			poisson_rhs = 1.5*H0*H0*a*a*(psi_amp*psi_amp - omega_dm_ini*pow(a0/a,3.0));
