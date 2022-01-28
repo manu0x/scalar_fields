@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 
 
 	int i;
-      	int ind[3]{128,128,128};
+      	int ind[3]{256,256,256};
 	
 	fftw_mpi_init();
 ////////////////////////////////	MPI related...	/////////////////////////////

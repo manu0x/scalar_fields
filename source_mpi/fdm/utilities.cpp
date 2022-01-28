@@ -14,15 +14,20 @@ int calculate_vel_from_psi(int *n,double *dx,fdm_psi_mpi psi,double v[][3],doubl
 	printf("velcal ...  %d %d %d\n",n[0],n[1],n[2]);
 	
 	theta = new double** [n[0]+4] ;
+	double *theta_pool;
 	vmax = 0.0;   
 	
 	   for(i=0;(i<n[0]+4);++i)
 	   {
 		theta[i] = new double* [n[1]];
+		theta_pool =  new double [n[1]*n[2]];
 		
 		for( j=0;j<n[1];++j)
 	     	{
-		  theta[i][j] = new  double[n[2]] ;
+		  theta[i][j] = theta_pool;
+		  //f_t[i][j] = f_t_pool;
+
+		  theta_pool+=n[2];
 		  
 		 }
 
@@ -74,11 +79,25 @@ int calculate_vel_from_psi(int *n,double *dx,fdm_psi_mpi psi,double v[][3],doubl
 		int sendtag = 1,recvtag = 1;
 
 
-		mpi_check = MPI_Isend(theta[2],2, c_x_plain, left_rank,sendtag, cart_comm,&send_req);
-		mpi_check = MPI_Irecv(theta[n[0]+2], 2, c_x_plain,right_rank , recvtag,cart_comm, &recv_req);
+		mpi_check = MPI_Isend(&theta[2][0][0],1, c_x_plain, left_rank,sendtag, cart_comm,&send_req);
+		mpi_check = MPI_Irecv(&theta[n[0]+2][0][0],1, c_x_plain,right_rank , recvtag,cart_comm, &recv_req);
 
-		mpi_check = MPI_Isend(theta[n[0]],2, c_x_plain, right_rank,sendtag, cart_comm,&send_req);
-		mpi_check = MPI_Irecv(theta[0], 2, c_x_plain,right_rank , recvtag,cart_comm, &recv_req);
+		mpi_check = MPI_Isend(&theta[3][0][0],1, c_x_plain, left_rank,sendtag, cart_comm,&send_req);
+		mpi_check = MPI_Irecv(&theta[n[0]+3][0][0],1, c_x_plain,right_rank , recvtag,cart_comm, &recv_req);
+
+		
+
+	
+
+
+		mpi_check = MPI_Isend(&theta[n[0]][0][0],1, c_x_plain, right_rank,sendtag, cart_comm,&send_req);
+		mpi_check = MPI_Irecv(&theta[0][0][0], 1, c_x_plain,left_rank , recvtag,cart_comm, &recv_req);
+
+		mpi_check = MPI_Isend(&theta[n[0]+1][0][0],1, c_x_plain, right_rank,sendtag, cart_comm,&send_req);
+		mpi_check = MPI_Irecv(&theta[1][0][0], 1, c_x_plain,left_rank , recvtag,cart_comm, &recv_req);
+
+		MPI_Barrier(cart_comm);
+		
 
 
 

@@ -160,7 +160,7 @@ MPI_Status stdn,stup;
 		
 
 
- 	MPI_Type_vector(1,0,n_axis_loc[2]*n_axis_loc[1],MPI_DOUBLE,&c_x_plain);
+ 	MPI_Type_vector(1,9,1,MPI_DOUBLE,&c_x_plain);
   	MPI_Type_commit(&c_x_plain);
   
  	//MPI_Type_vector(n_axis_loc[0],n_axis_loc[2],(n_axis_loc[2]+4)*(n_axis_loc[1]+4),MPI_DOUBLE,&c_y_plain);
@@ -193,7 +193,10 @@ MPI_Status stdn,stup;
 	else
 	fp2 = fopen("testTWO.txt","w");
 
-	int j,k;
+	int j,k,nx;
+
+	  nx = n_axis_loc[0]+4;
+	
 	
 
 
@@ -249,6 +252,8 @@ MPI_Status stdn,stup;
 	fprintf(fp2,"\n###############################################\n");
 	
 	f.mpi_send_recv();
+
+	MPI_Barrier(cart_comm);
 
 	for(i=-2;i<n_axis_loc[0]+2;++i)
 	 {
