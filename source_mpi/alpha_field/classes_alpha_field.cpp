@@ -20,7 +20,7 @@ class scalar_field_3d_mpi
 	   ini_status = 'I';
 	   nx = n[0]+4;
 	   f = new double** [nx] ;
-	   f_t = new double** [nx] ;
+	   //f_t = new double** [nx] ;
 	   if(need_lap)
 	   f_lap = new double** [n[0]] ;
 	   if(need_space_grads)
@@ -30,7 +30,7 @@ class scalar_field_3d_mpi
 	     f_x[2] = new double** [n[0]];  
 	   }
 
-	   for(i=0;i<(nx);++i)
+/*	   for(i=0;i<(nx);++i)
 	   {
 		f[i] = new double* [n[1]];
 		f_t[i] = new double* [n[1]];
@@ -57,6 +57,84 @@ class scalar_field_3d_mpi
 		 }
 
 	    }
+*/
+
+	for(i=0;i<(nx);++i)
+	   {
+		f[i] = new double* [n[1]];
+		//f_t[i] = new double* [n[1]];
+
+		double *f_pool;
+		//double *f_t_pool;
+		double *f_lap_pool;
+		double *f_x_pool, *f_y_pool, *f_z_pool;
+
+		
+		 
+
+		if((need_lap)&&(i<n[0]))
+		{ f_lap[i] = new double* [n[1]];
+		   
+		}
+
+		if((need_space_grads)&&(i<n[0]))
+		{ f_x[0][i] = new double* [n[1]];
+		  f_x[1][i] = new double* [n[1]];
+		  f_x[2][i] = new double* [n[1]];
+
+		  
+		}
+
+
+		f_pool = new double [n[1]*n[2]];
+		  //f_t_pool = new double [n[1]*n[2]];
+
+			
+		if((need_space_grads)&&(i<n[0]))
+		  { f_x_pool = new double [n[1]*n[2]];
+		    f_y_pool = new double [n[1]*n[2]];
+		    f_z_pool = new double [n[1]*n[2]];
+		  }
+
+		if((need_lap)&&(i<n[0]))
+		  { f_lap_pool = new double [n[1]*n[2]];
+		    
+		  }
+		
+
+
+
+		for(int j=0;j<n[1];++j)
+	     	{
+		  
+		 
+		  f[i][j] = f_pool;
+		  //f_t[i][j] = f_t_pool;
+
+		  f_pool+=n[2];
+		  //f_t_pool+=n[2];
+		  
+
+		   if((need_lap)&&(i<n[0]))
+		   { f_lap[i][j] = f_lap_pool;
+	   	     f_lap_pool+=n[2];
+		    }
+		   if((need_space_grads)&&(i<n[0]))
+		   { f_x[0][i][j] = f_x_pool ;
+		     f_x[1][i][j] = f_y_pool ;
+		     f_x[2][i][j] = f_z_pool ;
+
+		     f_x_pool+=n[2];
+		     f_y_pool+=n[2];
+		     f_z_pool+=n[2];
+		   }
+	
+
+		 }
+
+	    }
+
+
 	if((need_lap)||(need_space_grads))
 	  {	
 		if((need_lap)&&(need_space_grads))
@@ -153,22 +231,14 @@ class scalar_field_3d_mpi
 	   for(i=0;i<3;++i)
 	   {
 	     
-	     if(i>0)
-	     {	ind_l1[i] = (n[i]+ind_lw[i]-1)%n[i];
+	  
+	     	ind_l1[i] = (n[i]+ind_lw[i]-1)%n[i];
 	     	ind_l2[i] = (n[i]+ind_lw[i]-2)%n[i];
 
 	     	ind_r1[i] = (ind_lw[i]+1)%n[i];
 	     	ind_r2[i] = (ind_lw[i]+2)%n[i];
-	      }
-	    else
-
-	      {	ind_l1[i] = (n[i]+ind_lw[i]-1);
-	     	ind_l2[i] = (n[i]+ind_lw[i]-2);
-
-	     	ind_r1[i] = (ind_lw[i]+1);
-	     	ind_r2[i] = (ind_lw[i]+2);
-	      }
-		
+	      
+	    
 	    
 	     if(spt_grad==true)
 	     {
@@ -182,7 +252,7 @@ class scalar_field_3d_mpi
 
 	     if(laplacian==true)
 	      {	m[0] = (16.0*f[ind_l1[0]][ind_l1[1]][ind_l1[2]]+16.0*f[ind_r1[0]][ind_r1[1]][ind_r1[2]]); 
-	      	m[1] = (-f[ind_l1[0]][ind_l1[1]][ind_l1[2]]-f[ind_r2[0]][ind_r2[1]][ind_r2[2]]);
+	      	m[1] = (-f[ind_l2[0]][ind_l2[1]][ind_l2[2]]-f[ind_r2[0]][ind_r2[1]][ind_r2[2]]);
 	      	m[2] = m[0] + m[1] -30.0*f[ind_lw[0]][ind_lw[1]][ind_lw[2]];
 	     	lapsum+= (m[2]/(dx[i]));
 
@@ -269,9 +339,23 @@ class scalar_field_3d_mpi
 		int sendtag = 1,recvtag = 1;
 
 
-		mpi_check = MPI_Isend(&f[0][0][0],2, c_x_plain, left_rank,sendtag, cart_comm,&send_req);
-		mpi_check = MPI_Irecv(&f[n[0]+2][0][0], 2, c_x_plain,right_rank , recvtag,cart_comm, &recv_req);
+		mpi_check = MPI_Isend(&f[2][0][0],1, c_x_plain, left_rank,sendtag, cart_comm,&send_req);
+		mpi_check = MPI_Irecv(&f[n[0]+2][0][0],1, c_x_plain,right_rank , recvtag,cart_comm, &recv_req);
 
+		mpi_check = MPI_Isend(&f[3][0][0],1, c_x_plain, left_rank,sendtag, cart_comm,&send_req);
+		mpi_check = MPI_Irecv(&f[n[0]+3][0][0],1, c_x_plain,right_rank , recvtag,cart_comm, &recv_req);
+
+		
+
+		
+
+
+		mpi_check = MPI_Isend(&f[n[0]][0][0],1, c_x_plain, right_rank,sendtag, cart_comm,&send_req);
+		mpi_check = MPI_Irecv(&f[0][0][0], 1, c_x_plain,left_rank , recvtag,cart_comm, &recv_req);
+
+		mpi_check = MPI_Isend(&f[n[0]+1][0][0],1, c_x_plain, right_rank,sendtag, cart_comm,&send_req);
+		mpi_check = MPI_Irecv(&f[1][0][0], 1, c_x_plain,left_rank , recvtag,cart_comm, &recv_req);
+	
 
 
 
@@ -286,7 +370,7 @@ class scalar_field_3d_mpi
                          right_rank, sendtag, right_rank, recvtag,
                         cart_comm, &status);
 */
-		printf("sending done for cart rank %d %d\n",my_cart_rank,n[0]);
+		//printf("sending done for cart rank %d %d\n",my_cart_rank,n[0]);
 		
 		return(mpi_check);
 	}

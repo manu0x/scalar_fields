@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 
 
 	int i;
-      	int ind[3]{256,256,256};
+      	int ind[3]{128,128,128};
 	
 	fftw_mpi_init();
 ////////////////////////////////	MPI related...	/////////////////////////////
@@ -205,14 +205,16 @@ MPI_Status stdn,stup;
 	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n",Hi,omega_dm_ini,ai);
 
 	initialise_mpi(n_axis,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf,use_hdf5_format,cum_lin_ind);
-	//psi.mpi_send_recv();
+	psi.mpi_send_recv();
+
+	MPI_Barrier(cart_comm);
 	
 	//printf("\ndk is %lf\n",dk);
 
-	//if(use_omp)
-	//fail = evolve_kdk_openmp(ind,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4,use_hdf5_format);
-	//else
-	//fail = evolve_kdk(ind,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4,use_hdf5_format);
+	if(use_omp)
+	fail = evolve_kdk_openmp(ind,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4,use_hdf5_format);
+	else
+	fail = evolve_kdk(ind,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4,use_hdf5_format);
 	
 	
 	printf("fail is %d\n",fail);
