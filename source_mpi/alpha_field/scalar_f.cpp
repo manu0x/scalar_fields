@@ -159,15 +159,15 @@ MPI_Status stdn,stup;
 		
 
 
- 	MPI_Type_vector(n_axis_loc[1],n_axis_loc[2],n_axis_loc[2]+4,MPI_DOUBLE,&c_x_plain);
+ 	
+ 	MPI_Type_vector(1,n_axis_loc[2]*n_axis_loc[1],0,MPI_DOUBLE,&c_x_plain);
   	MPI_Type_commit(&c_x_plain);
   
- 	MPI_Type_vector(n_axis_loc[0],n_axis_loc[2],(n_axis_loc[2]+4)*(n_axis_loc[1]+4),MPI_DOUBLE,&c_y_plain);
- 	MPI_Type_commit(&c_y_plain);
+ 	//MPI_Type_vector(n_axis_loc[0],n_axis_loc[2],(n_axis_loc[2]+4)*(n_axis_loc[1]+4),MPI_DOUBLE,&c_y_plain);
+ 	//MPI_Type_commit(&c_y_plain);
   
- 	MPI_Type_vector(n_axis_loc[0]*n_axis_loc[1],1,n_axis_loc[2]+4,MPI_DOUBLE,&c_z_plain);
- 	MPI_Type_commit(&c_z_plain);
-
+ 	//MPI_Type_vector(n_axis_loc[0]*n_axis_loc[1],1,n_axis_loc[2]+4,MPI_DOUBLE,&c_z_plain);
+ 	//MPI_Type_commit(&c_z_plain);
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

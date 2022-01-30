@@ -160,7 +160,7 @@ MPI_Status stdn,stup;
 		
 
 
- 	MPI_Type_vector(1,9,1,MPI_DOUBLE,&c_x_plain);
+ 	MPI_Type_vector(1,n_axis_loc[2]*n_axis_loc[1],0,MPI_DOUBLE,&c_x_plain);
   	MPI_Type_commit(&c_x_plain);
   
  	//MPI_Type_vector(n_axis_loc[0],n_axis_loc[2],(n_axis_loc[2]+4)*(n_axis_loc[1]+4),MPI_DOUBLE,&c_y_plain);
@@ -169,9 +169,6 @@ MPI_Status stdn,stup;
  	//MPI_Type_vector(n_axis_loc[0]*n_axis_loc[1],1,n_axis_loc[2]+4,MPI_DOUBLE,&c_z_plain);
  	//MPI_Type_commit(&c_z_plain);
 
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
 
 	int c1=1,c2=1,fail=0;
 		
@@ -209,7 +206,8 @@ MPI_Status stdn,stup;
 		    {
 
 			ind_loc[0] = i; ind_loc[1] = j; ind_loc[2] = k;
-			f.update_field(ind_loc,(double)(i+1));	
+			
+			f.update_field(ind_loc,(double)(i+1+my_corank*3));	
 
 
 		    }
@@ -290,6 +288,75 @@ MPI_Status stdn,stup;
 	printf("fail is %d\n",fail);
 	fftw_mpi_cleanup();
 	
+
+	//////////////////////////////////////////////////////////////////////// HDF5 /////////////////////////////////////
+
+	hid_t filename;
+	herr_t status;
+	
+	MPI_Info info  = MPI_INFO_NULL;
+	hid_t plist_id;
+
+
+	plist_id = H5Pcreate(H5P_FILE_ACCESS);
+        H5Pset_fapl_mpio(plist_id, cart_comm, info);
+
+		
+	filename = H5Fcreate ("test.hdf5", H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+	H5Pclose(plist_id);
+				
+
+	
+	hid_t file,dtype,dspace_glbl,dset_glbl;
+	hsize_t dim[3];
+	dim[0] = ind[0];
+	dim[1] = ind[1];
+	dim[2] = ind[2];
+
+	
+
+	
+
+
+	
+	dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
+    	status = H5Tset_order(dtype, H5T_ORDER_LE);
+	dspace_glbl = H5Screate_simple(3, dim, NULL);
+
+
+	
+		
+
+		
+
+		
+
+    /*
+     * Create the dataset with default properties and close filespace.
+     */
+   		dset_glbl = H5Dcreate(filename, "f", dtype, dspace_glbl,
+						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+				
+		
+
+		status = f.write_hdf5_mpi( filename,dtype,dset_glbl);
+		
+		
+		H5Dclose(dset_glbl);
+		H5Sclose(dspace_glbl);
+		H5Tclose(dtype);
+
+
+		
+				
+	
+	status=H5Fclose(filename);
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 
 	MPI_Finalize();
 	

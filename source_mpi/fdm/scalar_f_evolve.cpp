@@ -81,14 +81,14 @@ int evolve_kdk(int *n_glbl,int *n,fdm_psi_mpi &psi,metric_potential_mpi &phi,dou
 				H5Pclose(plist_id);
 						
 				
-				//evolve_hdf5_write(n_glbl,psi, phi,filename,dc,a3a03omega,a,true);
+				evolve_hdf5_write(n_glbl,psi, phi,filename,dc,a3a03omega,a,true);
 				status=H5Fclose(filename);
 
 				printf("hdf5 %s\n",fp_hdf5_name);
 				printf("pwr spec name %s\n",fp_pwr_spec_name);		
 				
 				
-				cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
+				//cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
 				fclose(fpwr_spec);
 
 			}
@@ -234,14 +234,14 @@ int evolve_kdk(int *n_glbl,int *n,fdm_psi_mpi &psi,metric_potential_mpi &phi,dou
 			H5Pclose(plist_id);
 						
 				
-			//evolve_hdf5_write(n_glbl,psi, phi,filename,dc,a3a03omega,a,true);
+			evolve_hdf5_write(n_glbl,psi, phi,filename,dc,a3a03omega,a,true);
 			status=H5Fclose(filename);
 
 			printf("hdf5 %s\n",fp_hdf5_name);
 			printf("pwr spec name %s\n",fp_pwr_spec_name);		
 			
 		
-			cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
+			//cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
 			fclose(fpwr_spec);
 
 		}
@@ -358,7 +358,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_psi_mpi &psi,metric_potential_mpi &
 				H5Pclose(plist_id);
 						
 				
-				//evolve_hdf5_write(n_glbl,psi, phi,filename,dc,a3a03omega,a,true);
+				evolve_hdf5_write(n_glbl,psi, phi,filename,dc,a3a03omega,a,true);
 				status=H5Fclose(filename);
 			
 				printf("hdf5 %s\n",fp_hdf5_name);
@@ -418,6 +418,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_psi_mpi &psi,metric_potential_mpi &
 		    {
 			ci = (n[2]*n[1])*i + n[2]*j + k;
 			ind[0] = i;ind[1] = j;ind[2] = k;
+
 			potn = phi.get_potential(ci);
 			c1  = psi.get_psi(ind,psi_val[ci]);///Check if this as intented
 			
@@ -428,7 +429,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_psi_mpi &psi,metric_potential_mpi &
 			psi_amp = sqrt(psi_k[0]*psi_k[0] + psi_k[1]*psi_k[1]);
 			
 			psi.update(ind,psi_k[0],psi_k[1]);
-
+	
 			poisson_rhs = 1.5*H0*H0*ak*ak*(psi_amp*psi_amp - omega_dm_ini*pow(a0/ak,3.0));
 			phi.update_4pieGpsi(ci,poisson_rhs);
 			
@@ -440,6 +441,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_psi_mpi &psi,metric_potential_mpi &
 	}
 	phi.solve_poisson(psi,k_grid);
 	mpi_check=psi.mpi_send_recv();
+	MPI_Barrier(cart_comm);
 
 	
 	a_t = ak*sqrt(omega_dm_ini*pow(a0/ak,3.0)+ (1.0-omega_dm_ini));
@@ -455,7 +457,9 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_psi_mpi &psi,metric_potential_mpi &
 			ci = (n[2]*n[1])*i + n[2]*j + k;
 			ind[0] = i;ind[1] = j;ind[2] = k;
 			
-			c1  = psi.get_psi(ind,psi_retrive);			
+			potn = phi.get_potential(ci);
+			c1  = psi.get_psi(ind,psi_retrive);	
+		
 			c1 = psi.calc_vel(ind,psi_vel, potn, ak, a_t,dx);
 			psi_k[0] = 0.5*(psi_retrive[0]+psi_val[ci][0]+ psi_vel[0]*dt);
 			psi_k[1] = 0.5*(psi_retrive[1]+psi_val[ci][1]+ psi_vel[1]*dt);
@@ -467,7 +471,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_psi_mpi &psi,metric_potential_mpi &
 			{	fail=1;
 				//printf("FAIL %d %d %d\n",i,j,k);break;
 			}
-
+	
 			poisson_rhs = 1.5*H0*H0*a*a*(psi_amp*psi_amp - omega_dm_ini*pow(a0/a,3.0));
 			phi.update_4pieGpsi(ci,poisson_rhs);
 			
@@ -480,7 +484,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_psi_mpi &psi,metric_potential_mpi &
 
 	phi.solve_poisson(psi,k_grid);
 	mpi_check=psi.mpi_send_recv();
-
+	MPI_Barrier(cart_comm);
 	
 	 if(isnan(a))
 	  {printf("FAILED  \n"); fail = 1;	break;
@@ -517,7 +521,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_psi_mpi &psi,metric_potential_mpi &
 			H5Pclose(plist_id);
 						
 				
-			//evolve_hdf5_write(n_glbl,psi, phi,filename,dc,a3a03omega,a,true);
+			evolve_hdf5_write(n_glbl,psi, phi,filename,dc,a3a03omega,a,true);
 			status=H5Fclose(filename);
 			printf("hdf5 %s\n",fp_hdf5_name);
 			printf("pwr spec name %s\n",fp_pwr_spec_name);		

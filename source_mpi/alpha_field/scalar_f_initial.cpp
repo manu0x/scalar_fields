@@ -35,7 +35,7 @@ double res_limits(double max_potn,double vmax,double dx,double a,double &dt_limi
 
 */
 void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potential_approx_1_t_mpi &phi,metric_potential_poisson_mpi poisson_phi,
-				double k_grid[][3],int kbin_grid[],double a0,double ai,double Hi,double omega_dm_ini,double *dx,double &dk,int & kbins,
+				double k_grid[][3],int kbin_grid[],double a0,double ai,double Hi,double omega_dm_0,double *dx,double &dk,int & kbins,
 								ini_power_generator pk,gauss_rand_field_gen_mpi grf,bool use_hdf5_format,int cum_lin_ind)
 {
       
@@ -73,7 +73,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
       double max_potn=0.0,vmax=0.0,vmax_cap;
       double dt_limit,len_res;
 
-      double a3a03omega = pow(a/a0,3.0*(1.0+w))/omega_dm_ini;
+      double a3a03omega = pow(a/a0,3.0*(1.0+w))/omega_dm_0;
 
 /////////////////////////	MPI and hdf5 variables	///////////////////////////////
 	
@@ -198,7 +198,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 		    {
 			ci = (n[2]*n[1])*i + n[2]*j + k;
 			loc_ind[0] = i;  loc_ind[1] = j;  loc_ind[2] = k;
-			pow_arg = 3.0*Hi*Hi*Mfield*Mfield*Mfield*Mfield*(omega_dm_ini*pow(a0/ai,3.0*(1.0+w))*(1.0+ini_dc[ci]))/(4.0*twopie*G*(2.0*alpha-1.0));
+			pow_arg = 3.0*(Hi/H0)*(Hi/H0)*pow(Mfield,4.0*(alpha-1.0))*(omega_dm_0*pow(a0/ai,3.0*(1.0+w))*(1.0+ini_dc[ci]))/(4.0*twopie*G*(2.0*alpha-1.0));
 			fa_t_val = pow(pow_arg,1.0/alpha);
 			
 
@@ -208,7 +208,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 
 			
 
-			 poisson_rhs = -1.5*omega_dm_ini*pow(a0/ai,3.0*(1.0+w))*ini_dc[ci];
+			 poisson_rhs = -1.5*omega_dm_0*pow(a0/ai,3.0*(1.0+w))*ini_dc[ci];
 
 			//printf("P rhs %.15lf %.15lf %.10lf %.10lf %.10lf\n",poisson_rhs,ggg,1.5*H0*H0,psi_i_val,ini_theta[ci]);
 			poisson_phi.update_4pieGpsi(ci,poisson_rhs);
