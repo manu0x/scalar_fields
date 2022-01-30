@@ -482,7 +482,7 @@ class metric_potential_approx_1_t_mpi
 	
 
 
-	int calc_vel(int * ind,double &potn_vel,double f_t,double a,double a_t,double *dx)
+	int calc_vel(int * ind,double &potn_vel,double f_t,double a,double a_t,double *dx,double omega_de_0)
 	{
 		int c1;		
 		double potn_val,lap_potn;
@@ -493,7 +493,7 @@ class metric_potential_approx_1_t_mpi
 		potn_val = potn.get_field(ind,give_f);
 		
 		
-		potn_vel = potn_approx_vel(a,a_t,potn_val,lap_potn,f_t);
+		potn_vel = potn_approx_vel(a,a_t,potn_val,lap_potn,f_t,omega_de_0);
 		
 		
 		if(isnan(potn_vel))

@@ -1,7 +1,7 @@
 
 
 int evolve_kdk(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_approx_1_t_mpi &phi,double k_grid[][3],int kbin_grid[],
-					double a_final,double a_ini,double a0,double omega_dm_ini,double *dx,double dk,int kbins,double dt,
+					double a_final,double a_ini,double a0,double omega_dm_0,double *dx,double dk,int kbins,double dt,
 						int cum_lin_id,bool use_hdf_format)
 {	printf("Yo\n");
 	double a,a_t,t,ak,a3a03omega,dti=dt;
@@ -19,6 +19,9 @@ int evolve_kdk(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_appr
 	int prn=0;	
 	
 	int mpi_check;
+	MPI_Info info  = MPI_INFO_NULL;
+	hid_t plist_id;
+
 	
 	
 	FILE *fp_falpha;
@@ -43,7 +46,7 @@ int evolve_kdk(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_appr
 	  {
 		
 		a_print+=1e-3;
-		a3a03omega = pow(a/a0,3.0*(1.0+w))/omega_dm_ini;
+		a3a03omega = pow(a/a0,3.0*(1.0+w))/omega_dm_0;
 		z_cur = ((a0/a) -1.0);
 
 		char fp_falpha_name[20]("f_alpha_z_");
@@ -71,7 +74,13 @@ int evolve_kdk(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_appr
 
 			  
 			  	fpwr_spec = fopen(fp_pwr_spec_name,"w");
-		 		filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC,H5P_DEFAULT, H5P_DEFAULT);
+		 		plist_id = H5Pcreate(H5P_FILE_ACCESS);
+        			H5Pset_fapl_mpio(plist_id, cart_comm, info);
+
+		
+		 		filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+				H5Pclose(plist_id);
+
 				printf("hdf5 %s\n",fp_hdf5_name);
 				printf("pwr spec name %s\n",fp_pwr_spec_name);		
 				
@@ -118,7 +127,7 @@ int evolve_kdk(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_appr
 		
 
 	  }
-	a_t = a*sqrt(omega_dm_ini*pow(a0/a,3.0*(1.0+w))+ (1.0-omega_dm_ini));
+	a_t = a*sqrt(omega_dm_0*pow(a0/a,3.0*(1.0+w))+ (1.0-omega_dm_0));
 	  
 	ak = a+a_t*dt;
 
@@ -136,7 +145,7 @@ int evolve_kdk(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_appr
 			c1 = phi.get_potn_spt_der(ind,potn_der);
 			c1  = f_alpha.get_field_alpha(ind,fa_val[ci]);///Check if this as intented
 
-			c1 = phi.calc_vel(ind,potn_t,fa_val[ci][1],a,a_t,dx);
+			c1 = phi.calc_vel(ind,potn_t,fa_val[ci][1],a,a_t,dx,(1.0-omega_dm_0));
 			
 			c1 = f_alpha.calc_acc(ind,acc_fa, potn_val[ci], potn_t,potn_der, a, a_t,dx);
 				
@@ -162,7 +171,7 @@ int evolve_kdk(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_appr
 	mpi_check = phi.mpi_send_recv();
 	mpi_check = MPI_Barrier(cart_comm);
 	
-	a_t = ak*sqrt(omega_dm_ini*pow(a0/ak,3.0*(1.0+w))+ (1.0-omega_dm_ini));
+	a_t = ak*sqrt(omega_dm_0*pow(a0/ak,3.0*(1.0+w))+ (1.0-omega_dm_0));
 	a = 0.5*(ak+a+a_t*dt);
 	for(i=0;(i<n[0])&&(!fail);++i)
 	 {
@@ -178,7 +187,7 @@ int evolve_kdk(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_appr
 			
 			c1  = f_alpha.get_field_alpha(ind,fa_retrive);
 			potn_k = phi.get_potential(ind);	
-			c1 = phi.calc_vel(ind,potn_t,fa_retrive[1],a,a_t,dx);	
+			c1 = phi.calc_vel(ind,potn_t,fa_retrive[1],a,a_t,dx,(1.0-omega_dm_0));	
 			c1 = phi.get_potn_spt_der(ind,potn_der);	
 			c1 = f_alpha.calc_acc(ind,acc_fa, potn_k, potn_t,potn_der, a, a_t,dx);
 
@@ -209,7 +218,7 @@ int evolve_kdk(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_appr
 
 	}
 
-	a3a03omega = pow(a/a0,3.0*(1.0+w))/omega_dm_ini;	
+	a3a03omega = pow(a/a0,3.0*(1.0+w))/omega_dm_0;	
 	z_cur = ((a0/a) -1.0);
 
 	char fp_falpha_name[20]("f_alpha_z_");
@@ -229,7 +238,12 @@ int evolve_kdk(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_appr
 
 			  
 		  	fpwr_spec = fopen(fp_pwr_spec_name,"w");
-		 	filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC,H5P_DEFAULT, H5P_DEFAULT);
+		 	plist_id = H5Pcreate(H5P_FILE_ACCESS);
+        		H5Pset_fapl_mpio(plist_id, cart_comm, info);
+
+		
+		 	filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+			H5Pclose(plist_id);
 			printf("hdf5 %s\n",fp_hdf5_name);
 			printf("pwr spec name %s\n",fp_pwr_spec_name);		
 			
@@ -272,7 +286,7 @@ int evolve_kdk(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_appr
 }
 
 int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_approx_1_t_mpi &phi,double k_grid[][3],int kbin_grid[],
-					double a_final,double a_ini,double a0,double omega_dm_ini,double *dx,double dk,int kbins,double dt,
+					double a_final,double a_ini,double a0,double omega_dm_0,double *dx,double dk,int kbins,double dt,
 							int cum_lin_id,bool use_hdf_format)
 {	printf("Yo\n");
 	double a,a_t,t,ak,a3a03omega,dti=dt;
@@ -290,7 +304,9 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 	int prn=0;	
 	
 	int mpi_check;
-	
+	MPI_Info info  = MPI_INFO_NULL;
+	hid_t plist_id;
+
 	
 	FILE *fp_falpha;
 	FILE *fp_phi;
@@ -305,7 +321,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 	
 	
 	
-
+	
 
 	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail);t+=dt,++step_cnt)
 	{
@@ -314,7 +330,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 	  {
 		
 		a_print+=1e-3;
-		a3a03omega = pow(a/a0,3.0*(1.0+w))/omega_dm_ini;
+		a3a03omega = pow(a/a0,3.0*(1.0+w))/omega_dm_0;
 		z_cur = ((a0/a) -1.0);
 
 		char fp_falpha_name[20]("f_alpha_z_");
@@ -342,13 +358,20 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 
 			  
 			  	fpwr_spec = fopen(fp_pwr_spec_name,"w");
-		 		filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC,H5P_DEFAULT, H5P_DEFAULT);
+
+		 		plist_id = H5Pcreate(H5P_FILE_ACCESS);
+        			H5Pset_fapl_mpio(plist_id, cart_comm, info);
+
+		
+		 		filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+				H5Pclose(plist_id);
+
 				printf("hdf5 %s\n",fp_hdf5_name);
 				printf("pwr spec name %s\n",fp_pwr_spec_name);		
 				
 				evolve_hdf5_write(n_glbl,f_alpha, phi,filename,dc,a3a03omega,a,cum_lin_id,true);
 				status=H5Fclose(filename);
-				cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
+				//cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
 				fclose(fpwr_spec);	
 				
 				++prn;
@@ -386,17 +409,17 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 		}
 
 		
-
+	
 		
 		
 
 	  }
-
-
-	a_t = a*sqrt(omega_dm_ini*pow(a0/a,3.0*(1.0+w))+ (1.0-omega_dm_ini));
+	
+	
+	a_t = a*sqrt(omega_dm_0*pow(a0/a,3.0*(1.0+w))+ (1.0-omega_dm_0));
 	  
 	ak = a+a_t*dt;
- #pragma omp parallel for private(j,k,ci,ind,c1,potn_t,fa_k,potn_der,acc_fa)
+ #pragma omp parallel for private(j,k,ci,ind,c1,fa_k,fa_vel,potn,potn_k,potn_t,acc_fa,potn_der)
 	 for(i=0;i<n[0];++i)
 	 {
 		  for(j=0;j<n[1];++j)
@@ -411,7 +434,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 			c1 = phi.get_potn_spt_der(ind,potn_der);
 			c1  = f_alpha.get_field_alpha(ind,fa_val[ci]);///Check if this as intented
 
-			c1 = phi.calc_vel(ind,potn_t,fa_val[ci][1],a,a_t,dx);
+			c1 = phi.calc_vel(ind,potn_t,fa_val[ci][1],a,a_t,dx,(1.0-omega_dm_0));
 			
 			c1 = f_alpha.calc_acc(ind,acc_fa, potn_val[ci], potn_t,potn_der, a, a_t,dx);
 				
@@ -428,16 +451,18 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 
 		   }
 	}
+	//printf("YOYOYOYO\n");
+	
 	mpi_check = f_alpha.mpi_send_recv();
 	mpi_check = phi.mpi_send_recv();
 	mpi_check = MPI_Barrier(cart_comm);
 	
-
 	
-	a_t = ak*sqrt(omega_dm_ini*pow(a0/ak,3.0*(1.0+w))+ (1.0-omega_dm_ini));
+	
+	a_t = ak*sqrt(omega_dm_0*pow(a0/ak,3.0*(1.0+w))+ (1.0-omega_dm_0));
 	a = 0.5*(ak+a+a_t*dt);
 
- #pragma omp parallel for private(j,k,ci,ind,c1,potn,psi_vel,psi_k,psi_amp,poisson_rhs)
+ #pragma omp parallel for private(j,k,ci,ind,c1,fa_k,fa_vel,fa_retrive,potn,potn_k,potn_t,acc_fa,potn_der)
 	for(i=0;(i<n[0]);++i)
 	 {
 		  for(j=0;(j<n[1]);++j)
@@ -452,7 +477,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 			
 			c1  = f_alpha.get_field_alpha(ind,fa_retrive);
 			potn_k = phi.get_potential(ind);	
-			c1 = phi.calc_vel(ind,potn_t,fa_retrive[1],a,a_t,dx);	
+			c1 = phi.calc_vel(ind,potn_t,fa_retrive[1],a,a_t,dx,(1.0-omega_dm_0));	
 			c1 = phi.get_potn_spt_der(ind,potn_der);	
 			c1 = f_alpha.calc_acc(ind,acc_fa, potn_k, potn_t,potn_der, a, a_t,dx);
 
@@ -483,7 +508,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 
 	}
 
-	a3a03omega = pow(a/a0,3.0*(1.0+w))/omega_dm_ini;	
+	a3a03omega = pow(a/a0,3.0*(1.0+w))/omega_dm_0;	
 	z_cur = ((a0/a) -1.0);
 
 	char fp_falpha_name[20]("f_alpha_z_");
@@ -503,7 +528,13 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 
 			  
 		  	fpwr_spec = fopen(fp_pwr_spec_name,"w");
-		 	filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC,H5P_DEFAULT, H5P_DEFAULT);
+		 	plist_id = H5Pcreate(H5P_FILE_ACCESS);
+        		H5Pset_fapl_mpio(plist_id, cart_comm, info);
+
+		
+		 	filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+			H5Pclose(plist_id);
+
 			printf("hdf5 %s\n",fp_hdf5_name);
 			printf("pwr spec name %s\n",fp_pwr_spec_name);		
 			
@@ -511,7 +542,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 
 	
 			status=H5Fclose(filename);
-			cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
+			//cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
 			fclose(fpwr_spec);
 
 		}
@@ -548,7 +579,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 
 }
 
-
+	
 void evolve_hdf5_write(int *ind,field_alpha_mpi f_alpha,metric_potential_approx_1_t_mpi phi,hid_t filename,double *dc,double a3a03omega,double a,
 														int cum_lin_id,bool get_dc=false)
 {	
@@ -565,21 +596,21 @@ void evolve_hdf5_write(int *ind,field_alpha_mpi f_alpha,metric_potential_approx_
 	pdim[0]= tN; pdim[1] = 2;
 
 
-	
+/*	
 	dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
     	status = H5Tset_order(dtype, H5T_ORDER_LE);
 	dspace_falpha = H5Screate_simple(3, dim, NULL);
 	dspace_potn = H5Screate_simple(3, dim, NULL);
 
-	status_falpha = f_alpha.write_hdf5_f_alpha_mpi(filename, dtype, dspace_falpha,dc,a3a03omega,a,phi,cum_lin_id,get_dc);
+	//status_falpha = f_alpha.write_hdf5_f_alpha_mpi(filename, dtype, dspace_falpha,dc,a3a03omega,a,phi,cum_lin_id,get_dc);
 	
 	
-	status_phi = phi.write_hdf5_potn_mpi(filename, dtype,dspace_potn);
+	//status_phi = phi.write_hdf5_potn_mpi(filename, dtype,dspace_potn);
 
 	H5Sclose(dspace_falpha);
 	H5Sclose(dspace_potn);
 	H5Tclose(dtype);
-
+*/
 
 
 }

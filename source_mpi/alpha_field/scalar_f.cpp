@@ -177,8 +177,8 @@ MPI_Status stdn,stup;
 	int tN = n_axis[0]*n_axis[1]*n_axis[2];
 	int tN_loc = n_axis_loc[0]*n_axis_loc[1]*n_axis_loc[2];
 
-	field_alpha_mpi f_alpha(n_axis_loc,cum_lin_ind,true);
-	metric_potential_approx_1_t_mpi phi(n_axis_loc,cum_lin_ind,true);
+	field_alpha_mpi f_alpha(n_axis_loc,cum_lin_ind,true,true);
+	metric_potential_approx_1_t_mpi phi(n_axis_loc,cum_lin_ind,true,true);
 	metric_potential_poisson_mpi poisson_phi(n_axis,n_axis_loc,cum_lin_ind);
 	
 	//psi.test_ind();
@@ -211,7 +211,7 @@ MPI_Status stdn,stup;
 				k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf,use_hdf5_format,cum_lin_ind);
 	//psi.mpi_send_recv();
 	
-	//printf("\ndk is %lf\n",dk);
+	printf("\nHHHdk is %lf\n",dk);
 
 	if(use_omp)
 	fail = evolve_kdk_openmp(ind,n_axis_loc,f_alpha,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.4e-4,cum_lin_ind,use_hdf5_format);
