@@ -98,7 +98,7 @@ class scalar_field_3d
 
 	     if(laplacian==true)
 	      {	m[0] = (16.0*f[ind_l1[0]][ind_l1[1]][ind_l1[2]]+16.0*f[ind_r1[0]][ind_r1[1]][ind_r1[2]]); 
-	      	m[1] = (-f[ind_l1[0]][ind_l1[1]][ind_l1[2]]-f[ind_r2[0]][ind_r2[1]][ind_r2[2]]);
+	      	m[1] = (-f[ind_l2[0]][ind_l2[1]][ind_l2[2]]-f[ind_r2[0]][ind_r2[1]][ind_r2[2]]);
 	      	m[2] = m[0] + m[1] -30.0*f[ind[0]][ind[1]][ind[2]];
 	     	lapsum+= (m[2]/(dx[i]));
 

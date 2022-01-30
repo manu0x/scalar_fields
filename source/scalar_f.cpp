@@ -16,7 +16,7 @@ using namespace std;
 int main()
 {
 	int c1=1,c2=1,fail=0;
-	int ind[3]{64,64,64};	
+	int ind[3]{128,128,128};	
 	int tN = ind[0]*ind[1]*ind[2];
 	fdm_psi psi(ind,true);
 	int use_omp{1};
