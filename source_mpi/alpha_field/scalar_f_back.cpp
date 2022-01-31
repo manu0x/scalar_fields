@@ -1,28 +1,31 @@
-void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_ini)
+void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_0,param_alpha p)
 {
-	double z = 99.0;
-	alpha = 1e8;
+	double z = p.z_ini;
+	alpha = p.loc_alpha;
 	w = 1.0/(2.0*alpha-1.0);
 
-	c_box = 2.99;
-	pc_box = 3.0857;
-	hbar_box = 6.582119569;//eVs 
-	lenfac = 1.0;
-	omega_dm_ini = 0.29;
-	h = 0.7;
+	c_box = p.loc_c_box;
+	pc_box = p.loc_pc_box;
+	hbar_box = p.loc_hbar_box;//eVs 
+	lenfac = p.loc_lenfac;
+	omega_dm_0 = p.omega_dm_0;
+	h = p.loc_h;
 	//hbar_by_m = hbar_box*c_box*(1e-8)/(alpha*pc_box);	
-	space_mpc_to_dimless = 0.001/c_box; ////	\tilde{x} (dimensionless) = physical{x (In Mpc)}*space_mpc_to_dimless  
+	space_mpc_to_dimless = p.loc_space_mpc_to_dimless; ////	\tilde{x} (dimensionless) = physical{x (In Mpc)}*space_mpc_to_dimless  
 		
 	
 	
 	H0 = lenfac*(h/c_box)*0.001;
-	printf("H0 %lf h  %e\n",H0,h);
+	//printf("H0 %lf h  %e\n",H0,h);
 	
 	
-	a0 = 1.0;
+	a0 = p.a0;
 	ai = a0/(1.0+z);
-	Hi =   H0*sqrt(omega_dm_ini*pow(a0/ai,3.0*(1.0+w))+ (1.0-omega_dm_ini));
+	Hi =   H0*sqrt(omega_dm_0*pow(a0/ai,3.0*(1.0+w))+ (1.0-omega_dm_0));
 
+	
+	p.print_to_file(fp_sim_info);
+	
 
 }
 

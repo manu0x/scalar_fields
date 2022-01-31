@@ -36,7 +36,7 @@ double res_limits(double max_potn,double vmax,double dx,double a,double &dt_limi
 */
 void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potential_approx_1_t_mpi &phi,metric_potential_poisson_mpi poisson_phi,
 				double k_grid[][3],int kbin_grid[],double a0,double ai,double Hi,double omega_dm_0,double *dx,double &dk,int & kbins,
-								ini_power_generator pk,gauss_rand_field_gen_mpi grf,bool use_hdf5_format,int cum_lin_ind)
+								ini_power_generator pk,gauss_rand_field_gen_mpi grf,bool use_hdf5_format,double boxlength,int cum_lin_ind)
 {
       
 
@@ -54,7 +54,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
       
      
 
-      double L[3],boxlength;
+      double L[3];
       
            
       int tN = ind_loc[0]*ind_loc[1]*ind_loc[2]; 
@@ -198,7 +198,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 		    {
 			ci = (n[2]*n[1])*i + n[2]*j + k;
 			loc_ind[0] = i;  loc_ind[1] = j;  loc_ind[2] = k;
-			pow_arg = 3.0*(Hi/H0)*(Hi/H0)*pow(Mfield,4.0*(alpha-1.0))*(omega_dm_0*pow(a0/ai,3.0*(1.0+w))*(1.0+ini_dc[ci]))/(4.0*twopie*G*(2.0*alpha-1.0));
+			pow_arg = 3.0*(Hi/H0)*(Hi/H0)*pow(Mfield,(alpha-1.0))*(omega_dm_0*pow(a0/ai,3.0*(1.0+w))*(1.0+ini_dc[ci]))/(4.0*twopie*G*(2.0*alpha-1.0));
 			fa_t_val = pow(pow_arg,1.0/alpha);
 			
 
@@ -278,15 +278,23 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 	vmax_cap=res_limits(max_potn, vmax, dx[0],ai,dt_limit, len_res);
 	
 */
-	printf("\nInitialization Complete from rank %d.\n",my_corank);
-	/*printf("\n Length details\n");
-	printf("	L is %lf\n",L[0]);
-	printf("	dx is %lf req len res %lf\n",dx[0],len_res);
-	printf("\nK details:\n	dk is %lf  per MPc\n",dk/lenfac);
-	printf("	kmin %lf kmax %lf\n",sqrt(minkmagsqr),sqrt(maxkmagsqr));
-	printf("	k_nyquist is %.5lf\n",k_nyq);
 
-	printf("	kbins is %d   %d\n",kbins,(int)((sqrt(maxkmagsqr)-sqrt(minkmagsqr))/dk));
+
+
+	fprintf(fp_sim_info,"\n######## Ini Info   ##########\n");
+	fprintf(fp_sim_info,"Info from cart rank %d\n",my_corank);
+	fprintf(fp_sim_info,"	L is %lf\n",L[0]);
+	fprintf(fp_sim_info,"	dx is %lf req len res %lf\n",dx[0],len_res);
+	fprintf(fp_sim_info,"\nK details:\n	dk is %lf  per MPc\n",dk/lenfac);
+	fprintf(fp_sim_info,"	kmin %lf kmax %lf\n",sqrt(minkmagsqr),sqrt(maxkmagsqr));
+	fprintf(fp_sim_info,"	k_nyquist is %.5lf\n",k_nyq);
+
+	fprintf(fp_sim_info,"	kbins is %d   %d\n",kbins,(int)((sqrt(maxkmagsqr)-sqrt(minkmagsqr))/dk));
+
+
+	
+	/*printf("\n Length details\n");
+	
 	printf("	Max vel is %e  /c\n",vmax);
 	printf("	Max vel cap is %e  /c\n",vmax_cap);
 	printf("	de Broglie wave is %e\n",twopie*hbar_by_m/vmax);
@@ -303,7 +311,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 	printf("\n	dx is %.16lf MPc\n",dx[0]*lenfac);
 
 	*/
-	
+	printf("\nInitialization Complete from rank %d.\n",my_corank);
 	
 	  
 
