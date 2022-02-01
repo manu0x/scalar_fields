@@ -239,10 +239,10 @@ MPI_Status stdn,stup;
 	
 	//printf("\ndk is %lf\n",dk);
 
-	//if(use_omp)
-	//fail = evolve_kdk_openmp(ind,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.2e-4,use_hdf5_format);
-	//else
-	//fail = evolve_kdk(ind,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.2e-4,use_hdf5_format);
+	if(use_omp)
+	fail = evolve_kdk_openmp(ind,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.2e-4,use_hdf5_format);
+	else
+	fail = evolve_kdk(ind,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.2e-4,use_hdf5_format);
 	
 	
 	printf("fail is %d\n",fail);
