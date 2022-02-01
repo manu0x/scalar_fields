@@ -25,14 +25,13 @@ class scalar_field_3d
 	     f_x[1] = new double** [n[0]];
 	     f_x[2] = new double** [n[0]];  
 	   }
-
-	   for(i=0;i<n[0];++i)
+/*	   for(i=0;i<(nx);++i)
 	   {
 		f[i] = new double* [n[1]];
 		f_t[i] = new double* [n[1]];
-		if(need_lap)
+		if((need_lap)&&(i<n[0]))
 		f_lap[i] = new double* [n[1]];
-		if(need_space_grads)
+		if((need_space_grads)&&(i<n[0]))
 		{ f_x[0][i] = new double* [n[1]];
 		  f_x[1][i] = new double* [n[1]];
 		 f_x[2][i] = new double* [n[1]];
@@ -41,9 +40,9 @@ class scalar_field_3d
 	     	{
 		  f[i][j] = new  double[n[2]] ;
 		  f_t[i][j] = new  double[n[2]] ;
-		  if(need_lap)
+		  if((need_lap)&&(i<n[0]))
 		   f_lap[i][j] = new  double[n[2]] ;
-		  if(need_space_grads)
+		  if((need_space_grads)&&(i<n[0]))
 		  { f_x[0][i][j] = new  double[n[2]] ;
 		     f_x[1][i][j] = new  double[n[2]] ;
 		     f_x[2][i][j] = new  double[n[2]] ;
@@ -53,19 +52,183 @@ class scalar_field_3d
 		 }
 
 	    }
+*/
+
+/*	for(i=0;i<(nx);++i)
+	   {
+		f[i] = new double* [n[1]];
+		//f_t[i] = new double* [n[1]];
+
+		double *f_pool;
+		//double *f_t_pool;
+		double *f_lap_pool;
+		double *f_x_pool, *f_y_pool, *f_z_pool;
+
+		
+		 
+
+		if((need_lap)&&(i<n[0]))
+		{ f_lap[i] = new double* [n[1]];
+		   
+		}
+
+		if((need_space_grads)&&(i<n[0]))
+		{ f_x[0][i] = new double* [n[1]];
+		  f_x[1][i] = new double* [n[1]];
+		  f_x[2][i] = new double* [n[1]];
+
+		  
+		}
+
+
+		f_pool = new double [n[1]*n[2]];
+		  //f_t_pool = new double [n[1]*n[2]];
+
+			
+		if((need_space_grads)&&(i<n[0]))
+		  { f_x_pool = new double [n[1]*n[2]];
+		    f_y_pool = new double [n[1]*n[2]];
+		    f_z_pool = new double [n[1]*n[2]];
+		  }
+
+		if((need_lap)&&(i<n[0]))
+		  { f_lap_pool = new double [n[1]*n[2]];
+		    
+		  }
+		
+
+
+
+		for(int j=0;j<n[1];++j)
+	     	{
+		  
+		 
+		  f[i][j] = f_pool;
+		  //f_t[i][j] = f_t_pool;
+
+		  f_pool+=n[2];
+		  //f_t_pool+=n[2];
+		  
+
+		   if((need_lap)&&(i<n[0]))
+		   { f_lap[i][j] = f_lap_pool;
+	   	     f_lap_pool+=n[2];
+		    }
+		   if((need_space_grads)&&(i<n[0]))
+		   { f_x[0][i][j] = f_x_pool ;
+		     f_x[1][i][j] = f_y_pool ;
+		     f_x[2][i][j] = f_z_pool ;
+
+		     f_x_pool+=n[2];
+		     f_y_pool+=n[2];
+		     f_z_pool+=n[2];
+		   }
+	
+
+		 }
+
+	    }
+*/
+
+
+	double *f_pool;
+	//double *f_t_pool;
+	double *f_lap_pool;
+	double *f_x_pool, *f_y_pool, *f_z_pool;
+
+
+
+	f_pool = new double [n[0]*n[1]*n[2]];
+	//f_t_pool = new double [n[1]*n[2]];
+
+			
+	if((need_space_grads)&&(i<n[0]))
+	 { f_x_pool = new double [n[0]*n[1]*n[2]];
+	   f_y_pool = new double [n[0]*n[1]*n[2]];
+	   f_z_pool = new double [n[0]*n[1]*n[2]];
+	}
+
+	if((need_lap)&&(i<n[0]))
+	 { f_lap_pool = new double [n[0]*n[1]*n[2]];
+		    
+	 }
+
+
+
+	for(i=0;i<(n[0]);++i)
+	   {
+		f[i] = new double* [n[1]];
+		//f_t[i] = new double* [n[1]];
+
+		
+
+		
+		 
+
+		if((need_lap)&&(i<n[0]))
+		{ f_lap[i] = new double* [n[1]];
+		   
+		}
+
+		if((need_space_grads)&&(i<n[0]))
+		{ f_x[0][i] = new double* [n[1]];
+		  f_x[1][i] = new double* [n[1]];
+		  f_x[2][i] = new double* [n[1]];
+
+		  
+		}
+
+
+		
+		
+
+
+
+		for(int j=0;j<n[1];++j)
+	     	{
+		  
+		 
+		  f[i][j] = f_pool;
+		  //f_t[i][j] = f_t_pool;
+
+		  f_pool+=n[2];
+		  //f_t_pool+=n[2];
+		  
+
+		   if((need_lap)&&(i<n[0]))
+		   { f_lap[i][j] = f_lap_pool;
+	   	     f_lap_pool+=n[2];
+		    }
+		   if((need_space_grads)&&(i<n[0]))
+		   { f_x[0][i][j] = f_x_pool ;
+		     f_x[1][i][j] = f_y_pool ;
+		     f_x[2][i][j] = f_z_pool ;
+
+		     f_x_pool+=n[2];
+		     f_y_pool+=n[2];
+		     f_z_pool+=n[2];
+		   }
+	
+
+		 }
+
+	    }
+
+
+
 	if((need_lap)||(need_space_grads))
 	  {	
 		if((need_lap)&&(need_space_grads))
- 		 cout<<"Field allocated with arrays for space der and laplacian\n";
+ 		 printf("Field allocated with arrays for space der and laplacian %d %d %d\n",n[0],n[1],n[2]);
 		else
 		  if(need_lap)
-			cout<<"Field allocated with array for laplacian\n";	
+			 printf("Field allocated with array for laplacian %d %d %d %d\n",n[0],n[1],n[2],n[0]*n[1]*n[2]);	
 		  else
-			cout<<"Field allocated with arrays for space der\n";
+			 printf("Field allocated with space ders\n");
 
 	 }
 	else
-	   cout<<"Field allocated withOUT arrays for space der and laplacian\n";
+	   printf("Field allocated withOUT arrays for space der and laplacian\n");
 		
 
 	}
