@@ -1,4 +1,4 @@
-int parser(char * param_file_name, param_alpha &p)
+int parser(char * param_file_name, param_fdm &p)
 {
 	FILE *fp_param = fopen(param_file_name,"r");
 	
@@ -39,7 +39,7 @@ int parser(char * param_file_name, param_alpha &p)
 			p.z_ini = num_val;
 		
 		   else
-		   if(read_key=="h_bar_by_m22")
+		   if(read_key=="hbar_by_m22")
 			p.loc_hbar_by_m22 = num_val;
 		
 			

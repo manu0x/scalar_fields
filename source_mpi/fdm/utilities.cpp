@@ -11,7 +11,7 @@ int calculate_vel_from_psi(int *n,double *dx,fdm_psi_mpi psi,double v[][3],doubl
 	tN = n[0]*n[1]*n[2];
 	dtN = (double) tN;
 
-	printf("velcal ...  %d %d %d\n",n[0],n[1],n[2]);
+	//printf("velcal ...  %d %d %d\n",n[0],n[1],n[2]);
 	
 	theta = new double** [n[0]+4] ;
 	double *theta_pool;
@@ -192,7 +192,7 @@ int calculate_vel_from_psi(int *n,double *dx,fdm_psi_mpi psi,double v[][3],doubl
 /////////////////// MPI_TO_DO : Write a collective MAX call....................////////////////////////
 
 
-	printf("Hey vmax  %lf %lf %lf %lf\n",vmax,dx[0],dx[1],dx[2]);
+	//printf("Hey vmax  %lf %lf %lf %lf\n",vmax,dx[0],dx[1],dx[2]);
 	return(ret);	  
 
 }

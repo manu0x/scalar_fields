@@ -5,6 +5,10 @@ using namespace std;
 #include <stdlib.h>
 #include <iostream>
 #include <string.h> 
+#include <string>
+#include <cctype>
+#include <algorithm> 
+
 #include <omp.h>
 #include <mpi.h>
 #include <time.h>
@@ -18,12 +22,14 @@ using namespace std;
 
 enum code1 {give_f,give_f_t,give_f_x,give_f_y,give_f_z,give_f_lap};
 #include "scalar_f_global_constants.h"
-#include "scalar_f_back.h"
+
 
 
 bool hdf5_format;
 
 #include "../../source_mpi/fdm/my_classes.cpp"
+#include "../../source_mpi/fdm/param_parser.cpp"
+#include "scalar_f_back.h"
 
 #include "utilities.h"
 #include "scalar_f_initial.h"

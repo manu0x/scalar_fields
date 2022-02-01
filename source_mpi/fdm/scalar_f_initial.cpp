@@ -7,6 +7,7 @@ double res_limits(double max_potn,double vmax,double dx,double a,double &dt_limi
 {
 	//############ Uses constraints from May & Springel  2101.01828
 	double t_constrain_1,t_constrain_2,t_smaller_constrain,vmax_cap;
+	int my_corank;
 	len_res  = M_PI*hbar_by_m/vmax;
 	vmax_cap  = M_PI*hbar_by_m/dx;
 
@@ -21,9 +22,11 @@ double res_limits(double max_potn,double vmax,double dx,double a,double &dt_limi
 	
 	
 	dt_limit = t_smaller_constrain;
+	MPI_Comm_rank(cart_comm,&my_corank);
+	
 
-	printf("\nResolution Constraints @ z = %lf\n",(1.0/a)-1.0);
-	printf("\tt_constrain_1 %e\n\tt_constrain_2 %e\n\tdt_limit %e\n\tlen_res req. %e\n\tdx is %e\n\tvmax_cap is %e\n",
+	fprintf(fp_sim_info,"\n###### (cart_rank %d) Resolution Constraints @ z = %lf\n",my_corank,(1.0/a)-1.0);
+	fprintf(fp_sim_info,"\tt_constrain_1 %e\n\tt_constrain_2 %e\n\tdt_limit %e\n\tlen_res req. %e\n\tdx is %e\n\tvmax_cap is %e\n",
 							t_constrain_1,t_constrain_2,dt_limit,len_res,dx,vmax_cap);
 	
 	return vmax_cap;
@@ -34,7 +37,7 @@ double res_limits(double max_potn,double vmax,double dx,double a,double &dt_limi
 }
 
 
-void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi &phi,double k_grid[][3],int kbin_grid[],double a0,double ai,double Hi,double omega_dm_ini,double *dx,double &dk,int & kbins,ini_power_generator pk,gauss_rand_field_gen_mpi grf,bool use_hdf5_format,int cum_lin_ind)
+void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi &phi,double k_grid[][3],int kbin_grid[],double a0,double ai,double Hi,double omega_dm_ini,double *dx,double &dk,int & kbins,ini_power_generator pk,gauss_rand_field_gen_mpi grf,bool use_hdf5_format,double boxlength,int cum_lin_ind)
 {
       
 
@@ -52,7 +55,7 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
       
      
 
-      double L[3],boxlength;
+      double L[3];
       
            
       int tN = ind_loc[0]*ind_loc[1]*ind_loc[2]; 
@@ -88,13 +91,13 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
 	f_ini=dlogD_dloga(a);
 
 	//double kf = twopie*lenfac/(64.0);
-	boxlength = 0.5;
+	
 	
         dx[0] = boxlength/((double)(ind[0]-1));	dx[1] = boxlength/((double)(ind[1]-1));	dx[2] = boxlength/((double)(ind[2]-1));
 	L[0] = boxlength;	L[1] = boxlength;	L[2] = boxlength;
 	dk = 1.0/boxlength;
 	kbins = 0;
-	printf("dk %lf\n",dk);
+	//printf("dk %lf\n",dk);
 	k_nyq = 0.5/(dx[0]);
 	
 ////////////////////// For MPI ////////////////////////////////
@@ -272,6 +275,23 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_psi_mpi &psi,metric_potential_mpi
 	fclose(fpwr_spec);
 
 */	
+
+
+	fprintf(fp_sim_info,"\n######## Ini Info   ##########\n");
+	fprintf(fp_sim_info,"Info from cart rank %d\n",my_corank);
+	fprintf(fp_sim_info,"	L is %lf\n",L[0]);
+	fprintf(fp_sim_info,"	dx is %lf req len res %lf\n",dx[0],len_res);
+	fprintf(fp_sim_info,"\nK details:\n	dk is %lf  per MPc\n",dk/lenfac);
+	fprintf(fp_sim_info,"	kmin %lf kmax %lf\n",sqrt(minkmagsqr),sqrt(maxkmagsqr));
+	fprintf(fp_sim_info,"	k_nyquist is %.5lf\n",k_nyq);
+
+	fprintf(fp_sim_info,"	kbins is %d   %d\n",kbins,(int)((sqrt(maxkmagsqr)-sqrt(minkmagsqr))/dk));
+	fprintf(fp_sim_info,"	kbins is %d   %d\n",kbins,(int)((sqrt(maxkmagsqr)-sqrt(minkmagsqr))/dk));
+	fprintf(fp_sim_info,"	Max vel is %e  /c\n",vmax);
+	fprintf(fp_sim_info,"	Max vel cap is %e  /c\n",vmax_cap);
+	fprintf(fp_sim_info,"	de Broglie wave is %e\n",twopie*hbar_by_m/vmax);
+	fprintf(fp_sim_info,"	Max potential is %.10lf  /c^2\n",max_potn);
+	
 	
 	
   if(my_corank==0)	

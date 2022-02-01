@@ -540,7 +540,7 @@ class param_cosmo_sim
 class param_alpha: public param_cosmo_sim
 {
 	public:
-	double loc_alpha;
+	double loc_hbar_by_m22, loc_alpha;
 	void load_defaults()
 	{
 		load_default_cosmo_sim();

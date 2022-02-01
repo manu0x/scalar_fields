@@ -1,6 +1,8 @@
 double hbar_by_m,h,H0,Hi,lenfac;
 double c_box,pc_box,hbar_box;
 
+
+FILE *fp_sim_info;
 ////////////////////// MPI Globals....///////////////////
 MPI_Datatype c_x_plain,c_y_plain,c_z_plain;
 MPI_Comm cart_comm;

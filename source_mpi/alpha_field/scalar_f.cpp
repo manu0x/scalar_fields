@@ -240,7 +240,7 @@ MPI_Status stdn,stup;
 
 /*
 	initialise_mpi(n_axis,n_axis_loc,f_alpha,phi,poisson_phi,
-				k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf,use_hdf5_format,cum_lin_ind);
+				k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf,use_hdf5_format,p.boxlength,cum_lin_ind);
 	//psi.mpi_send_recv();
 	
 	printf("\nHHHdk is %lf\n",dk);

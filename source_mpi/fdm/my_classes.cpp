@@ -224,16 +224,16 @@ class scalar_field_3d_mpi
 	if((need_lap)||(need_space_grads))
 	  {	
 		if((need_lap)&&(need_space_grads))
- 		 printf("Field allocated with arrays for space der and laplacian %d %d %d\n",n[0],n[1],n[2]);
+ 		 fprintf(fp_sim_info,"Field allocated with arrays for space der and laplacian %d %d %d\n",n[0],n[1],n[2]);
 		else
 		  if(need_lap)
-			printf("Field allocated with array for laplacian %d %d %d %d\n",n[0],n[1],n[2],nx);	
+			fprintf(fp_sim_info,"Field allocated with array for laplacian %d %d %d %d\n",n[0],n[1],n[2],nx);	
 		  else
-			cout<<"Field allocated with arrays for space der\n";
+			fprintf(fp_sim_info,"Field allocated with space ders\n");
 
 	 }
 	else
-	   cout<<"Field allocated withOUT arrays for space der and laplacian\n";
+	   fprintf(fp_sim_info,"Field allocated withOUT arrays for space der and laplacian\n");
 		
 
 	}
@@ -463,6 +463,110 @@ class scalar_field_3d_mpi
 
 
 };
+
+
+class param_cosmo_sim
+{
+	
+	public:
+	double omega_dm_0,loc_h,z_ini,a0;
+	double box_length;
+	int box_n;
+
+	double loc_c_box,
+		loc_pc_box,
+		loc_hbar_box , 
+		loc_lenfac,loc_space_mpc_to_dimless;
+
+
+	
+	void load_default_unit_const()	
+	{
+		loc_c_box = 2.99;
+		loc_pc_box = 3.0857;
+		loc_hbar_box = 6.582119569;//eVs 
+		loc_lenfac = 1.0;
+
+
+
+
+	}
+
+
+
+	
+
+	void load_default_cosmo_sim()
+	{
+		load_default_unit_const();
+		a0 = 1.0;
+		omega_dm_0 = 0.29;
+		loc_h = 0.7;
+		//hbar_by_m = hbar_box*c_box*(1e-8)/(alpha*pc_box);	
+		loc_space_mpc_to_dimless = 0.001/loc_c_box; ////	\tilde{x} (dimensionless) = physical{x (In Mpc)}*space_mpc_to_dimless  
+
+		box_length = 1.0;
+		box_n = 128;
+		z_ini = 99.0;
+
+
+
+	}
+
+
+	void print_to_file_cosmo_sim(FILE *fp)
+	{
+
+		fprintf(fp,"\n######## Cosmo info: ##########\n");
+		fprintf(fp,"h = %lf\n",loc_h);
+		fprintf(fp,"omega_dm_0 = %lf\n",omega_dm_0);
+		
+		fprintf(fp,"\n######## Unit boxes: ##########\n");
+		fprintf(fp,"c_box = %lf\n pc_box = %lf\nhbar_box = %lf\nlenfac = %lf\n",loc_c_box,loc_pc_box,loc_hbar_box,loc_lenfac);
+		fprintf(fp,"\n######## Box details: #########\n");
+		fprintf(fp,"box_length = %lf\n",box_length);
+		fprintf(fp,"box_N = %d\n",box_n);
+
+
+
+	}
+	
+
+
+
+};
+
+
+class param_fdm: public param_cosmo_sim
+{
+	public:
+	double loc_hbar_by_m22, loc_alpha;
+	void load_defaults()
+	{
+		load_default_cosmo_sim();
+
+		loc_hbar_by_m22 = 1.0;	
+	
+
+	}
+
+	void print_to_file(FILE *fp)
+	{
+
+
+		print_to_file_cosmo_sim(fp);
+		
+		fprintf(fp,"\n######## fdm info: ##########\n");
+		fprintf(fp,"(in units of 10^-22 eV ) h_bar/m = %lf\n",loc_hbar_by_m22);
+
+		
+
+
+	}
+
+	
+};
+
 
 class fdm_psi_mpi
 {
@@ -721,7 +825,7 @@ class fdm_psi_mpi
 		double psi_r_val,psi_i_val,psi_amp2,h;
 
 
-		printf("gg %d %d %d\n",n[0],n[1],n[2]);	
+		//printf("gg %d %d %d\n",n[0],n[1],n[2]);	
 
 		  MPI_Comm_rank(cart_comm,&my_corank);
 			
@@ -752,7 +856,7 @@ class fdm_psi_mpi
 
 		  }
 
-		printf("bfjkbkbw TESTING DONE\n");
+		//printf("bfjkbkbw TESTING DONE\n");
 
 	}
 
@@ -1038,13 +1142,13 @@ class ini_power_generator
 		}
 		
 		fclose(fp);
-		printf("	doing spline..\n");
+		fprintf(fp_sim_info,"	doing spline..\n");
 		
 		checkspl = spline(k,p,point_cnt,cload); 
 		if(checkspl)
-		 printf("\nALERT !!!! Spline fit failed....checkspl %d  %.10lf\n",checkspl,max_dx);
+		 fprintf(fp_sim_info,"\nALERT !!!! Spline fit failed....checkspl %d  %.10lf\n",checkspl,max_dx);
 		else
-		 printf("	spline done successfully..\n");
+		 fprintf(fp_sim_info,"	spline done successfully..\n");
 	
 		for(i=0;i<point_cnt;++i)
 		{
@@ -1081,7 +1185,7 @@ class ini_power_generator
 	 }
 
 	if(!ind_match)
-	printf("\nALERT index overrun for spline...for x %lf\n",x);
+	fprintf(fp_sim_info,"\nALERT index overrun for spline...for x %lf\n",x);
 
 	return Val;
 		
@@ -1275,7 +1379,7 @@ class gauss_rand_field_gen_mpi
 	{	int i,j,k,ci;
 		double ksqr,pk_val,dtN;
 
-		printf("ini_dc %lf %d %d %d\n",ini_dc[ci],n_loc[0],n_loc[1],n_loc[2]);
+		//printf("ini_dc %lf %d %d %d\n",ini_dc[ci],n_loc[0],n_loc[1],n_loc[2]);
 		dtN = (double)(n[0]*n[1]*n[2]);
 
 		for(i=0;i<n_loc[0];++i)

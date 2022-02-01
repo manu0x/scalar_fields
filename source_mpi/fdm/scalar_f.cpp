@@ -26,16 +26,35 @@ int main(int argc, char **argv)
 
 	t_start = clock();
 
+	int mpicheck = 0;
+	int num_p = 0;
+	int rank;
+
+	mpicheck = MPI_Init(&argc,&argv);
+	mpicheck = MPI_Comm_size(MPI_COMM_WORLD,&num_p);
+	
+	mpicheck = MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+
+
+
+	char *param_file_name;
+	char fp_sim_info_name[30]("sim_info_"), str_corank[3];
+
+	param_file_name = argv[1];
+	printf("Param filename is %s\n",param_file_name);
+	
 
 	int i;
-      	int ind[3]{128,128,128};
+	param_fdm p;
+	p.load_defaults();
+
+	i =  parser(param_file_name, p);
+      	int ind[3]{p.box_n,p.box_n,p.box_n};
 	
 	fftw_mpi_init();
 ////////////////////////////////	MPI related...	/////////////////////////////
 
-int mpicheck = 0;
-int num_p = 0;
-int rank;
+
 
 
 int nd_cart;
@@ -65,11 +84,7 @@ MPI_Status stdn,stup;
 	n_axis[2]=ind[2];
 
 
-	mpicheck = MPI_Init(&argc,&argv);
-	mpicheck = MPI_Comm_size(MPI_COMM_WORLD,&num_p);
 	
-	mpicheck = MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-
 	if(num_p<=8)
 		nd_cart = 1;
 	else
@@ -95,13 +110,25 @@ MPI_Status stdn,stup;
 
 	mpicheck = MPI_Dims_create(num_p,nd_cart,dims);
 
-	printf("num proce %d %d %d\n",num_p,nd_cart,dims[0]);
+	
 
 	mpicheck = MPI_Cart_create(MPI_COMM_WORLD,nd_cart, dims, periods,1,&cart_comm);
 
 	mpicheck = MPI_Cart_get(cart_comm,nd_cart,dims,periods,my_coords);
 	
 	mpicheck = MPI_Cart_rank(cart_comm,my_coords,&my_corank);
+
+	sprintf(str_corank,"%d",my_corank);
+	
+	strcat(fp_sim_info_name,str_corank);
+	strcat(fp_sim_info_name,".txt"); 
+	fp_sim_info = fopen(fp_sim_info_name,"w");
+
+	printf("fp info name %s\n",fp_sim_info_name);
+	
+	fprintf(fp_sim_info,"/////////////////	CART-RANK %d TALKING	//////////////////\n\n",my_corank);
+	
+	fprintf(fp_sim_info,"num process  %d nd_cart %d dim[0] %d\n",num_p,nd_cart,dims[0]);
 
 
 	for(i=0;i<3;++i)
@@ -155,7 +182,7 @@ MPI_Status stdn,stup;
 
 	}
 	
-		printf("cO_RANK %d cords %d with nloc 0  %d and cum_ind %d\n",my_coords[i],my_corank,n_axis_loc[0],cum_lin_ind);
+	fprintf(fp_sim_info,"cO_RANK %d cords %d with nloc 0  %d and cum_ind %d\n",my_coords[0],my_corank,n_axis_loc[0],cum_lin_ind);
 		
 
 
@@ -188,7 +215,7 @@ MPI_Status stdn,stup;
 	
 
 	const char name[] = "lcdm_00_pk.dat";
-	printf("\n Building pk...\n");
+	//printf("\n Building pk...\n");
 	ini_power_generator pk(name);
 	pk.check(0.0);
 	gauss_rand_field_gen_mpi grf(n_axis,n_axis_loc);
@@ -201,20 +228,21 @@ MPI_Status stdn,stup;
 	double k_grid[tN_loc][3],dx[3],dk;
 	int kbins,kbin_grid[tN_loc];
 	
-	set_back_cosmo(a0,ai,Hi,omega_dm_ini);
-	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n",Hi,omega_dm_ini,ai);
+	set_back_cosmo(a0,ai,Hi,omega_dm_ini,p);
+	//printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n",Hi,omega_dm_ini,ai);
+	//printf("hbar_by_m  %.15lf\n",hbar_by_m);
 
-	initialise_mpi(n_axis,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf,use_hdf5_format,cum_lin_ind);
+	initialise_mpi(n_axis,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf,use_hdf5_format,p.box_length,cum_lin_ind);
 	psi.mpi_send_recv();
 
 	MPI_Barrier(cart_comm);
 	
 	//printf("\ndk is %lf\n",dk);
 
-	if(use_omp)
-	fail = evolve_kdk_openmp(ind,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.2e-4,use_hdf5_format);
-	else
-	fail = evolve_kdk(ind,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.2e-4,use_hdf5_format);
+	//if(use_omp)
+	//fail = evolve_kdk_openmp(ind,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.2e-4,use_hdf5_format);
+	//else
+	//fail = evolve_kdk(ind,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.2e-4,use_hdf5_format);
 	
 	
 	printf("fail is %d\n",fail);

@@ -90,7 +90,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 	f_ini=dlogD_dloga(a);
 
 	//double kf = twopie*lenfac/(64.0);
-	boxlength = 1.0;
+	
 	
         dx[0] = boxlength*space_mpc_to_dimless/((double)(ind[0]-1));	dx[1] = boxlength*space_mpc_to_dimless/((double)(ind[1]-1));	
 	dx[2] = boxlength*space_mpc_to_dimless/((double)(ind[2]-1));
