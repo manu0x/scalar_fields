@@ -256,14 +256,14 @@ class scalar_field_3d
 	       m[2] = m[0] + m[1] ;
 		
 		
-	       f_x[i][ind[0]][ind[1]][ind[2]] = m[2]/(dx[i]);
+	       f_x[i][ind[0]][ind[1]][ind[2]] = m[2]/(12.0*dx[i]);
 	      }
 
 	     if(laplacian==true)
 	      {	m[0] = (16.0*f[ind_l1[0]][ind_l1[1]][ind_l1[2]]+16.0*f[ind_r1[0]][ind_r1[1]][ind_r1[2]]); 
 	      	m[1] = (-f[ind_l2[0]][ind_l2[1]][ind_l2[2]]-f[ind_r2[0]][ind_r2[1]][ind_r2[2]]);
 	      	m[2] = m[0] + m[1] -30.0*f[ind[0]][ind[1]][ind[2]];
-	     	lapsum+= (m[2]/(dx[i]));
+	     	lapsum+= (m[2]/(12.0*dx[i]*dx[i]));
 
 	     	
 	      }
@@ -369,7 +369,8 @@ class fdm_psi
 		psi_i_lap = psi_i.get_field(ind,give_f_lap);
 		v[0] = -1.5*(a_t/a)*psi_r_val;
 		v[0]+= ((-0.5*hbar_by_m*psi_i_lap/(a*a) + potn*psi_i_val/hbar_by_m))/H0;
-		//printf("back  %lf lap %.10lf  potn  %.10lf\n", -1.5*(a_t/a)*psi_r_val,-0.5*hbar_by_m*psi_i_lap/(a*a) ,potn*psi_i_val/hbar_by_m);
+		//if((ind[0]<20)&&(ind[1]<20)&&(ind[2]<20))
+		//printf("back  %lf other %lf lap %.10lf  potn  %.10lf\n",dx[0],dx[1],dx[2] ,dx[0]+dx[1]+dx[2]);
 		v[1] = -1.5*(a_t/a)*psi_i_val;
 		v[1]+= ((0.5*hbar_by_m*psi_r_lap/(a*a) - potn*psi_r_val/hbar_by_m))/H0;
 		//printf("back  %lf lap %.10lf  potn  %.10lf\n\n", -1.5*(a_t/a)*psi_i_val,0.5*hbar_by_m*psi_r_lap/(a*a),potn*psi_r_val/hbar_by_m);

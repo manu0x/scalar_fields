@@ -167,7 +167,8 @@ int evolve_kdk(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][3],int 
 			psi_amp = sqrt(psi_k[0]*psi_k[0] + psi_k[1]*psi_k[1]);
 			if(isnan(psi_amp))
 			{	fail=1;
-				printf("FAIL %d %d %d\n",i,j,k);break;
+				//printf("FAIL %d %d %d\n",i,j,k);
+				break;
 			}
 
 			poisson_rhs = 1.5*H0*H0*a*a*(psi_amp*psi_amp - omega_dm_ini*pow(a0/a,3.0));
@@ -285,7 +286,7 @@ int evolve_kdk_openmp(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][
 	
 
 
-	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail);t+=dt,++step_cnt)
+	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail)&&(step_cnt<2);t+=dt,++step_cnt)
 	{
 	   //dt=dti*sqrt(a/a_ini);
 	 if(a>=a_print)
@@ -407,9 +408,9 @@ int evolve_kdk_openmp(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][
 	a = 0.5*(ak+a+a_t*dt);
 
  #pragma omp parallel for private(j,k,ci,ind,c1,potn,psi_vel,psi_k,psi_amp,poisson_rhs)
-	for(i=0;(i<n[0]);++i)
+	for(i=0;(i<n[0])&&(!fail);++i)
 	 {
-		  for(j=0;(j<n[1]);++j)
+		  for(j=0;(j<n[1])&&(!fail);++j)
 		  {
 		    for(k=0;(k<n[2]);++k)
 		    {
@@ -426,7 +427,8 @@ int evolve_kdk_openmp(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][
 			psi_amp = sqrt(psi_k[0]*psi_k[0] + psi_k[1]*psi_k[1]);
 			if(isnan(psi_amp))
 			{	fail=1;
-				printf("FAIL %d %d %d\n",i,j,k);break;
+				printf("FAIL %d %d %d %lf %lf %lf\n",i,j,k,psi_k[0]*psi_k[0] , psi_k[1],psi_k[1]);
+				break;
 			}
 
 			poisson_rhs = 1.5*H0*H0*a*a*(psi_amp*psi_amp - omega_dm_ini*pow(a0/a,3.0));
@@ -444,7 +446,8 @@ int evolve_kdk_openmp(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][
 
 	
 	 if(isnan(a))
-	  {printf("FAILED  \n"); fail = 1;	break;
+	  {printf("FAILED  \n"); 
+		fail = 1;	break;
 	  }
 
 	}

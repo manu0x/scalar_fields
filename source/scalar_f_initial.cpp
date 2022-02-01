@@ -77,7 +77,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	f_ini=dlogD_dloga(a);
 
 	//double kf = twopie*lenfac/(64.0);
-	boxlength = 0.5;
+	boxlength = 1.0;
 	
         dx[0] = boxlength/((double)(ind[0]-1));	dx[1] = boxlength/((double)(ind[1]-1));	dx[2] = boxlength/((double)(ind[2]-1));
 	L[0] = boxlength;	L[1] = boxlength;	L[2] = boxlength;
@@ -208,6 +208,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 
 	
 	ret = calculate_vel_from_psi(ind,dx,psi, vel,vmax,ai);
+	phi.solve_poisson(psi,k_grid);
 	
 	for(i=0;i<n[0];++i)
 		{
@@ -228,7 +229,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 			
 
 			fprintf(fpstoreini,"%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\n",
-							a,dx[0]*i,dx[1]*j,dx[2]*k,psi_r_val,psi_i_val,potn,ini_dc[ci],ini_theta[ci],vel[ci][0],vel[ci][1],vel[ci][2]);
+							a,dx[0]*i,dx[1]*j,psi_amp,psi_r_val,psi_i_val,potn,ini_dc[ci],ini_theta[ci],vel[ci][0],vel[ci][1],vel[ci][2]);
 			//printf("ci %d   %.15lf\n",ci,potn);
 
 	            }
@@ -240,6 +241,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	FILE *fpwr_spec = fopen("spec_test.txt","w");
 	//cal_spectrum(double *f,int *kbingrid,int kbins,int *s,double *pwspctrm,double dk,double abyai, FILE *fspwrite)
 	cal_spectrum(ini_dc,kbin_grid, kbins,n,pwr_spec, dk,a/ai,fpwr_spec);
+
 	fclose(fpwr_spec);
 
 	file = H5Fcreate("test_initial.hdf5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
