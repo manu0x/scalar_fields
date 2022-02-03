@@ -77,7 +77,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 	f_ini=dlogD_dloga(a);
 
 	//double kf = twopie*lenfac/(64.0);
-	boxlength = 1.0;
+	boxlength = 0.5;
 	
         dx[0] = boxlength/((double)(ind[0]-1));	dx[1] = boxlength/((double)(ind[1]-1));	dx[2] = boxlength/((double)(ind[2]-1));
 	L[0] = boxlength;	L[1] = boxlength;	L[2] = boxlength;
@@ -188,7 +188,7 @@ void initialise(int * ind,fdm_psi &psi,metric_potential &phi,double k_grid[][3],
 			psi_r_val = psi_amp*cos(ini_theta[ci]);
 			psi_i_val = psi_amp*sin(ini_theta[ci]);
 
-			err_hold =  psi.update(loc_ind, psi_r_val, psi_i_val);
+			err_hold =  psi.update(loc_ind, psi_r_val, psi_i_val,0);
 
 			//ggg = 1.5*H0*H0*a*a*omega_dm_ini*pow(a0/ai,3.0)*(ini_dc[ci]);
 

@@ -286,7 +286,7 @@ int evolve_kdk_openmp(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][
 	
 
 
-	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail)&&(step_cnt<2);t+=dt,++step_cnt)
+	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail)&&(step_cnt<200);t+=dt,++step_cnt)
 	{
 	   //dt=dti*sqrt(a/a_ini);
 	 if(a>=a_print)
@@ -372,11 +372,13 @@ int evolve_kdk_openmp(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][
 	a_t = a*sqrt(omega_dm_ini*pow(a0/a,3.0)+ (1.0-omega_dm_ini));
 	  
 	ak = a+a_t*dt;
- #pragma omp parallel for private(j,k,ci,ind,c1,potn,psi_vel,psi_k,psi_amp,poisson_rhs)
+ #pragma omp parallel for private(j,k,ci,ind,c1,potn,psi_vel,psi_k,psi_amp,psi_retrive,poisson_rhs)
 	 for(i=0;i<n[0];++i)
 	 {
 		  for(j=0;j<n[1];++j)
 		  {
+
+		    #pragma omp parallel for private(ci,ind,c1,potn,psi_vel,psi_retrive,psi_k,psi_amp,poisson_rhs)
 		    for(k=0;k<n[2];++k)
 		    {
 			ci = (n[2]*n[1])*i + n[2]*j + k;
@@ -401,17 +403,20 @@ int evolve_kdk_openmp(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][
 
 		   }
 	}
+
+	psi.switch_fs();
 	phi.solve_poisson(psi,k_grid);
 
 	
 	a_t = ak*sqrt(omega_dm_ini*pow(a0/ak,3.0)+ (1.0-omega_dm_ini));
 	a = 0.5*(ak+a+a_t*dt);
 
- #pragma omp parallel for private(j,k,ci,ind,c1,potn,psi_vel,psi_k,psi_amp,poisson_rhs)
-	for(i=0;(i<n[0])&&(!fail);++i)
+
+	for(i=0;(i<n[0]);++i)
 	 {
-		  for(j=0;(j<n[1])&&(!fail);++j)
-		  {
+		  for(j=0;(j<n[1]);++j)
+		  { 
+		   #pragma omp parallel for private(ci,ind,c1,potn,psi_vel,psi_retrive,psi_k,psi_amp,poisson_rhs)
 		    for(k=0;(k<n[2]);++k)
 		    {
 			ci = (n[2]*n[1])*i + n[2]*j + k;
@@ -428,7 +433,8 @@ int evolve_kdk_openmp(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][
 			if(isnan(psi_amp))
 			{	fail=1;
 				printf("FAIL %d %d %d %lf %lf %lf\n",i,j,k,psi_k[0]*psi_k[0] , psi_k[1],psi_k[1]);
-				break;
+				printf("FAIL %d %d %d %lf %lf %lf\n",i,j,k,psi_vel[0] , psi_vel[1] ,psi_k[1]);
+				
 			}
 
 			poisson_rhs = 1.5*H0*H0*a*a*(psi_amp*psi_amp - omega_dm_ini*pow(a0/a,3.0));
@@ -441,6 +447,7 @@ int evolve_kdk_openmp(int *n,fdm_psi &psi,metric_potential &phi,double k_grid[][
 		}
 	}
 
+	psi.switch_fs();
 	phi.solve_poisson(psi,k_grid);
 
 

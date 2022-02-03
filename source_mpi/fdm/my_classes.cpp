@@ -147,13 +147,13 @@ class scalar_field_3d_mpi
 	//f_t_pool = new double [n[1]*n[2]];
 
 			
-	if((need_space_grads)&&(i<n[0]))
+	if(need_space_grads)
 	 { f_x_pool = new double [n[0]*n[1]*n[2]];
 	   f_y_pool = new double [n[0]*n[1]*n[2]];
 	   f_z_pool = new double [n[0]*n[1]*n[2]];
 	}
 
-	if((need_lap)&&(i<n[0]))
+	if(need_lap)
 	 { f_lap_pool = new double [n[0]*n[1]*n[2]];
 		    
 	 }

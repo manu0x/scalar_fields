@@ -5,7 +5,7 @@ class scalar_field_3d
 {
 
 	protected:
-	 double ***f,***f_t,****f_x,***f_lap;
+	 double ***f,***f_up,***f_t,****f_x,***f_lap;
          int n[3];
 
 
@@ -16,6 +16,7 @@ class scalar_field_3d
 	   int i,j;
 	   n[0] = n_arr[0];	n[1] = n_arr[1];	n[2] = n_arr[2];
 	   f = new double** [n[0]] ;
+	   f_up = new double** [n[0]] ;
 	   f_t = new double** [n[0]] ;
 	   if(need_lap)
 	   f_lap = new double** [n[0]] ;
@@ -132,6 +133,7 @@ class scalar_field_3d
 
 
 	double *f_pool;
+	double *f_up_pool;
 	//double *f_t_pool;
 	double *f_lap_pool;
 	double *f_x_pool, *f_y_pool, *f_z_pool;
@@ -139,16 +141,17 @@ class scalar_field_3d
 
 
 	f_pool = new double [n[0]*n[1]*n[2]];
+	f_up_pool = new double [n[0]*n[1]*n[2]];
 	//f_t_pool = new double [n[1]*n[2]];
 
 			
-	if((need_space_grads)&&(i<n[0]))
+	if(need_space_grads)
 	 { f_x_pool = new double [n[0]*n[1]*n[2]];
 	   f_y_pool = new double [n[0]*n[1]*n[2]];
 	   f_z_pool = new double [n[0]*n[1]*n[2]];
 	}
 
-	if((need_lap)&&(i<n[0]))
+	if(need_lap)
 	 { f_lap_pool = new double [n[0]*n[1]*n[2]];
 		    
 	 }
@@ -158,6 +161,7 @@ class scalar_field_3d
 	for(i=0;i<(n[0]);++i)
 	   {
 		f[i] = new double* [n[1]];
+		f_up[i] = new double* [n[1]];
 		//f_t[i] = new double* [n[1]];
 
 		
@@ -189,9 +193,11 @@ class scalar_field_3d
 		  
 		 
 		  f[i][j] = f_pool;
+		  f_up[i][j] = f_up_pool;
 		  //f_t[i][j] = f_t_pool;
 
 		  f_pool+=n[2];
+		  f_up_pool+=n[2];
 		  //f_t_pool+=n[2];
 		  
 
@@ -285,8 +291,11 @@ class scalar_field_3d
 	
 	}
 
-	int update_field(int * ind,double fu,double f_tu=0.0)
+	int update_field(int * ind,double fu,int up=1,double f_tu=0.0)
 	{
+		if(up)		
+		f_up[ind[0]][ind[1]][ind[2]] = fu;
+		else
 		f[ind[0]][ind[1]][ind[2]] = fu;
 		//f_t[ind[0]][ind[1]][ind[2]] = f_tu;
 
@@ -294,6 +303,30 @@ class scalar_field_3d
 			return(0);
 		else
 			return(1);
+
+	}
+
+
+	void switch_fs()
+	{
+
+		/*double ***temp = f;
+		f = f_up;
+		f_up = temp;
+		*/
+		int i,j,k;
+		for(i=0;i<n[0];++i)
+		{
+			for(j=0;j<n[1];++j)
+			{
+				for(k=0;k<n[2];++k)
+				{
+					f[i][j][k] = f_up[i][j][k] ;
+
+				}
+			}
+		}
+		
 
 	}
 
@@ -368,11 +401,12 @@ class fdm_psi
 		psi_r_lap = psi_r.get_field(ind,give_f_lap);
 		psi_i_lap = psi_i.get_field(ind,give_f_lap);
 		v[0] = -1.5*(a_t/a)*psi_r_val;
-		v[0]+= ((-0.5*hbar_by_m*psi_i_lap/(a*a) + potn*psi_i_val/hbar_by_m))/H0;
+		v[0]+= ((-0.5*hbar_by_m*psi_i_lap/(a*a) + potn*psi_i_val/hbar_by_m));
 		//if((ind[0]<20)&&(ind[1]<20)&&(ind[2]<20))
 		//printf("back  %lf other %lf lap %.10lf  potn  %.10lf\n",dx[0],dx[1],dx[2] ,dx[0]+dx[1]+dx[2]);
 		v[1] = -1.5*(a_t/a)*psi_i_val;
-		v[1]+= ((0.5*hbar_by_m*psi_r_lap/(a*a) - potn*psi_r_val/hbar_by_m))/H0;
+		v[1]+= ((0.5*hbar_by_m*psi_r_lap/(a*a) - potn*psi_r_val/hbar_by_m));
+		//if((ind[0]<2)&&(ind[1]<2)&&(ind[2]<2))
 		//printf("back  %lf lap %.10lf  potn  %.10lf\n\n", -1.5*(a_t/a)*psi_i_val,0.5*hbar_by_m*psi_r_lap/(a*a),potn*psi_r_val/hbar_by_m);
 
 		if(isnan(v[0]+v[1]))
@@ -395,11 +429,11 @@ class fdm_psi
 
 	}
 
-	int update(int * ind,double psir,double psii)
+	int update(int * ind,double psir,double psii,int up=1)
 	{
 		int c1,c2;
-		c1 = psi_r.update_field(ind,psir);
-		c2 = psi_i.update_field(ind,psii);
+		c1 = psi_r.update_field(ind,psir,up);
+		c2 = psi_i.update_field(ind,psii,up);
 		
 		return (c1*c2);
 	}
@@ -415,6 +449,14 @@ class fdm_psi
 
 
 
+
+	}
+
+	void switch_fs()
+	{
+
+		psi_r.switch_fs();
+		psi_i.switch_fs();
 
 	}
 
@@ -1022,8 +1064,8 @@ class gauss_rand_field_gen
 				field_ft[ci][0] = sqrt(pk_val)*field_ft[ci][0]/dtN;
 				field_ft[ci][1] = sqrt(pk_val)*field_ft[ci][1]/dtN;
 
-				theta[ci][0] =  (a_t*Hi/a)*f_ini*(a/a0)*(a/a0)*field_ft[ci][0]/(ksqr*hbar_by_m);
-				theta_ft[ci][1] =  (a_t*Hi/a)*f_ini*(a/a0)*(a/a0)*field_ft[ci][1]/(ksqr*hbar_by_m);
+				theta[ci][0] =  (Hi)*f_ini*(a/a0)*(a/a0)*field_ft[ci][0]/(ksqr*hbar_by_m);
+				theta_ft[ci][1] =  (Hi)*f_ini*(a/a0)*(a/a0)*field_ft[ci][1]/(ksqr*hbar_by_m);
 				//printf("Hi %lf\n",Hi);
 
 

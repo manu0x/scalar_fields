@@ -16,7 +16,7 @@ using namespace std;
 int main()
 {
 	int c1=1,c2=1,fail=0;
-	int ind[3]{128,128,128};	
+	int ind[3]{64,64,64};	
 	int tN = ind[0]*ind[1]*ind[2];
 	fdm_psi psi(ind,true);
 	int use_omp{1};
@@ -43,8 +43,10 @@ int main()
 	initialise(ind,psi,phi,k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf,use_hdf5_format);
 	//printf("\ndk is %lf\n",dk);
 	
+	//psi.test_pool();
+
 	if(use_omp)
-	fail = evolve_kdk_openmp(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.2e-4,use_hdf5_format);
+	fail = evolve_kdk_openmp(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,1e-6,use_hdf5_format);
 	else
 	fail = evolve_kdk(ind,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,dx,dk,kbins,0.2e-4,use_hdf5_format);
 	
