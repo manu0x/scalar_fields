@@ -238,10 +238,10 @@ MPI_Status stdn,stup;
 	//printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n h is %lf\n",Hi,omega_dm_ini,ai,h);
 	fclose(fp_sim_info);
 
-/*
+
 	initialise_mpi(n_axis,n_axis_loc,f_alpha,phi,poisson_phi,
-				k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf,use_hdf5_format,p.boxlength,cum_lin_ind);
-	//psi.mpi_send_recv();
+				k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,dx,dk,kbins,pk,grf,use_hdf5_format,p.box_length,cum_lin_ind);
+	
 	
 	printf("\nHHHdk is %lf\n",dk);
 
@@ -255,7 +255,7 @@ MPI_Status stdn,stup;
 	
 	printf("fail is %d\n",fail);
 	fftw_mpi_cleanup();
-*/	
+/**/	
 	
 	MPI_Finalize();
 	

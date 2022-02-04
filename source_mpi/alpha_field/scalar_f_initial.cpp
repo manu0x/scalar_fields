@@ -97,7 +97,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 	L[0] = boxlength;	L[1] = boxlength;	L[2] = boxlength;
 	dk = 1.0/boxlength;
 	kbins = 0;
-	printf("dk %lf\n",dk);
+	
 	k_nyq = 0.5/(dx[0]);
 	
 ////////////////////// For MPI ////////////////////////////////
@@ -249,6 +249,8 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 
 		}
 
+	
+
 	mpi_check = falpha.mpi_send_recv();
 	
 	
@@ -265,7 +267,8 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 	
 	
 
-	fclose(fpstoreini);
+	
+	printf("df dk %lf\n",dk);
 /*
 	FILE *fpwr_spec = fopen("spec_test.txt","w");
 	//cal_spectrum(double *f,int *kbingrid,int kbins,int *s,double *pwspctrm,double dk,double abyai, FILE *fspwrite)
@@ -278,7 +281,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 	vmax_cap=res_limits(max_potn, vmax, dx[0],ai,dt_limit, len_res);
 	
 */
-
+	
 
 
 	fprintf(fp_sim_info,"\n######## Ini Info   ##########\n");
@@ -291,7 +294,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 
 	fprintf(fp_sim_info,"	kbins is %d   %d\n",kbins,(int)((sqrt(maxkmagsqr)-sqrt(minkmagsqr))/dk));
 
-
+	
 	
 	/*printf("\n Length details\n");
 	
@@ -312,6 +315,9 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 
 	*/
 	printf("\nInitialization Complete from rank %d.\n",my_corank);
+	MPI_Barrier(cart_comm);
+
+	fclose(fpstoreini);
 	
 	  
 

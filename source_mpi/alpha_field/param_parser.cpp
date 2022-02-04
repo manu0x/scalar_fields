@@ -42,6 +42,10 @@ int parser(char * param_file_name, param_alpha &p)
 		   if(read_key=="h_bar_by_m22")
 			p.loc_hbar_by_m22 = num_val;
 		
+		   else
+			if(read_key=="box_n")
+			p.box_n = num_val;
+		
 			
 
 		 } 
