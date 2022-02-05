@@ -199,7 +199,8 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 			
 
 		
-
+			ci = (n[2]*n[1])*i + n[2]*j + k;
+			loc_ind[0] = i;  loc_ind[1] = j;  loc_ind[2] = k;
 			
 
 			 poisson_rhs = -1.5*omega_dm_0*pow(a0/ai,3.0*(1.0+w))*ini_dc[ci];
@@ -237,6 +238,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 
 			chk = phi.update( loc_ind,potn);
 			chk = falpha.get_field_alpha(loc_ind,fa);
+			potn = phi.get_potential(loc_ind);
 			
 			if(fabs(potn)>=max_potn)
 				max_potn = fabs(potn);
@@ -254,7 +256,9 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 	
 
 	mpi_check = falpha.mpi_send_recv();
-	
+	mpi_check = phi.mpi_send_recv();
+
+	phi.test_ind();
 	
 	plist_id = H5Pcreate(H5P_FILE_ACCESS);
         H5Pset_fapl_mpio(plist_id, cart_comm, info);

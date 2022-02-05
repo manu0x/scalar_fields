@@ -15,6 +15,8 @@ double field_acc_approx(double f_t,double f_sx[3],double f_t_x[3],double lap_f,d
 			+ 2.0*(f_x)*(phi_x) - 2.0*(alpha*((f_x)*(phi_x)) + (-1.0 + alpha)*(f_y)*(phi_y)) 
 			- 2.0*(-1.0 + alpha)*(f_z)*(phi_z)) + (phi_t)*(pow(f_x, 2.0) + pow(f_y, 2.0) + pow(f_z, 2.0)))));
 
+	//printf("acc %lf %.15lf\n",  pow(f_t, -1.0),f_t);
+
 	return acc;
 
 }

@@ -30,110 +30,7 @@ class scalar_field_3d_mpi
 	     f_x[2] = new double** [n[0]];  
 	   }
 
-/*	   for(i=0;i<(nx);++i)
-	   {
-		f[i] = new double* [n[1]];
-		f_t[i] = new double* [n[1]];
-		if((need_lap)&&(i<n[0]))
-		f_lap[i] = new double* [n[1]];
-		if((need_space_grads)&&(i<n[0]))
-		{ f_x[0][i] = new double* [n[1]];
-		  f_x[1][i] = new double* [n[1]];
-		 f_x[2][i] = new double* [n[1]];
-		}
-		for(int j=0;j<n[1];++j)
-	     	{
-		  f[i][j] = new  double[n[2]] ;
-		  f_t[i][j] = new  double[n[2]] ;
-		  if((need_lap)&&(i<n[0]))
-		   f_lap[i][j] = new  double[n[2]] ;
-		  if((need_space_grads)&&(i<n[0]))
-		  { f_x[0][i][j] = new  double[n[2]] ;
-		     f_x[1][i][j] = new  double[n[2]] ;
-		     f_x[2][i][j] = new  double[n[2]] ;
-		  }
-	
 
-		 }
-
-	    }
-*/
-
-/*	for(i=0;i<(nx);++i)
-	   {
-		f[i] = new double* [n[1]];
-		//f_t[i] = new double* [n[1]];
-
-		double *f_pool;
-		//double *f_t_pool;
-		double *f_lap_pool;
-		double *f_x_pool, *f_y_pool, *f_z_pool;
-
-		
-		 
-
-		if((need_lap)&&(i<n[0]))
-		{ f_lap[i] = new double* [n[1]];
-		   
-		}
-
-		if((need_space_grads)&&(i<n[0]))
-		{ f_x[0][i] = new double* [n[1]];
-		  f_x[1][i] = new double* [n[1]];
-		  f_x[2][i] = new double* [n[1]];
-
-		  
-		}
-
-
-		f_pool = new double [n[1]*n[2]];
-		  //f_t_pool = new double [n[1]*n[2]];
-
-			
-		if((need_space_grads)&&(i<n[0]))
-		  { f_x_pool = new double [n[1]*n[2]];
-		    f_y_pool = new double [n[1]*n[2]];
-		    f_z_pool = new double [n[1]*n[2]];
-		  }
-
-		if((need_lap)&&(i<n[0]))
-		  { f_lap_pool = new double [n[1]*n[2]];
-		    
-		  }
-		
-
-
-
-		for(int j=0;j<n[1];++j)
-	     	{
-		  
-		 
-		  f[i][j] = f_pool;
-		  //f_t[i][j] = f_t_pool;
-
-		  f_pool+=n[2];
-		  //f_t_pool+=n[2];
-		  
-
-		   if((need_lap)&&(i<n[0]))
-		   { f_lap[i][j] = f_lap_pool;
-	   	     f_lap_pool+=n[2];
-		    }
-		   if((need_space_grads)&&(i<n[0]))
-		   { f_x[0][i][j] = f_x_pool ;
-		     f_x[1][i][j] = f_y_pool ;
-		     f_x[2][i][j] = f_z_pool ;
-
-		     f_x_pool+=n[2];
-		     f_y_pool+=n[2];
-		     f_z_pool+=n[2];
-		   }
-	
-
-		 }
-
-	    }
-*/
 
 
 	double *f_pool;
@@ -286,7 +183,9 @@ class scalar_field_3d_mpi
 		int i,j,k,l[3];
 		double h;
 		printf("ff %d %d %d\n",n[0],n[1],n[2]);
-		for(i=0;i<(n[0]);++i)
+		FILE *fp = fopen("ind_check.txt","w");
+		
+		for(i=-2;i<(n[0]+2);++i)
 		{
 			for(j=0;j<n[1];++j)
 			{
@@ -294,7 +193,7 @@ class scalar_field_3d_mpi
 				{
 					l[0] = i; l[1] = j;l[2] = k;
 					h = get_field(l,give_f);//f[l[0]+2][l[1]][l[2]];
-					//printf("ijk %lf %d %d %d\n",h,i,j,k);
+					fprintf(fp,"h ijk %.10lf %d %d %d\n",h,i,j,k);
 
 				}
 
@@ -304,6 +203,7 @@ class scalar_field_3d_mpi
 
 		}
 		printf("\ntest_ind SUCCESS\n");
+		fclose(fp);
 
 	}
 
@@ -317,13 +217,13 @@ class scalar_field_3d_mpi
 	   for(i=0;i<3;++i)
 	   {
 	     
-	  
-	     	ind_l1[i] = (n[i]+ind_lw[i]-1)%n[i];
-	     	ind_l2[i] = (n[i]+ind_lw[i]-2)%n[i];
+	  	if(i!=0)
+	     	{ind_l1[i] = (n[i]+ind_lw[i]-1)%n[i];
+	     	 ind_l2[i] = (n[i]+ind_lw[i]-2)%n[i];
 
-	     	ind_r1[i] = (ind_lw[i]+1)%n[i];
-	     	ind_r2[i] = (ind_lw[i]+2)%n[i];
-	      
+	     	 ind_r1[i] = (ind_lw[i]+1)%n[i];
+	     	 ind_r2[i] = (ind_lw[i]+2)%n[i];
+	      	}
 	    
 	    
 	     if(spt_grad==true)
@@ -341,7 +241,8 @@ class scalar_field_3d_mpi
 	      	m[1] = (-f[ind_l2[0]][ind_l2[1]][ind_l2[2]]-f[ind_r2[0]][ind_r2[1]][ind_r2[2]]);
 	      	m[2] = m[0] + m[1] -30.0*f[ind_lw[0]][ind_lw[1]][ind_lw[2]];
 	     	lapsum+= (m[2]/(dx[i]));
-
+		//printf("\ni %d j %d k %d potn_val %.10lf potn_lap  %.15lf\n",ind_lw[0],ind_lw[1],ind_lw[2],m[1],f[ind_r1[0]][ind_r1[1]][ind_r1[2]]);
+		//printf("left1 i %d j %d k %d  %.10lf\n",ind_l1[0],ind_l1[1],ind_l1[2],f[65][62][0]);
 	     	
 	      }
 		ind_l1[i] = ind_lw[i];
@@ -361,6 +262,7 @@ class scalar_field_3d_mpi
 		return (1);
 	
 	}
+
 
 	int update_field(int * ind,double fu,double f_tu=0.0)
 	{
@@ -586,6 +488,12 @@ class metric_potential_approx_1_t_mpi
 	
 
 
+	void test_ind()
+	{
+		potn.test_ind();
+
+	}
+
 	int calc_vel(int * ind,double &potn_vel,double f_t,double a,double a_t,double *dx,double omega_de_0)
 	{
 		int c1;		
@@ -597,8 +505,9 @@ class metric_potential_approx_1_t_mpi
 		potn_val = potn.get_field(ind,give_f);
 		
 		
+			
 		potn_vel = potn_approx_vel(a,a_t,potn_val,lap_potn,f_t,omega_de_0);
-		
+		//printf("lap_potn %lf %lf\n",lap_potn,potn_vel);
 		
 		if(isnan(potn_vel))
 			return (-1);
@@ -773,7 +682,7 @@ class field_alpha_mpi
 	int calc_acc(int * ind,double &acc,double potn,double potn_t,double potn_x[3],double a,double a_t,double *dx)
 	{
 		int c1;		
-		double fa,fa_t,f_val,fa_t_val,fa_lap,fa_der[3],fa_t_der[3];
+		double fa,f_val,fa_t_val,fa_lap,fa_der[3],fa_t_der[3];
 
 		//fa_val = f_alpha.get_field(ind,give_f);
 		fa_t_val = f_alpha_t.get_field(ind,give_f);
@@ -786,9 +695,9 @@ class field_alpha_mpi
 		c1 = f_alpha_t.get_field_spt_der(ind,fa_t_der);  
 
 		
-		acc = field_acc_approx(fa_t,fa_der, fa_t_der,fa_lap,potn,potn_t, potn_x,a,a_t);
+		acc = field_acc_approx(fa_t_val,fa_der, fa_t_der,fa_lap,potn,potn_t, potn_x,a,a_t);
 
-		
+		//printf("%lf %lf\n",potn_x[0]+potn_x[1]+potn_x[2],fa_t);
 		if(isnan(acc))
 			return (-1);
 		else
