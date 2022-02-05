@@ -236,7 +236,7 @@ MPI_Status stdn,stup;
 	
 	set_back_cosmo(a0,ai,Hi,omega_dm_ini,p);
 	//printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n h is %lf\n",Hi,omega_dm_ini,ai,h);
-	fclose(fp_sim_info);
+	
 
 
 	initialise_mpi(n_axis,n_axis_loc,f_alpha,phi,poisson_phi,

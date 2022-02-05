@@ -196,21 +196,15 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 		  {
 		    for(k=0;k<n[2];++k)
 		    {
-			ci = (n[2]*n[1])*i + n[2]*j + k;
-			loc_ind[0] = i;  loc_ind[1] = j;  loc_ind[2] = k;
-			pow_arg = 3.0*(Hi/H0)*(Hi/H0)*pow(Mfield,(alpha-1.0))*(omega_dm_0*pow(a0/ai,3.0*(1.0+w))*(1.0+ini_dc[ci]))/(4.0*twopie*G*(2.0*alpha-1.0));
-			fa_t_val = pow(pow_arg,1.0/alpha);
 			
 
-			err_hold =  falpha.update(loc_ind, 1.0, fa_t_val);
-
-			//ggg = 1.5*H0*H0*a*a*omega_dm_ini*pow(a0/ai,3.0)*(ini_dc[ci]);
+		
 
 			
 
 			 poisson_rhs = -1.5*omega_dm_0*pow(a0/ai,3.0*(1.0+w))*ini_dc[ci];
 
-			//printf("P rhs %.15lf %.15lf %.10lf %.10lf %.10lf\n",poisson_rhs,ggg,1.5*H0*H0,psi_i_val,ini_theta[ci]);
+	
 			poisson_phi.update_4pieGpsi(ci,poisson_rhs);
 			
 
@@ -233,6 +227,14 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 			ci = (n[2]*n[1])*i + n[2]*j + k;
 			loc_ind[0] = i;  loc_ind[1] = j;  loc_ind[2] = k;
 			potn = poisson_phi.get_potential(ci);
+			
+			
+			pow_arg = 3.0*(H0*H0)*pow(Mfield,(alpha-1.0))*(omega_dm_0*pow(a0/ai,3.0*(1.0+w))*(1.0+ini_dc[ci]))/(4.0*twopie*G*(2.0*alpha-1.0));
+			fa_t_val = sqrt(2.0*pow(pow_arg,1.0/alpha)*(1.0+2.0*potn))/H0;
+			
+
+			err_hold =  falpha.update(loc_ind, 1.0, fa_t_val);
+
 			chk = phi.update( loc_ind,potn);
 			chk = falpha.get_field_alpha(loc_ind,fa);
 			

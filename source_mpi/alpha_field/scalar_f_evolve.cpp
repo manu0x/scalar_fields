@@ -323,7 +323,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 	
 	
 
-	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail);t+=dt,++step_cnt)
+	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail)&&(step_cnt<1);t+=dt,++step_cnt)
 	{
 	   //dt=dti*sqrt(a/a_ini);
 	 if(a>=a_print)
@@ -584,8 +584,8 @@ void evolve_hdf5_write(int *ind,field_alpha_mpi f_alpha,metric_potential_approx_
 														int cum_lin_id,bool get_dc=false)
 {	
 	herr_t status_falpha,status_phi,status;	
-	hid_t file,dtype,dspace_falpha,dspace_potn;
-	hsize_t dim[3],pdim[2];
+	hid_t file,dtype,dspace_falpha,dspace_potn,dspace_dc;
+	hsize_t dim[3],pdim[1];
 	dim[0] = ind[0];
 	dim[1] = ind[1];
 	dim[2] = ind[2];
@@ -593,24 +593,26 @@ void evolve_hdf5_write(int *ind,field_alpha_mpi f_alpha,metric_potential_approx_
 	
 
 	int tN = ind[0]*ind[1]*ind[0];
-	pdim[0]= tN; pdim[1] = 2;
+	pdim[0]= tN; 
 
 
-/*	
+	
 	dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
     	status = H5Tset_order(dtype, H5T_ORDER_LE);
 	dspace_falpha = H5Screate_simple(3, dim, NULL);
 	dspace_potn = H5Screate_simple(3, dim, NULL);
+	dspace_dc = H5Screate_simple(1, pdim, NULL);
 
-	//status_falpha = f_alpha.write_hdf5_f_alpha_mpi(filename, dtype, dspace_falpha,dc,a3a03omega,a,phi,cum_lin_id,get_dc);
+	status_falpha = f_alpha.write_hdf5_f_alpha_mpi(filename, dtype, dspace_falpha,dspace_dc,dc,a3a03omega,a,phi,cum_lin_id,get_dc);
 	
 	
-	//status_phi = phi.write_hdf5_potn_mpi(filename, dtype,dspace_potn);
+	status_phi = phi.write_hdf5_potn_mpi(filename, dtype,dspace_potn);
 
 	H5Sclose(dspace_falpha);
+	H5Sclose(dspace_dc);
 	H5Sclose(dspace_potn);
 	H5Tclose(dtype);
-*/
+
 
 
 }

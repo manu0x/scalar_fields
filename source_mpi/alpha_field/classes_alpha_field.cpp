@@ -828,11 +828,12 @@ class field_alpha_mpi
 		
 		
 		fa_t_val = f_alpha_t.get_field(ind,give_f);
+		fa_t_val = fa_t_val*H0;
 
 		c1 = f_alpha.get_field_spt_der(ind,s_der);
 
 		
-		X = fa_t_val*fa_t_val/(1.0+phi)  - (s_der[0]*s_der[0]+s_der[1]*s_der[1]+s_der[2]*s_der[2])/(a*a*(1.0+phi));
+		X = fa_t_val*fa_t_val/(1.0+phi)  - H0*H0*(s_der[0]*s_der[0]+s_der[1]*s_der[1]+s_der[2]*s_der[2])/(a*a*(1.0+phi));
 		X = 0.5*X;
 
 		return(X);
@@ -897,7 +898,7 @@ class field_alpha_mpi
 
 
 
-	herr_t write_hdf5_f_alpha_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,double *dc,double a3a03omega,double a,
+	herr_t write_hdf5_f_alpha_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,hid_t dspace_dc_glbl,double *dc,double a3a03omega,double a,
 							metric_potential_approx_1_t_mpi phi,int cum_lin_ind,bool get_dc=false)
 	{
 
@@ -917,7 +918,9 @@ class field_alpha_mpi
    		dset_glbl_r = H5Dcreate(filename, "field_alpha", dtype, dspace_glbl,
 						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 		dset_glbl_i = H5Dcreate(filename, "field_alpha_t", dtype, dspace_glbl,
-						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);    		
+						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);   
+
+		 		
 		
 
 		status = f_alpha.write_hdf5_mpi( filename,dtype,dset_glbl_r);
@@ -947,7 +950,8 @@ class field_alpha_mpi
 
 					rho_fa = (2.0*alpha-1.0)*x4val*pow(x4val/(Mfield),alpha-1.0);
 
-					dc[ci] = (4.0*twopie*G*rho_fa*a3a03omega/3.0)-1.0;
+
+					dc[ci] = (4.0*twopie*G*rho_fa*a3a03omega/3.0)/(H0*H0)-1.0;
 					 
 
 				}
@@ -958,7 +962,7 @@ class field_alpha_mpi
 		
 
 
-		dataset = H5Dcreate(filename, "dc_alpha_field", dtype, dspace_glbl,
+		dataset = H5Dcreate(filename, "dc_alpha_field", dtype, dspace_dc_glbl,
 						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
 		
@@ -970,12 +974,12 @@ class field_alpha_mpi
 		dspace = H5Screate_simple(1, count, NULL);
 
 
-		H5Sselect_hyperslab(dspace_glbl, H5S_SELECT_SET, offset, NULL, count, NULL);
+		H5Sselect_hyperslab(dspace_dc_glbl, H5S_SELECT_SET, offset, NULL, count, NULL);
 		plist_id = H5Pcreate(H5P_DATASET_XFER);
     		H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
 		
 		
-		status = H5Dwrite(dataset, dtype, dspace, dspace_glbl,
+		status = H5Dwrite(dataset, dtype, dspace, dspace_dc_glbl,
 		      				plist_id,dc);
 
 		H5Sclose(dspace);
@@ -1107,10 +1111,12 @@ class metric_potential_poisson_mpi
 	}
 
 
-	double get_potential(int ci)
+	double get_potential(int ci,int get_imag=0)
 	{
-
+		if(!get_imag)
 		return (fpGpsi[ci][0]);	
+		else
+		return(fpGpsi[ci][1]/sqrt(fpGpsi[ci][0]*fpGpsi[ci][0]+fpGpsi[ci][1]*fpGpsi[ci][1]));
 
 	}
 
