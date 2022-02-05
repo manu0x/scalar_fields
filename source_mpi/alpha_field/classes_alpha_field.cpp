@@ -239,14 +239,14 @@ class scalar_field_3d_mpi
 	       m[2] = m[0] + m[1] ;
 		
 		
-	       f_x[i][ind[0]][ind[1]][ind[2]] = m[2]/(dx[i]);
+	       f_x[i][ind[0]][ind[1]][ind[2]] = m[2]/(12.0*dx[i]);
 	      }
 
 	     if(laplacian==true)
 	      {	m[0] = (16.0*f[ind_l1[0]][ind_l1[1]][ind_l1[2]]+16.0*f[ind_r1[0]][ind_r1[1]][ind_r1[2]]); 
 	      	m[1] = (-f[ind_l2[0]][ind_l2[1]][ind_l2[2]]-f[ind_r2[0]][ind_r2[1]][ind_r2[2]]);
 	      	m[2] = m[0] + m[1] -30.0*f[ind_lw[0]][ind_lw[1]][ind_lw[2]];
-	     	lapsum+= (m[2]/(dx[i]));
+	     	lapsum+= (m[2]/(12.0*dx[i]*dx[i]));
 		//printf("\ni %d j %d k %d potn_val %.10lf potn_lap  %.15lf\n",ind_lw[0],ind_lw[1],ind_lw[2],m[1],f[ind_r1[0]][ind_r1[1]][ind_r1[2]]);
 		//printf("left1 i %d j %d k %d  %.10lf\n",ind_l1[0],ind_l1[1],ind_l1[2],f[65][62][0]);
 	     	
