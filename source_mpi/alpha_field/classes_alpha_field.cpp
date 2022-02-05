@@ -5,7 +5,7 @@ class scalar_field_3d_mpi
 {
 
 	protected:
-	 double ***f,***f_t,****f_x,***f_lap;
+	 double ***f,***fup,***f_t,****f_x,***f_lap;
          int n[3],cum_lin_ind;
          char ini_status{'N'};
 
@@ -20,6 +20,7 @@ class scalar_field_3d_mpi
 	   ini_status = 'I';
 	   nx = n[0]+4;
 	   f = new double** [nx] ;
+	   fup = new double** [nx] ;
 	   //f_t = new double** [nx] ;
 	   if(need_lap)
 	   f_lap = new double** [n[0]] ;
@@ -34,6 +35,7 @@ class scalar_field_3d_mpi
 
 
 	double *f_pool;
+	double *fup_pool;
 	//double *f_t_pool;
 	double *f_lap_pool;
 	double *f_x_pool, *f_y_pool, *f_z_pool;
@@ -41,6 +43,7 @@ class scalar_field_3d_mpi
 
 
 	f_pool = new double [nx*n[1]*n[2]];
+	fup_pool = new double [nx*n[1]*n[2]];
 	//f_t_pool = new double [n[1]*n[2]];
 
 			
@@ -60,6 +63,7 @@ class scalar_field_3d_mpi
 	for(i=0;i<(nx);++i)
 	   {
 		f[i] = new double* [n[1]];
+		fup[i] = new double* [n[1]];
 		//f_t[i] = new double* [n[1]];
 
 		
@@ -91,9 +95,11 @@ class scalar_field_3d_mpi
 		  
 		 
 		  f[i][j] = f_pool;
+		  fup[i][j] = fup_pool;
 		  //f_t[i][j] = f_t_pool;
 
 		  f_pool+=n[2];
+		  fup_pool+=n[2];
 		  //f_t_pool+=n[2];
 		  
 
@@ -264,8 +270,35 @@ class scalar_field_3d_mpi
 	}
 
 
-	int update_field(int * ind,double fu,double f_tu=0.0)
+	void switch_fs()
 	{
+		int i,j,k;
+		for(i=0;i<(n[0]+4);++i)
+		{
+			for(j=0;j<n[1];++j)
+			{
+				for(k=0;k<(n[2]);++k)
+				{
+					f[i][j][k] =  fup[i][j][k] ;
+
+				}
+
+			}
+
+
+
+		}
+
+
+
+	}
+
+	int update_field(int * ind,double fu,int upd=1,double f_tu=0.0)
+	{
+		
+		if(upd)
+		fup[ind[0]+2][ind[1]][ind[2]] = fu;
+		else
 		f[ind[0]+2][ind[1]][ind[2]] = fu;
 		//f_t[ind[0]][ind[1]][ind[2]] = f_tu;
 
@@ -494,6 +527,13 @@ class metric_potential_approx_1_t_mpi
 
 	}
 
+	void switch_fs()
+	{
+		potn.switch_fs();
+
+	}
+
+
 	int calc_vel(int * ind,double &potn_vel,double f_t,double a,double a_t,double *dx,double omega_de_0)
 	{
 		int c1;		
@@ -516,10 +556,10 @@ class metric_potential_approx_1_t_mpi
 	}
 
 
-	int update(int * ind,double potn_val)
+	int update(int * ind,double potn_val,int upd=1)
 	{
 		int c1;
-		c1 = potn.update_field(ind,potn_val);
+		c1 = potn.update_field(ind,potn_val,upd);
 		
 		
 		return (c1);
@@ -706,11 +746,11 @@ class field_alpha_mpi
 
 	
 
-	int update(int * ind,double fa,double fa_t)
+	int update(int * ind,double fa,double fa_t,int upd=1)
 	{
 		int c1,c2;
-		c1 = f_alpha.update_field(ind,fa);
-		c2 = f_alpha_t.update_field(ind,fa_t);
+		c1 = f_alpha.update_field(ind,fa,upd);
+		c2 = f_alpha_t.update_field(ind,fa_t,upd);
 		
 		return (c1*c2);
 	}

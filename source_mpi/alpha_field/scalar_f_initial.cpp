@@ -234,9 +234,9 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 			fa_t_val = sqrt(2.0*pow(pow_arg,1.0/alpha)*(1.0+2.0*potn))/H0;
 			
 
-			err_hold =  falpha.update(loc_ind, 1.0, fa_t_val);
+			err_hold =  falpha.update(loc_ind, 1.0, fa_t_val,0);
 
-			chk = phi.update( loc_ind,potn);
+			chk = phi.update( loc_ind,potn,0);
 			chk = falpha.get_field_alpha(loc_ind,fa);
 			potn = phi.get_potential(loc_ind);
 			

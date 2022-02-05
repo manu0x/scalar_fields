@@ -444,15 +444,22 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 			
 			potn_k = potn_val[ci]+ potn_t*dt;
 			
-			//phi.update(ind,potn_k);
-			//f_alpha.update(ind,fa_k[0],fa_k[1]);
-
+			
+			//printf(" %d %lf %lf %lf\n",step_cnt,potn_t,acc_fa,fa_k[1]);
 
 			if(isnan(potn_k+fa_k[0]+fa_k[1]))
 			{
-				printf("Yfailed at step %d\n",step_cnt);
+				//printf("Yfailed at step %d %lf %lf %lf\n",step_cnt,potn_k,potn_t,fa_k[1]);
 				fail=1;
 				break;
+
+			}
+
+			else
+			{
+
+				phi.update(ind,potn_k);
+				f_alpha.update(ind,fa_k[0],fa_k[1]);
 
 			}
 			
@@ -461,6 +468,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 
 		   }
 	}
+
+	phi.switch_fs();
 	//printf("YOYOYOYO\n");
 	
 	mpi_check = f_alpha.mpi_send_recv();
@@ -473,7 +482,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 	a = 0.5*(ak+a+a_t*dt);
 
  #pragma omp parallel for private(j,k,ci,ind,c1,fa_k,fa_vel,fa_retrive,potn,potn_k,potn_t,acc_fa,potn_der)
-	for(i=0;(i>n[0])&&(!fail);++i)
+	for(i=0;(i<n[0])&&(!fail);++i)
 	 {
 		  for(j=0;(j<n[1]);++j)
 		  {
@@ -514,6 +523,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 		}
 	}
 
+
+	phi.switch_fs();
 	mpi_check = f_alpha.mpi_send_recv();
 	mpi_check = phi.mpi_send_recv();
 	mpi_check = MPI_Barrier(cart_comm);
