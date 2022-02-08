@@ -84,7 +84,7 @@ int evolve_kdk(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_appr
 				printf("hdf5 %s\n",fp_hdf5_name);
 				printf("pwr spec name %s\n",fp_pwr_spec_name);		
 				
-				evolve_hdf5_write(n_glbl,f_alpha, phi,filename,dc,a3a03omega,a,cum_lin_id,true);
+				evolve_hdf5_write(n_glbl,f_alpha, phi,filename,dc,a3a03omega,a,Xb_0,cum_lin_id,true);
 
 				
 				status=H5Fclose (filename);
@@ -278,7 +278,7 @@ int evolve_kdk(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_appr
 			printf("hdf5 %s\n",fp_hdf5_name);
 			printf("pwr spec name %s\n",fp_pwr_spec_name);		
 			
-			evolve_hdf5_write(n_glbl,f_alpha, phi,filename,dc,a3a03omega,a,cum_lin_id,true);
+			evolve_hdf5_write(n_glbl,f_alpha, phi,filename,dc,a3a03omega,a,Xb_0,cum_lin_id,true);
 			status=H5Fclose (filename);
 			cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
 			fclose(fpwr_spec);
@@ -329,7 +329,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 	int c1,c2,fail=0;
 	int step_cnt;
 	int num_prints = 14;
-	double z_print_list[num_prints]{99.0,40.0,10.0,5.0,4.0,5.0,3.0,2.0,1.0,0.5,0.25,0.1,0.000001,0.0};
+	double z_print_list[num_prints]{99.0,96.0,40.0,10.0,5.0,4.0,5.0,3.0,2.0,1.0,0.5,0.25,0.1,0.000001,0.0};
 	double z_cur;
 	
 	int prn=0;	
@@ -354,7 +354,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 	
 	
 
-	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail);t+=dt,++step_cnt)
+	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail)&&(prn<4);t+=dt,++step_cnt)
 	{
 	   //dt=dti*sqrt(a/a_ini);
 	 if(a>=a_print)
@@ -400,7 +400,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 				printf("hdf5 %s\n",fp_hdf5_name);
 				printf("pwr spec name %s\n",fp_pwr_spec_name);		
 				
-				evolve_hdf5_write(n_glbl,f_alpha, phi,filename,dc,a3a03omega,a,cum_lin_id,true);
+				evolve_hdf5_write(n_glbl,f_alpha, phi,filename,dc,a3a03omega,a,Xb_0,cum_lin_id,true);
 				status=H5Fclose(filename);
 				//cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
 				fclose(fpwr_spec);	
@@ -606,7 +606,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 			printf("hdf5 %s\n",fp_hdf5_name);
 			printf("pwr spec name %s\n",fp_pwr_spec_name);		
 			
-			evolve_hdf5_write(n_glbl,f_alpha, phi,filename,dc,a3a03omega,a,cum_lin_id,true);
+			evolve_hdf5_write(n_glbl,f_alpha, phi,filename,dc,a3a03omega,a,Xb_0,cum_lin_id,true);
 
 	
 			status=H5Fclose(filename);
@@ -648,7 +648,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 }
 
 	
-void evolve_hdf5_write(int *ind,field_alpha_mpi f_alpha,metric_potential_approx_1_t_mpi phi,hid_t filename,double *dc,double a3a03omega,double a,
+void evolve_hdf5_write(int *ind,field_alpha_mpi f_alpha,metric_potential_approx_1_t_mpi phi,hid_t filename,double *dc,double a3a03omega,double a,double Xb_0,
 														int cum_lin_id,bool get_dc=false)
 {	
 	herr_t status_falpha,status_phi,status;	
@@ -671,7 +671,7 @@ void evolve_hdf5_write(int *ind,field_alpha_mpi f_alpha,metric_potential_approx_
 	dspace_potn = H5Screate_simple(3, dim, NULL);
 	dspace_dc = H5Screate_simple(1, pdim, NULL);
 
-	status_falpha = f_alpha.write_hdf5_f_alpha_mpi(filename, dtype, dspace_falpha,dspace_dc,dc,a3a03omega,a,phi,cum_lin_id,get_dc);
+	status_falpha = f_alpha.write_hdf5_f_alpha_mpi(filename, dtype, dspace_falpha,dspace_dc,dc,a3a03omega,a,Xb_0,phi,cum_lin_id,get_dc);
 	
 	
 	status_phi = phi.write_hdf5_potn_mpi(filename, dtype,dspace_potn);
