@@ -1,8 +1,8 @@
 
 
 int evolve_kdk(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_approx_1_t_mpi &phi,double k_grid[][3],int kbin_grid[],
-					double a_final,double a_ini,double a0,double omega_dm_0,double *dx,double dk,int kbins,double dt,
-						int cum_lin_id,bool use_hdf_format)
+					double a_final,double a_ini,double a0,double omega_dm_0,double Xb_0,double *dx,double dk,int kbins,double dt,
+							int cum_lin_id,bool use_hdf_format)
 {	printf("Yo\n");
 	double a,a_t,t,ak,a3a03omega,dti=dt;
 	double a_print;
@@ -145,18 +145,38 @@ int evolve_kdk(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_appr
 			c1 = phi.get_potn_spt_der(ind,potn_der);
 			c1  = f_alpha.get_field_alpha(ind,fa_val[ci]);///Check if this as intented
 
-			c1 = phi.calc_vel(ind,potn_t,fa_val[ci][1],a,a_t,dx,(1.0-omega_dm_0));
 			
+			//int calc_vel(int * ind,double &potn_vel,double f_t,double a,double a_t,double *dx,double omega_dm_0,double Xb_0)
+			
+			c1 = phi.calc_vel(ind,potn_t,fa_val[ci][1],a,a_t,dx,omega_dm_0,Xb_0);
+
 			c1 = f_alpha.calc_acc(ind,acc_fa, potn_val[ci], potn_t,potn_der, a, a_t,dx);
 				
-			//printf("i %d j %d k %d psi r %10lf i  %10lf\n",i,j,k,psi_val[ci][0],psi_val[ci][1]);
+			//printf("i %d j %d k %d psi r %10lf i  %10lf\n",i,j,k,potn_val[ci],potn_der[0]+potn_der[1]+potn_der[2]);
 			fa_k[0] = fa_val[ci][0]+ fa_val[ci][1]*dt;
 			fa_k[1] = fa_val[ci][1]+ acc_fa*dt;
 			
 			potn_k = potn_val[ci]+ potn_t*dt;
 			
-			phi.update(ind,potn_k);
-			f_alpha.update(ind,fa_k[0],fa_k[1]);
+			
+			//printf(" %d %lf %lf %lf\n",step_cnt,potn_t,acc_fa,fa_k[1]);
+
+			if(isnan(potn_k+fa_k[0]+fa_k[1]))
+			{
+				printf("Yfailed at step %d %lf %lf %lf\n",step_cnt,potn_k,potn_t,fa_k[1]);
+				fail=1;
+				break;
+
+			}
+
+			else
+			{
+
+				phi.update(ind,potn_k);
+				f_alpha.update(ind,fa_k[0],fa_k[1]);
+
+			}
+			
 
 			
 			
@@ -186,10 +206,13 @@ int evolve_kdk(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_appr
 
 			
 			c1  = f_alpha.get_field_alpha(ind,fa_retrive);
-			potn_k = phi.get_potential(ind);	
-			c1 = phi.calc_vel(ind,potn_t,fa_retrive[1],a,a_t,dx,(1.0-omega_dm_0));	
+			potn_k = phi.get_potential(ind);
+
+				
+			c1 = phi.calc_vel(ind,potn_t,fa_retrive[1],a,a_t,dx,omega_dm_0,Xb_0);	
 			c1 = phi.get_potn_spt_der(ind,potn_der);	
 			c1 = f_alpha.calc_acc(ind,acc_fa, potn_k, potn_t,potn_der, a, a_t,dx);
+			//printf("failed at step %d %.15lf %lf %lf\n",step_cnt,potn_k,fa_retrive[1],acc_fa);
 
 			fa_k[0] = 0.5*(fa_retrive[0]+fa_val[ci][0]+ fa_retrive[1]*dt);
 			fa_k[1] = 0.5*(fa_retrive[1]+fa_val[ci][1]+ acc_fa*dt);
@@ -199,6 +222,14 @@ int evolve_kdk(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_appr
 			phi.update(ind,potn_k);
 			f_alpha.update(ind,fa_k[0],fa_k[1]);
 
+			if(isnan(potn_k+fa_k[0]+fa_k[1]))
+			{
+				//printf("failed at step %d\n",step_cnt);
+				fail=1;
+				break;
+
+			}
+			
 			
 
 
@@ -286,7 +317,7 @@ int evolve_kdk(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_appr
 }
 
 int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_approx_1_t_mpi &phi,double k_grid[][3],int kbin_grid[],
-					double a_final,double a_ini,double a0,double omega_dm_0,double *dx,double dk,int kbins,double dt,
+					double a_final,double a_ini,double a0,double omega_dm_0,double Xb_0,double *dx,double dk,int kbins,double dt,
 							int cum_lin_id,bool use_hdf_format)
 {	printf("Yo\n");
 	double a,a_t,t,ak,a3a03omega,dti=dt;
@@ -323,7 +354,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 	
 	
 
-	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail)&&(step_cnt<1);t+=dt,++step_cnt)
+	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail)&&(prn<=1);t+=dt,++step_cnt)
 	{
 	   //dt=dti*sqrt(a/a_ini);
 	 if(a>=a_print)
@@ -434,8 +465,11 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 			c1 = phi.get_potn_spt_der(ind,potn_der);
 			c1  = f_alpha.get_field_alpha(ind,fa_val[ci]);///Check if this as intented
 
-			c1 = phi.calc_vel(ind,potn_t,fa_val[ci][1],a,a_t,dx,(1.0-omega_dm_0));
 			
+			//int calc_vel(int * ind,double &potn_vel,double f_t,double a,double a_t,double *dx,double omega_dm_0,double Xb_0)
+			
+			c1 = phi.calc_vel(ind,potn_t,fa_val[ci][1],a,a_t,dx,omega_dm_0,Xb_0);
+
 			c1 = f_alpha.calc_acc(ind,acc_fa, potn_val[ci], potn_t,potn_der, a, a_t,dx);
 				
 			//printf("i %d j %d k %d psi r %10lf i  %10lf\n",i,j,k,potn_val[ci],potn_der[0]+potn_der[1]+potn_der[2]);
@@ -449,7 +483,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 
 			if(isnan(potn_k+fa_k[0]+fa_k[1]))
 			{
-				//printf("Yfailed at step %d %lf %lf %lf\n",step_cnt,potn_k,potn_t,fa_k[1]);
+				printf("Yfailed at step %d %lf %lf %lf\n",step_cnt,potn_k,potn_t,fa_k[1]);
 				fail=1;
 				break;
 
@@ -470,6 +504,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 	}
 
 	phi.switch_fs();
+	f_alpha.switch_fs();
 	//printf("YOYOYOYO\n");
 	
 	mpi_check = f_alpha.mpi_send_recv();
@@ -495,10 +530,13 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 
 			
 			c1  = f_alpha.get_field_alpha(ind,fa_retrive);
-			potn_k = phi.get_potential(ind);	
-			c1 = phi.calc_vel(ind,potn_t,fa_retrive[1],a,a_t,dx,(1.0-omega_dm_0));	
+			potn_k = phi.get_potential(ind);
+
+				
+			c1 = phi.calc_vel(ind,potn_t,fa_retrive[1],a,a_t,dx,omega_dm_0,Xb_0);	
 			c1 = phi.get_potn_spt_der(ind,potn_der);	
 			c1 = f_alpha.calc_acc(ind,acc_fa, potn_k, potn_t,potn_der, a, a_t,dx);
+			//printf("failed at step %d %.15lf %lf %lf\n",step_cnt,potn_k,fa_retrive[1],acc_fa);
 
 			fa_k[0] = 0.5*(fa_retrive[0]+fa_val[ci][0]+ fa_retrive[1]*dt);
 			fa_k[1] = 0.5*(fa_retrive[1]+fa_val[ci][1]+ acc_fa*dt);
@@ -510,7 +548,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 
 			if(isnan(potn_k+fa_k[0]+fa_k[1]))
 			{
-				printf("failed at step %d\n",step_cnt);
+				//printf("failed at step %d\n",step_cnt);
 				fail=1;
 				break;
 
@@ -525,6 +563,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 
 
 	phi.switch_fs();
+	f_alpha.switch_fs();
 	mpi_check = f_alpha.mpi_send_recv();
 	mpi_check = phi.mpi_send_recv();
 	mpi_check = MPI_Barrier(cart_comm);

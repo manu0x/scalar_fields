@@ -534,7 +534,7 @@ class metric_potential_approx_1_t_mpi
 	}
 
 
-	int calc_vel(int * ind,double &potn_vel,double f_t,double a,double a_t,double *dx,double omega_de_0)
+	int calc_vel(int * ind,double &potn_vel,double f_t,double a,double a_t,double *dx,double omega_dm_0,double Xb_0)
 	{
 		int c1;		
 		double potn_val,lap_potn;
@@ -546,8 +546,12 @@ class metric_potential_approx_1_t_mpi
 		
 		
 			
-		potn_vel = potn_approx_vel(a,a_t,potn_val,lap_potn,f_t,omega_de_0);
-		//printf("lap_potn %lf %lf\n",lap_potn,potn_vel);
+		//potn_vel = potn_approx_vel(a,a_t,potn_val,lap_potn,f_t,omega_de_0);
+		//printf("lap_potn %lf %lf %lf\n",lap_potn,potn_val,f_t);
+	
+	
+
+		potn_vel = potn_vel_eqn(a,a_t,potn_val,lap_potn,f_t,omega_dm_0,Xb_0);
 		
 		if(isnan(potn_vel))
 			return (-1);
@@ -696,6 +700,15 @@ class field_alpha_mpi
 	}
 
 
+	void switch_fs()
+	{
+
+		f_alpha.switch_fs();
+		f_alpha_t.switch_fs();
+
+
+	}
+
 	void test_ind2()
 	{   int locind[3],i,j,k,ci;
 		double psi_r_val;
@@ -735,7 +748,8 @@ class field_alpha_mpi
 		c1 = f_alpha_t.get_field_spt_der(ind,fa_t_der);  
 
 		
-		acc = field_acc_approx(fa_t_val,fa_der, fa_t_der,fa_lap,potn,potn_t, potn_x,a,a_t);
+		//acc = field_acc_approx(fa_t_val,fa_der, fa_t_der,fa_lap,potn,potn_t, potn_x,a,a_t);
+		 acc = field_acc_eqn(fa_t_val,fa_der, fa_t_der,fa_lap,potn,potn_t, potn_x,a,a_t);
 
 		//printf("%lf %lf\n",potn_x[0]+potn_x[1]+potn_x[2],fa_t);
 		if(isnan(acc))

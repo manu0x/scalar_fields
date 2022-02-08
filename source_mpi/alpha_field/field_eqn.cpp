@@ -1,0 +1,25 @@
+
+double field_acc_eqn(double f_t,double f_sx[3],double f_t_x[3],double lap_f,double phi,double phi_t,double phi_sx[3],double a,double a_t)
+{
+	double numer,denom;	
+	double acc,phi_x,phi_y,phi_z,f_x,f_y,f_z,f_tx,f_ty,f_tz,f_ssqr;    
+	
+	phi_x = phi_sx[0];	phi_y = phi_sx[1];	phi_z = phi_sx[2];
+	f_x = f_sx[0];	f_y = f_sx[1];	f_z = f_sx[2];
+	f_tx = f_t_x[0];	f_ty = f_t_x[1];	f_tz = f_t_x[2];
+	f_ssqr = f_x*f_x + f_y*f_y + f_z*f_z;
+
+	numer = 3.0*(1.0-2.0*alpha*phi)*(a_t/a)*f_t - (3.0+alpha)*f_t*phi_t - (-1.0+2.0*(2.0+alpha)*phi)*(a_t/a)*f_ssqr/(f_t*a*a);
+	numer+= -( phi_t*f_ssqr/(f_t*a*a) - (-1.0+2.0*alpha)*(-1.0+2.0*(-2.0+alpha)*phi)*( f_x*f_tx + f_y*f_ty + f_z*f_tz )/(f_t*a*a) 
+		   +( -2.0*(-1.0+alpha)*( f_x*phi_x + f_y*phi_y + f_z*phi_z )/(a*a) + (1.0-2.0*(-2.0+alpha)*phi)*lap_f/(a*a)  )     );
+
+	denom = (-alpha+2.0*alpha*alpha*phi);
+
+	acc = numer/denom;
+
+	//printf("acc %lf %.15lf\n",  pow(f_t, -1.0),f_t);
+
+	return acc;
+
+}
+

@@ -35,7 +35,7 @@ double res_limits(double max_potn,double vmax,double dx,double a,double &dt_limi
 
 */
 void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potential_approx_1_t_mpi &phi,metric_potential_poisson_mpi poisson_phi,
-				double k_grid[][3],int kbin_grid[],double a0,double ai,double Hi,double omega_dm_0,double *dx,double &dk,int & kbins,
+				double k_grid[][3],int kbin_grid[],double a0,double ai,double Hi,double omega_dm_0,double & Xb_0,double *dx,double &dk,int & kbins,
 								ini_power_generator pk,gauss_rand_field_gen_mpi grf,bool use_hdf5_format,double boxlength,int cum_lin_ind)
 {
       
@@ -106,6 +106,11 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 	
 	//ini_rand_field();
 	//  read_ini_rand_field();
+
+	double pow_arg,fa_t_val;
+
+	pow_arg = 3.0*(H0*H0)*pow(Mfield,(alpha-1.0))*(omega_dm_0*pow(a0/ai,3.0*(1.0+w)))/(4.0*twopie*G*(2.0*alpha-1.0));
+	Xb_0 = (pow(pow_arg,1.0/alpha));
         
 	for(ci = 0;ci <tN; ++ci)
 	{
@@ -189,7 +194,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 	
 	grf.gen(k_grid,ini_dc, pk,a_t,a,a0,f_ini);
 	
-	double pow_arg,fa_t_val;
+	
 	for(i=0;i<n[0];++i)
 		{
 		  for(j=0;j<n[1];++j)

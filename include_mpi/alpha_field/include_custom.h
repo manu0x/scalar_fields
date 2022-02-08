@@ -23,6 +23,9 @@ using namespace std;
 enum code1 {give_f,give_f_t,give_f_x,give_f_y,give_f_z,give_f_lap};
 #include "scalar_f_global_constants.h"
 
+#include "../../source_mpi/alpha_field/potn_eqn.cpp"
+#include "../../source_mpi/alpha_field/field_eqn.cpp"
+
 #include "../../source_mpi/alpha_field/potn_approx.cpp"
 #include "../../source_mpi/alpha_field/field_approx.cpp"
 
