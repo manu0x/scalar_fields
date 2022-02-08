@@ -319,7 +319,7 @@ int evolve_kdk(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_appr
 int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_approx_1_t_mpi &phi,double k_grid[][3],int kbin_grid[],
 					double a_final,double a_ini,double a0,double omega_dm_0,double Xb_0,double *dx,double dk,int kbins,double dt,
 							int cum_lin_id,bool use_hdf_format)
-{	printf("Yo\n");
+{	printf("OMP Yo\n");
 	double a,a_t,t,ak,a3a03omega,dti=dt;
 	double a_print;
 	double fa_vel[2],fa_val[n[0]*n[1]*n[2]][2],potn_val[n[0]*n[1]*n[2]],fa_k[2],potn,potn_k,
@@ -354,7 +354,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 	
 	
 
-	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail)&&(prn<=1);t+=dt,++step_cnt)
+	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail);t+=dt,++step_cnt)
 	{
 	   //dt=dti*sqrt(a/a_ini);
 	 if(a>=a_print)
@@ -548,7 +548,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 
 			if(isnan(potn_k+fa_k[0]+fa_k[1]))
 			{
-				//printf("failed at step %d\n",step_cnt);
+				printf("failed at step %d\n",step_cnt);
 				fail=1;
 				break;
 

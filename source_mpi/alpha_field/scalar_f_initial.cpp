@@ -91,9 +91,9 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 
 	//double kf = twopie*lenfac/(64.0);
 	
-	
-        dx[0] = boxlength*space_mpc_to_dimless/((double)(ind[0]-1));	dx[1] = boxlength*space_mpc_to_dimless/((double)(ind[1]-1));	
-	dx[2] = boxlength*space_mpc_to_dimless/((double)(ind[2]-1));
+	space_mpc_to_dimless=1.0;
+        dx[0] = boxlength/((double)(ind[0]-1));	dx[1] = boxlength/((double)(ind[1]-1));	
+	dx[2] = boxlength/((double)(ind[2]-1));
 	L[0] = boxlength;	L[1] = boxlength;	L[2] = boxlength;
 	dk = 1.0/boxlength;
 	kbins = 0;
