@@ -230,7 +230,13 @@ class scalar_field_3d_mpi
 	     	 ind_r1[i] = (ind_lw[i]+1)%n[i];
 	     	 ind_r2[i] = (ind_lw[i]+2)%n[i];
 	      	}
-	    
+	        else
+		{ind_l1[i] = (ind_lw[i]-1);
+	     	 ind_l2[i] = (ind_lw[i]-2);
+
+	     	 ind_r1[i] = (ind_lw[i]+1);
+	     	 ind_r2[i] = (ind_lw[i]+2);
+	      	}
 	    
 	     if(spt_grad==true)
 	     {
@@ -260,7 +266,7 @@ class scalar_field_3d_mpi
 	   } 
 
 	if(laplacian==true)
-	  f_lap[ind[0]][ind_lw[1]][ind_lw[2]]=lapsum;
+	  f_lap[ind[0]][ind[1]][ind[2]]=lapsum;
 
 	  if(isnan(lapsum))
 		return(0);
@@ -861,7 +867,7 @@ class field_alpha_mpi
 
 
 
-	herr_t write_hdf5_f_alpha_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,hid_t dspace_dc_glbl,double *dc,double a3a03omega,double a,double Xb_0,
+	herr_t write_hdf5_f_alpha_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,hid_t dspace_dc_glbl,double *dc,double a0,double a,double Xb_0,
 							metric_potential_approx_1_t_mpi phi,int cum_lin_ind,bool get_dc=false)
 	{
 
@@ -869,7 +875,7 @@ class field_alpha_mpi
 		herr_t status ;
 		int tN  = n[0]*n[1]*n[3];
 		int i,j,k,locind[3],ci;
-		double fa_val,fa_t_val,x4val,rho_fa,phival;
+		double fa_val,fa_t_val,x4val,rho_fa,phival,Xb;
 
 		
 
@@ -912,10 +918,10 @@ class field_alpha_mpi
 							
 
 					//rho_fa = x4val*(3.0*H0*H0/(4.0*a3a03omega*twopie*Xb_0));
+					Xb = Xb_0*pow(a0/a,6.0/(2.0*alpha-1.0));
 
-
-					dc[ci] = (x4val/Xb_0)-1.0;
-					 //printf("ci %d dc %.10lf  %.10lf %.10lf\n",ci,dc[ci],x4val,Xb_0);
+					dc[ci] = (x4val/Xb)-1.0;
+					// printf("ci %d dc %.10lf  %.10lf %.10lf\n",ci,dc[ci],x4val,Xb);
 
 				}
 	
