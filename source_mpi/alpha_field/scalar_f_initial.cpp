@@ -111,6 +111,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 
 	pow_arg = 3.0*(H0*H0)*pow(Mfield,(alpha-1.0))*(omega_dm_0)/(4.0*twopie*G*(2.0*alpha-1.0));
 	Xb_0 = (pow(pow_arg,1.0/alpha));
+	
         
 	for(ci = 0;ci <tN; ++ci)
 	{
@@ -207,7 +208,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 			ci = (n[2]*n[1])*i + n[2]*j + k;
 			loc_ind[0] = i;  loc_ind[1] = j;  loc_ind[2] = k;
 
-			ini_dc[ci] = 0.0;
+			//ini_dc[ci] = 0.0;
 
 			 poisson_rhs = -1.5*omega_dm_0*pow(a0/ai,3.0*(1.0+w))*ini_dc[ci];
 
@@ -234,6 +235,8 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 			ci = (n[2]*n[1])*i + n[2]*j + k;
 			loc_ind[0] = i;  loc_ind[1] = j;  loc_ind[2] = k;
 			potn = poisson_phi.get_potential(ci);
+
+			
 			
 			
 			//pow_arg = 3.0*(H0*H0)*pow(Mfield,(alpha-1.0))*(omega_dm_0*pow(a0/ai,3.0*(1.0+w))*(1.0+ini_dc[ci]))/(4.0*twopie*G*(2.0*alpha-1.0));

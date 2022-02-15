@@ -455,7 +455,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 	fb_t_k = fb_t + fb_acc*dt;
 	  
 	ak = a+a_t*dt;
-	printf("fb_t  %lf   fb_t_th  %lf\n",fb_t,fb_t_0*pow(a0/ak,3.0/(2.0*alpha-1.0)));
+	//printf("fb_t  %lf   fb_t_th  %lf\n",fb_t,fb_t_0*pow(a0/ak,3.0/(2.0*alpha-1.0)));
  #pragma omp parallel for private(j,k,ci,ind,c1,fa_k,fa_vel,potn,potn_k,potn_t,acc_fa,potn_der)
 	 for(i=0;i<n[0];++i)
 	 {
@@ -546,15 +546,15 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 			potn_k = phi.get_potential(ind);
 
 				
-			//c1 = phi.calc_vel(ind,potn_t,fa_retrive[1],a,a_t,dx,omega_dm_0,Xb_0);	
-			//c1 = phi.get_potn_spt_der(ind,potn_der);	
+			c1 = phi.calc_vel(ind,potn_t,fa_retrive[1],a,a_t,dx,omega_dm_0,Xb_0);	
+			c1 = phi.get_potn_spt_der(ind,potn_der);	
 			c1 = f_alpha.calc_acc(ind,acc_fa, potn_k, potn_t,potn_der, ak, a_t,dx);
 			//printf("failed at step %d %.15lf %lf %lf\n",step_cnt,potn_k,fa_retrive[1],acc_fa);
 
 			fa_k[0] = 0.5*(fa_retrive[0]+fa_val[ci][0]+ fa_retrive[1]*dt);
 			fa_k[1] = 0.5*(fa_retrive[1]+fa_val[ci][1]+ acc_fa*dt);
 
-			//potn_k = 0.5*(potn_k+potn_val[ci]+potn_t*dt);
+			potn_k = 0.5*(potn_k+potn_val[ci]+potn_t*dt);
 			
 			phi.update(ind,potn_k);
 			f_alpha.update(ind,fa_k[0],fa_k[1]);
