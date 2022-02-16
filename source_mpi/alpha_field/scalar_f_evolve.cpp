@@ -357,7 +357,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 	
 	
 
-	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail)&&(step_cnt<200);t+=dt,++step_cnt)
+	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail)&&(prn<=2);t+=dt,++step_cnt)
 	{
 	   //dt=dti*sqrt(a/a_ini);
 	 if(a>=a_print)
@@ -526,7 +526,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 
 	a = 0.5*(ak+a+a_t*dt);
 
-	printf("fb_t  %lf   fb_t_th  %lf\n",fb_t,fb_t_0*pow(a0/a,3.0/(2.0*alpha-1.0)));
+	//printf("fb_t  %lf   fb_t_th  %lf\n",fb_t,fb_t_0*pow(a0/a,3.0/(2.0*alpha-1.0)));
 
 
  #pragma omp parallel for private(j,k,ci,ind,c1,fa_k,fa_vel,fa_retrive,potn,potn_k,potn_t,acc_fa,potn_der)

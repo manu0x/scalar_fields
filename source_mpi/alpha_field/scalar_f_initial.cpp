@@ -52,7 +52,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 
       FILE *fpstoreini = fopen("initial.txt","w");	
       
-     
+    
 
       double L[3];
       
@@ -95,7 +95,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
         dx[0] = boxlength/((double)(ind[0]-1));	dx[1] = boxlength/((double)(ind[1]-1));	
 	dx[2] = boxlength/((double)(ind[2]-1));
 	L[0] = boxlength*space_mpc_to_dimless;	L[1] = boxlength*space_mpc_to_dimless;	L[2] = boxlength*space_mpc_to_dimless;
-	dk = 1.0/boxlength;
+	dk = 1.0/(boxlength*space_mpc_to_dimless);
 	kbins = 0;
 	
 	k_nyq = 0.5/(dx[0]);
@@ -112,14 +112,14 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 	pow_arg = 3.0*(H0*H0)*pow(Mfield,(alpha-1.0))*(omega_dm_0)/(4.0*twopie*G*(2.0*alpha-1.0));
 	Xb_0 = (pow(pow_arg,1.0/alpha));
 	
-        
+        printf("TTTT %d\n",tN);
 	for(ci = 0;ci <tN; ++ci)
 	{
 		kbin_count[ci]=0;
 	}
 	
-
-
+	 
+	
 	for(ci = 0;ci <tN; ++ci)
 	{
 		
@@ -163,7 +163,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 		
 		
 
-
+		
 		
 	
 			
@@ -175,7 +175,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 
 		kbin_grid[ci] = (int)(sqrt(ktmp)/(dk));
 		//kmag_grid[ci] = sqrt(ktmp);
-		 //printf("yo  %d  %lf\n",kmag_grid[ci],sqrt(ktmp));
+		// printf("yo  %d  %lf\n",kbin_grid[ci],sqrt(ktmp));
 		kbin_count[kbin_grid[ci]] = kbin_count[kbin_grid[ci]]+1;
 
 		if(kbin_grid[ci]>kbins)
@@ -188,7 +188,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 		
       	}	
 
-
+	
 	//ini_rand_field_2(ind,k_grid,kbin_grid,kbins, dk,
 	//					ini_dc,ini_theta,a,a0,a_t,pk);
 	//ini_rand_field(ind,kmag_grid,ini_dc,ini_theta,a,a0,a_t,pk);
