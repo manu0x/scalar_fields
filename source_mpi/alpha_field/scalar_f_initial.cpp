@@ -42,7 +42,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 
     
       int ci,i,j,k,ret;
-      int xcntr[3]={-1,-1,-1};
+      int xcntr[3]={cum_lin_ind-1,-1,-1};
       
       double ktmp,maxkmagsqr = 0.0,minkmagsqr = 1e10;
      
@@ -50,7 +50,8 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
       double a_t = a*Hi;
       double a_ti = ai*Hi;
 
-      FILE *fpstoreini = fopen("initial.txt","w");	
+      FILE *fpstoreini;
+     	
       
     
 
@@ -80,6 +81,11 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 	int my_corank,mpi_check;
       
 	MPI_Comm_rank(cart_comm,&my_corank);
+
+	if(my_corank==0)
+	fpstoreini = fopen("initial1.txt","w");
+	else
+	fpstoreini = fopen("initial2.txt","w");
 
 	MPI_Info info  = MPI_INFO_NULL;
 
@@ -135,10 +141,10 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 		{	
 			
 
-			if((xcntr[j]%n[j])<=(n[j]/2))
+			if((xcntr[j]%ind[j])<=(ind[j]/2))
 				{
 					
-				 k_grid[ci][j] = ((double)(xcntr[j]%n[j]))/L[j];
+				 k_grid[ci][j] = ((double)(xcntr[j]%ind[j]))/L[j];
 
 				  ktmp+= k_grid[ci][j]*k_grid[ci][j];
 
@@ -146,7 +152,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 				}
 			else
 				{ 
-				 k_grid[ci][j] = ((double)((xcntr[j]%n[j])-n[j]))/L[j];
+				 k_grid[ci][j] = ((double)((xcntr[j]%ind[j])-ind[j]))/L[j];
 
 				 ktmp+= k_grid[ci][j]*k_grid[ci][j];
 
@@ -155,7 +161,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 				}
 		
 			 
-			x_grid[ci][j] = ((double)(xcntr[j]%n[j]))*dx[j];
+			x_grid[ci][j] = ((double)(xcntr[j]%ind[j]))*dx[j];
 			
 		
 		}

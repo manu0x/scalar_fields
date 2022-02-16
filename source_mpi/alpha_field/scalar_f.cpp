@@ -152,6 +152,8 @@ MPI_Status stdn,stup;
 			 if(my_coords[i]==(dims[i]-1))
 				cum_lin_ind=((dims[i]-1)*n_axis_loc[i]);
 
+			printf("cum_lin_ind %d\n",cum_lin_ind);
+
 	           }
 	
 

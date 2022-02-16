@@ -357,7 +357,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 	
 	
 
-	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail)&&(prn<=2);t+=dt,++step_cnt)
+	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail)&&(step_cnt<1);t+=dt,++step_cnt)
 	{
 	   //dt=dti*sqrt(a/a_ini);
 	 if(a>=a_print)
@@ -672,7 +672,7 @@ void evolve_hdf5_write(int *ind,field_alpha_mpi f_alpha,metric_potential_approx_
 	dim[2] = ind[2];
 
 	
-
+	
 	int tN = ind[0]*ind[1]*ind[0];
 	pdim[0]= tN; 
 
