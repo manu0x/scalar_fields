@@ -8,6 +8,9 @@ double potn_vel_eqn(double a,double a_t,double phi,double lap_phi,double f_t,dou
 	
 	potn_t = -phi*(a_t/a) + lap_phi/(3.0*a_t*a) + 2.0*twopie*G*a*(2.0*alpha-1.0)*x_power_approx*((Xb/(H0*H0))-0.5*f_t*f_t/(1.0+2.0*phi))/(3.0*a_t);
 
+
+// potn_t = -phi*(a_t/a) + lap_phi/(3.0*a_t*a) + 2.0*twopie*G*a*(2.0*alpha-1.0)*x_power_approx*((Xb/(H0*H0))-0.5*f_t*f_t/(1.0+2.0*phi))/(3.0*a_t); (x->dimless(x))
+
     
 //	printf("lap_potn %.10lf %.10lf %.10lf\n",potn_t, (2.0*alpha-1.0)*2.0*twopie*G*a*x_power_approx*((Xb/(H0*H0))-0.5*f_t*f_t)/(3.0*a_t) ,
 //	2.0*(2.0*alpha-1.0)*twopie*G*a*alpha*x_power_approx*f_t*f_t*phi/(3.0*a_t)  );

@@ -97,7 +97,9 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 
 	//double kf = twopie*lenfac/(64.0);
 	
-	//space_mpc_to_dimless=1.0;
+	space_mpc_to_dimless=1.0;
+	if(my_corank==0)
+	 printf("\nbox_length %lf\n",boxlength);
         dx[0] = boxlength/((double)(ind[0]-1));	dx[1] = boxlength/((double)(ind[1]-1));	
 	dx[2] = boxlength/((double)(ind[2]-1));
 	L[0] = boxlength*space_mpc_to_dimless;	L[1] = boxlength*space_mpc_to_dimless;	L[2] = boxlength*space_mpc_to_dimless;
@@ -214,9 +216,9 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 			ci = (n[2]*n[1])*i + n[2]*j + k;
 			loc_ind[0] = i;  loc_ind[1] = j;  loc_ind[2] = k;
 
-			//ini_dc[ci] = 0.0;
+			 //ini_dc[ci] = 0.000001*ini_dc[ci];
 
-			 poisson_rhs = -1.5*omega_dm_0*pow(a0/ai,3.0*(1.0+w))*ini_dc[ci];
+			 poisson_rhs = 1.5*omega_dm_0*H0*H0*pow(a0/ai,3.0*(1.0+w))*ini_dc[ci];
 
 	
 			poisson_phi.update_4pieGpsi(ci,poisson_rhs);

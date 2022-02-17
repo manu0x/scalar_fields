@@ -1045,8 +1045,8 @@ class metric_potential_poisson_mpi
 			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
 			
 			if(k2fac>0.0)
-			{fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/((k2fac/(a*a*H0*H0)) -3.0*Hc*Hc);
-			 fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/((k2fac/(a*a*H0*H0)) -3.0*Hc*Hc);
+			{fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/((k2fac/(a*a)) +3.0*Hc*Hc);
+			 fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/((k2fac/(a*a)) +3.0*Hc*Hc);
 		
 			 fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/(dtN);
 			 fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/(dtN);

@@ -16,12 +16,13 @@ void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_0,param_al
 	
 	
 	H0 = lenfac*(h/c_box)*0.001;
-	//printf("H0 %lf h  %e\n",H0,h);
+	
 	
 	
 	a0 = p.a0;
 	ai = a0/(1.0+z);
 	Hi =   H0*sqrt(omega_dm_0*pow(a0/ai,3.0*(1.0+w))+ (1.0-omega_dm_0));
+	printf("H0 %lf Hi  %e\n",H0,Hi);
 
 	
 	p.print_to_file(fp_sim_info);

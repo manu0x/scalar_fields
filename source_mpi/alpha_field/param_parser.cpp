@@ -45,6 +45,10 @@ int parser(char * param_file_name, param_alpha &p)
 		   else
 			if(read_key=="box_n")
 			p.box_n = num_val;
+
+		   else
+			if(read_key=="box_length")
+			p.box_length = num_val;
 		
 			
 
