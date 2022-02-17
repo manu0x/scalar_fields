@@ -668,7 +668,7 @@ class metric_potential_approx_1_t_mpi
 						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 		
 
-		status = potn.write_hdf5_mpi( filename,dtype,dset_glbl_potn);
+		status = potn.write_hdf5_mpi(filename,dtype,dset_glbl_potn);
 		
 		
 		

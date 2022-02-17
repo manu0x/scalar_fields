@@ -232,6 +232,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 	
 	poisson_phi.solve_poisson(k_grid, ai, Hi);
 	int chk; double fa[2];
+	int cnt2;
 	for(i=0;i<n[0];++i)
 		{
 		  for(j=0;j<n[1];++j)
@@ -239,6 +240,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 		    for(k=0;k<n[2];++k)
 		    {
 			ci = (n[2]*n[1])*i + n[2]*j + k;
+			cnt2 = (n[2]*n[1])*(i+cum_lin_ind) + n[2]*j + k;
 			loc_ind[0] = i;  loc_ind[1] = j;  loc_ind[2] = k;
 			potn = poisson_phi.get_potential(ci);
 
@@ -253,14 +255,14 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 
 			chk = phi.update( loc_ind,potn,0);
 			chk = falpha.get_field_alpha(loc_ind,fa);
-			potn = phi.get_potential(loc_ind);
+			//potn = phi.get_potential(loc_ind);
 			
 			if(fabs(potn)>=max_potn)
 				max_potn = fabs(potn);
 
 			
 
-			fprintf(fpstoreini,"%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.15lf\t%.15lf\n",
+			fprintf(fpstoreini,"%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.22lf\t%.15lf\n",
 							a,dx[0]*i,dx[1]*j,dx[2]*k,fa[0],fa[1],potn,ini_dc[ci]);
 
 	            }
