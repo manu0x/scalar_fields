@@ -738,7 +738,7 @@ class field_alpha_mpi
 
 
 	
-	int calc_acc(int * ind,double &acc,double potn,double potn_t,double potn_x[3],double a,double a_t,double *dx)
+	int calc_acc(int * ind,double &acc,double potn,double potn_t,double potn_x[3],double a,double a_t,double a_tt,double *dx)
 	{
 		int c1;		
 		double fa,f_val,fa_t_val,fa_lap,fa_der[3],fa_t_der[3];
@@ -755,7 +755,7 @@ class field_alpha_mpi
 
 		
 		//acc = field_acc_approx(fa_t_val,fa_der, fa_t_der,fa_lap,potn,potn_t, potn_x,a,a_t);
-		 acc = field_acc_eqn(fa_t_val,fa_der, fa_t_der,fa_lap,potn,potn_t, potn_x,a,a_t);
+		 acc = field_acc_eqn(fa_t_val,fa_der, fa_t_der,fa_lap,potn,potn_t, potn_x,a,a_t,a_tt);
 
 		//printf("%lf %lf\n",potn_x[0]+potn_x[1]+potn_x[2],fa_t);
 		if(isnan(acc))
