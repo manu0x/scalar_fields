@@ -34,7 +34,7 @@ double res_limits(double max_potn,double vmax,double dx,double a,double &dt_limi
 }
 
 */
-void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potential_approx_1_t_mpi &phi,metric_potential_poisson_mpi poisson_phi,
+void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potential_poisson_mpi &phi,metric_potential_poisson_mpi_ini &poisson_phi,
 				double k_grid[][3],int kbin_grid[],double a0,double ai,double Hi,double omega_dm_0,double & Xb_0,double *dx,double &dk,int & kbins,
 								ini_power_generator pk,gauss_rand_field_gen_mpi grf,bool use_hdf5_format,double boxlength,
 																	double da,int cum_lin_ind)
@@ -233,7 +233,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 
 	
 	
-	poisson_phi.solve_poisson(k_grid, ai, a_t,da);
+	poisson_phi.solve_poisson(k_grid, ai, Hi);
 	int chk; double fa[2];
 	int cnt2;
 	for(i=0;i<n[0];++i)
@@ -246,6 +246,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 			cnt2 = (n[2]*n[1])*(i+cum_lin_ind) + n[2]*j + k;
 			loc_ind[0] = i;  loc_ind[1] = j;  loc_ind[2] = k;
 			potn = poisson_phi.get_potential(ci);
+			
 
 			
 			
@@ -256,7 +257,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 
 			err_hold =  falpha.update(loc_ind, 1.0, fa_t_val,0);
 
-			chk = phi.update( loc_ind,potn,0);
+			phi.update_4pieGpsi(ci,potn);
 			chk = falpha.get_field_alpha(loc_ind,fa);
 			//potn = phi.get_potential(loc_ind);
 			
@@ -276,9 +277,9 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 	
 
 	mpi_check = falpha.mpi_send_recv();
-	mpi_check = phi.mpi_send_recv();
+	//mpi_check = phi.mpi_send_recv();
 
-	phi.test_ind();
+	//phi.test_ind();
 	
 	plist_id = H5Pcreate(H5P_FILE_ACCESS);
         H5Pset_fapl_mpio(plist_id, cart_comm, info);
@@ -350,7 +351,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 }
 
 
-void initial_hdf5_write_mpi(int *ind,int *ind_loc,field_alpha_mpi falpha,metric_potential_approx_1_t_mpi phi,hid_t filename,double *dc,double k_grid[][3],double x_grid[][3],
+void initial_hdf5_write_mpi(int *ind,int *ind_loc,field_alpha_mpi falpha,metric_potential_poisson_mpi phi,hid_t filename,double *dc,double k_grid[][3],double x_grid[][3],
 													double a3a03omega,double a,int cum_lin_ind,bool get_dc=true)
 {	
 	herr_t status_psi,status_phi,status;	

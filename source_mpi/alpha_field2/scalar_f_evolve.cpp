@@ -142,7 +142,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 	fb_a_k = fb_a + fb_acc*da;
 	  
 	ak = a+da;
-
+	if(step_cnt!=0)
 	phi.solve_poisson(k_grid, a, a_t,da);
 
 	//printf("fb_t  %lf   fb_t_th  %lf\n",fb_t,fb_t_0*pow(a0/ak,3.0/(2.0*alpha-1.0)));

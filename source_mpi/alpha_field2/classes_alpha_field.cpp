@@ -950,6 +950,201 @@ class metric_potential_poisson_mpi
 
 
 
+class metric_potential_poisson_mpi_ini
+{
+
+	private:
+	int n[3];
+	int n_loc[3];
+	int cum_lin_ind;
+	//scalar_field_3d phi;
+
+	fftw_complex *fpGpsi;
+	fftw_complex *fpGpsi_ft;
+
+	fftw_plan plan_pois_f;
+	fftw_plan plan_pois_b;
+	
+	ptrdiff_t alloc_local, local_n0, local_0_start;
+	
+	public:
+	
+	metric_potential_poisson_mpi_ini(int *ind,int *ind_loc,int cum_lin_ind_ar,bool lb=false,bool sgb=false)//:phi(ind,lb,sgb)
+	{
+		int l = ind[0]*ind[1]*ind[2];
+		n[0]=ind[0];n[1]=ind[1];n[2]=ind[2];
+		n_loc[0]=ind_loc[0];n_loc[1]=ind_loc[1];n_loc[2]=ind_loc[2];
+
+		cum_lin_ind = cum_lin_ind_ar;
+
+
+		const ptrdiff_t n0 = n[0];
+		const ptrdiff_t n1 = n[1];
+		const ptrdiff_t n2 = n[2];
+	
+		alloc_local = fftw_mpi_local_size_3d(n0, n1, n2,
+                                 cart_comm,
+                                 &local_n0, &local_0_start);
+		
+		fpGpsi = fftw_alloc_complex(alloc_local);
+		fpGpsi_ft = fftw_alloc_complex(alloc_local);
+
+
+		plan_pois_f = fftw_mpi_plan_dft_3d(n0, n1,  n2,
+                               fpGpsi, fpGpsi_ft,
+                              cart_comm, FFTW_FORWARD, FFTW_ESTIMATE);
+		plan_pois_b = fftw_mpi_plan_dft_3d(n0, n1,  n2,
+                               fpGpsi_ft, fpGpsi,
+                              cart_comm, FFTW_BACKWARD, FFTW_ESTIMATE);
+
+	}
+
+
+	void solve_poisson(double k_grid[][3],double a,double Hc)
+	{
+		int i,j,k,ci,ind[3]{0,0,0},r;
+		double k2fac;
+		fftw_execute(plan_pois_f);
+		double sqrt_tN = sqrt((double)(n[0]*n[1]*n[2])); 
+		double dtN = (double)(n[0]*n[1]*n[2]);
+
+		for(i=0;i<n_loc[0];++i)
+		{
+		  for(j=0;j<n_loc[1];++j)
+		  {
+		    for(k=0;k<n_loc[2];++k)
+		    {
+			ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;			
+			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
+			
+			if(k2fac>0.0)
+			{fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/((k2fac/(a*a)) +3.0*Hc*Hc);
+			 fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/((k2fac/(a*a)) +3.0*Hc*Hc);
+		
+			 fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/(dtN);
+			 fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/(dtN);
+				
+			}	
+			else
+			{fpGpsi_ft[ci][0] = 0.0;
+			 fpGpsi_ft[ci][1] = 0.0;
+			}
+
+			
+
+		    }
+
+		  }
+
+		}
+		
+		fftw_execute(plan_pois_b);
+	
+
+	}
+
+
+	void update_4pieGpsi(int ci,double val)
+	{
+		
+		fpGpsi[ci][0] = val;
+		fpGpsi[ci][1] = 0.0;
+	
+	}
+
+
+	double get_potential(int ci,int get_imag=0)
+	{
+		if(!get_imag)
+		return (fpGpsi[ci][0]);	
+		else
+		return(fpGpsi[ci][1]/sqrt(fpGpsi[ci][0]*fpGpsi[ci][0]+fpGpsi[ci][1]*fpGpsi[ci][1]));
+
+	}
+
+	void write_potential(FILE *fp_ptn,double *dx,double a3a03omega,double a)
+	{	
+		int i,j,k,ci;
+		
+		for(i=0;i<n_loc[0];++i)
+		{
+			for(j=0;j<n_loc[1];++j)
+			{
+				for(k=0;k<n_loc[2];++k)
+				{
+					 ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;
+				
+					  fprintf(fp_ptn,"%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\n",a,dx[0]*i,dx[1]*j,dx[2]*k,fpGpsi[ci][0]);
+				
+
+
+
+				}
+	
+			}
+
+		}
+		
+		fprintf(fp_ptn,"\n\n\n\n");
+
+	}
+
+
+	herr_t write_hdf5_potn_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl)
+	{
+
+		hid_t dset_glbl;
+		herr_t status;
+		hid_t  dspace,plist_id;
+		hsize_t     dim[2];
+		dim[0] = n_loc[0]*n_loc[1]*n_loc[2]; dim[1]=2;
+
+		
+    		status = H5Tset_order(dtype, H5T_ORDER_LE);	
+
+		dset_glbl = H5Dcreate(filename, "potential_poisson", dtype, dspace_glbl,
+						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+
+		hsize_t count[2],offset[2];
+		count[0] = dim[0]; count[1] = 2; offset[0] = cum_lin_ind; offset[1] = 0;
+
+		dspace = H5Screate_simple(2, count, NULL);
+
+
+
+		H5Sselect_hyperslab(dspace_glbl, H5S_SELECT_SET, offset, NULL, count, NULL);
+		plist_id = H5Pcreate(H5P_DATASET_XFER);
+    		H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+		
+		
+		status = H5Dwrite(dset_glbl, dtype, dspace, dspace_glbl,
+		      				plist_id, fpGpsi);
+
+	
+    		H5Sclose(dspace);
+    		H5Pclose(plist_id);
+
+
+
+		return status;
+
+	}
+
+
+
+/*	int update(int * ind,double phi_val)
+	{
+		int c1;
+		c1 = phi.update_field(ind,phi_val);
+		
+		return (c1);
+	}
+
+*/
+
+
+};
 
 
 
