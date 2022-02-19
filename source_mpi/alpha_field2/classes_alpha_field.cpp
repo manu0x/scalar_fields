@@ -786,7 +786,7 @@ class metric_potential_poisson_mpi
 
 
 
-	int calc_vel(int * ind,double &potn_vel,double f_t,double a,double a_t,double *dx,double omega_dm_0,double Xb_0)
+	int calc_vel(int * ind,double &potn_vel,double f_t,double a,double a_t,double *dx,double omega_dm_0,double Xb)
 	{
 		int ci;		
 		double potn_val;
@@ -803,7 +803,7 @@ class metric_potential_poisson_mpi
 	
 	
 
-		potn_vel = potn_vel_eqn(a,a_t,potn_val,0.0,f_t,omega_dm_0,Xb_0);
+		potn_vel = potn_vel_eqn(a,a_t,potn_val,0.0,f_t,omega_dm_0,Xb);
 		
 		if(isnan(potn_vel))
 			return (-1);
@@ -1253,19 +1253,19 @@ class field_alpha_mpi
 	}
 
 
-	double cal_X_4vel(int * ind,double a,double phi)
+	double cal_X_4vel(int * ind,double a,double a_t,double phi)
 	{
 		double fa_val,fa_t_val,s_der[3],X;	
 		int c1;	
 		
 		
 		fa_t_val = f_alpha_t.get_field(ind,give_f);
-		fa_t_val = fa_t_val*H0;
+		fa_t_val = fa_t_val*a_t;
 
 		c1 = f_alpha.get_field_spt_der(ind,s_der);
 
 		
-		X = fa_t_val*fa_t_val/(1.0+2.0*phi)  - H0*H0*(s_der[0]*s_der[0]+s_der[1]*s_der[1]+s_der[2]*s_der[2])/(a*a*(1.0-2.0*phi));
+		X = fa_t_val*fa_t_val;///(1.0+2.0*phi)  - (s_der[0]*s_der[0]+s_der[1]*s_der[1]+s_der[2]*s_der[2])/(a*a*(1.0-2.0*phi));
 		X = 0.5*X;
 
 		return(X);
@@ -1330,7 +1330,7 @@ class field_alpha_mpi
 
 
 
-	herr_t write_hdf5_f_alpha_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,hid_t dspace_dc_glbl,double *dc,double a0,double a,double Xb_0,
+	herr_t write_hdf5_f_alpha_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,hid_t dspace_dc_glbl,double *dc,double a0,double a,double a_t,double Xb,
 							metric_potential_poisson_mpi phi,int cum_lin_ind,bool get_dc=false)
 	{
 
@@ -1338,7 +1338,7 @@ class field_alpha_mpi
 		herr_t status ;
 		int tN  = n[0]*n[1]*n[3];
 		int i,j,k,locind[3],ci;
-		double fa_val,fa_t_val,x4val,rho_fa,phival,Xb;
+		double fa_val,fa_t_val,x4val,rho_fa,phival;
 
 		
 
@@ -1377,11 +1377,12 @@ class field_alpha_mpi
 					phival = phi.get_potential(ci);	
 					
 
-					x4val = cal_X_4vel(locind,a,phival);	
+					x4val = cal_X_4vel(locind,a,a_t,phival);	
 							
 
 					//rho_fa = x4val*(3.0*H0*H0/(4.0*a3a03omega*twopie*Xb_0));
-					Xb = Xb_0*pow(a0/a,6.0/(2.0*alpha-1.0));
+					//Xb = Xb_0*pow(a0/a,6.0/(2.0*alpha-1.0));
+					
 
 					dc[ci] = (x4val/Xb)-1.0;
 					// printf("ci %d dc %.10lf  %.10lf %.10lf\n",ci,dc[ci],x4val,Xb);
