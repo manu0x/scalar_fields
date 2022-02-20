@@ -86,7 +86,14 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 	if(my_corank==0)
 	fpstoreini = fopen("initial1.txt","w");
 	else
+	if(my_corank==1)
 	fpstoreini = fopen("initial2.txt","w");
+	else
+	if(my_corank==2)
+	fpstoreini = fopen("initial3.txt","w");
+	else
+	if(my_corank==3)
+	fpstoreini = fopen("initial4.txt","w");
 
 	MPI_Info info  = MPI_INFO_NULL;
 
@@ -217,7 +224,7 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 			ci = (n[2]*n[1])*i + n[2]*j + k;
 			loc_ind[0] = i;  loc_ind[1] = j;  loc_ind[2] = k;
 
-			 ini_dc[ci] = 0.0;
+			// ini_dc[ci] = 0.0;
 
 			 poisson_rhs = 1.5*omega_dm_0*H0*H0*pow(a0/ai,3.0*(1.0+w))*ini_dc[ci];
 

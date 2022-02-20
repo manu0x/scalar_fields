@@ -1265,7 +1265,7 @@ class field_alpha_mpi
 		c1 = f_alpha.get_field_spt_der(ind,s_der);
 
 		
-		X = fa_t_val*fa_t_val;///(1.0+2.0*phi)  - (s_der[0]*s_der[0]+s_der[1]*s_der[1]+s_der[2]*s_der[2])/(a*a*(1.0-2.0*phi));
+		X = fa_t_val*fa_t_val/(1.0+2.0*phi);//  - (s_der[0]*s_der[0]+s_der[1]*s_der[1]+s_der[2]*s_der[2])/(a*a*(1.0-2.0*phi));
 		X = 0.5*X;
 
 		return(X);
@@ -1758,6 +1758,7 @@ class gauss_rand_field_gen_mpi
 
 		
 		dtN = (double)(n[0]*n[1]*n[2]);
+		
 
 		for(i=0;i<n_loc[0];++i)
 		{
