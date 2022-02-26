@@ -34,10 +34,116 @@ double res_limits(double max_potn,double vmax,double dx,double a,double &dt_limi
 }
 
 */
+
+void read_dc_from_hdf5(string fname,double *dc,int *ind, int cum_lin_ind)
+{
+
+	herr_t status;	
+	hid_t file,dtype,dspace_glbl,dspace,dset_glbl,plist_id,g_id;
+	MPI_Info info  = MPI_INFO_NULL;
+
+	hsize_t dim[3],odim[2];
+
+	dim[0] = ind[0];
+	dim[1] = ind[1];
+	dim[2] = ind[2];
+	odim[0] = ind[0]*ind[1]*ind[2];
+	odim[1] = 1;
+
+	plist_id = H5Pcreate(H5P_FILE_ACCESS);
+        H5Pset_fapl_mpio(plist_id, cart_comm, info);
+
+	
+	char fchar_name[fname.length()];
+	fname.copy(fchar_name,fname.length()-1,0);
+	printf("FINI_dc %s %d\n",fchar_name,fname.length());
+	
+	file = H5Fopen(fchar_name, H5F_ACC_RDONLY, plist_id);
+	H5Pclose(plist_id);
+
+	
+	dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
+    	status = H5Tset_order(dtype, H5T_ORDER_LE);
+
+
+	//dspace_glbl = H5Screate_simple(2, odim, NULL);
+
+	//g_id = H5G.open(file, "/");
+
+	dset_glbl = H5Dopen(file, "/dc",H5P_DEFAULT);
+
+	dspace_glbl = H5Dget_space(dset_glbl);
+
+	hsize_t count[2],offset[2];
+	count[0] = ind[0]*ind[1]*ind[2]; count[1] = odim[1]; offset[0] = cum_lin_ind*ind[1]*ind[2]; offset[1] = 0;
+
+	
+
+	dspace = H5Screate_simple(2, count, NULL);
+
+	
+
+	H5Sselect_hyperslab(dspace_glbl, H5S_SELECT_SET, offset, NULL, count, NULL);
+	plist_id = H5Pcreate(H5P_DATASET_XFER);
+    	H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+
+	
+
+	status = H5Dread(dset_glbl, dtype, dspace, dspace_glbl, plist_id, dc);
+
+	H5Dclose(dset_glbl);
+	H5Pclose(plist_id);
+	H5Sclose(dspace);
+
+
+	int my_corank,mpi_check;
+/*      
+	MPI_Comm_rank(cart_comm,&my_corank);
+
+	FILE *fpstoreini;
+
+	if(my_corank==0)
+	fpstoreini = fopen("readtest1.txt","w");
+	else
+	if(my_corank==1)
+	fpstoreini = fopen("readtest2.txt","w");
+	else
+	if(my_corank==2)
+	fpstoreini = fopen("readtest3.txt","w");
+	else
+	if(my_corank==3)
+	fpstoreini = fopen("readtest4.txt","w");
+
+	int i,j,k,ci;
+
+	for(i=0;i<ind[0];++i)
+	{
+		for(j=0;j<ind[1];++j)
+		{
+		   for(k=0;k<ind[2];++k)
+		   {
+			ci = (ind[2]*ind[1])*i + ind[2]*j + k;
+			
+
+			
+
+			fprintf(fpstoreini,"%d\t%d\t%d\t%.10lf\n",
+							cum_lin_ind+i,j,k,dc[ci]);
+
+	           }
+		}
+
+	}
+
+	fclose(fpstoreini);
+*/
+
+}
+
 void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potential_poisson_mpi &phi,metric_potential_poisson_mpi_ini &poisson_phi,
 				double k_grid[][3],int kbin_grid[],double a0,double ai,double Hi,double omega_dm_0,double & Xb_0,double *dx,double &dk,int & kbins,
-								ini_power_generator pk,gauss_rand_field_gen_mpi grf,bool use_hdf5_format,double boxlength,
-																	double da,int cum_lin_ind)
+				ini_power_generator pk,gauss_rand_field_gen_mpi grf,bool use_hdf5_format,double boxlength,
+											double da,int cum_lin_ind,string fini_name="None")
 {
       
 
@@ -209,7 +315,10 @@ void initialise_mpi(int * ind,int *ind_loc,field_alpha_mpi &falpha,metric_potent
 	//					ini_dc,ini_theta,a,a0,a_t,pk);
 	//ini_rand_field(ind,kmag_grid,ini_dc,ini_theta,a,a0,a_t,pk);
 	
+	if(fini_name=="None")
 	grf.gen(k_grid,ini_dc, pk,a_t,a,a0,f_ini);
+	else
+	read_dc_from_hdf5(fini_name,ini_dc,ind_loc, cum_lin_ind);
 	
 	
 	for(i=0;i<n[0];++i)

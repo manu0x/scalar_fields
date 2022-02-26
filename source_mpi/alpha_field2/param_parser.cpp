@@ -24,8 +24,11 @@ int parser(char * param_file_name, param_alpha &p)
 
 		if(read_key.length()>0)
 		{  read_val = read_str.substr(read_str.find("=")+1);
-		   num_val = stod(read_val);
+		   
 
+		   if(read_key!="fini_dc")
+			num_val = stod(read_val);
+		
 		   if(read_key=="h")
 			p.loc_h = num_val;
 		   else
@@ -49,6 +52,9 @@ int parser(char * param_file_name, param_alpha &p)
 		   else
 			if(read_key=="box_length")
 			p.box_length = num_val;
+		   else
+			if(read_key=="fini_dc")
+			p.fini_dc = read_val.c_str();
 		
 			
 

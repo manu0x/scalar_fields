@@ -4,7 +4,7 @@ void initial_hdf5_write_mpi(int *,int *,field_alpha_mpi ,metric_potential_poisso
 
 void initialise_mpi(int * ,int *,field_alpha_mpi &,metric_potential_poisson_mpi &,metric_potential_poisson_mpi_ini &,
 				double ,int ,double ,double,double,double ,double &,double *,double &,int & ,
-								ini_power_generator ,gauss_rand_field_gen_mpi ,bool ,double,double,int );
+								ini_power_generator ,gauss_rand_field_gen_mpi ,bool ,double,double,int,string);
 		   
 double ini_power_spec(double );
 

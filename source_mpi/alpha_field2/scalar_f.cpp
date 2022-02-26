@@ -243,7 +243,7 @@ MPI_Status stdn,stup;
 	double da = 0.5e-3;
 
 	initialise_mpi(n_axis,n_axis_loc,f_alpha,phi,poisson_phi,
-				k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,Xb_0,dx,dk,kbins,pk,grf,use_hdf5_format,p.box_length,da,cum_lin_ind);
+				k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,Xb_0,dx,dk,kbins,pk,grf,use_hdf5_format,p.box_length,da,cum_lin_ind,p.fini_dc);
 	
 	
 	printf("\nHHHdk is %lf\n",dk);
@@ -251,7 +251,7 @@ MPI_Status stdn,stup;
 	
 
 	//if(use_omp)
-	fail = evolve_kdk_openmp(ind,n_axis_loc,f_alpha,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,Xb_0,dx,dk,kbins,da,cum_lin_ind,use_hdf5_format);
+	//fail = evolve_kdk_openmp(ind,n_axis_loc,f_alpha,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,Xb_0,dx,dk,kbins,da,cum_lin_ind,use_hdf5_format);
 	//else
 	//fail = evolve_kdk(ind,n_axis_loc,f_alpha,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,Xb_0,dx,dk,kbins,0.2e-4,cum_lin_ind,use_hdf5_format);
 	

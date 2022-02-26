@@ -482,11 +482,13 @@ class param_alpha: public param_cosmo_sim
 {
 	public:
 	double loc_hbar_by_m22, loc_alpha;
+	string fini_dc;
 	void load_defaults()
 	{
 		load_default_cosmo_sim();
 
-		loc_alpha = 1e8;	
+		loc_alpha = 1e8;
+		fini_dc = "None";	
 	
 
 	}
@@ -1574,7 +1576,7 @@ class ini_power_generator
 
 	double test_spec(double x)
 	{
-		return(1.0/pow(x,3.0));
+		return(1.0/pow(x,2.0));
 	}
 
 	void check(double x)
@@ -1800,7 +1802,7 @@ class gauss_rand_field_gen_mpi
 			}
 			else
 			{
-				pk_val = p_k.test_spec(sqrt(ksqr));				
+				pk_val = 0.001;//p_k.test_spec(sqrt(ksqr));				
 					
 				field_ft[ci][0] = sqrt(pk_val)*field_ft[ci][0]/dtN;
 				field_ft[ci][1] = sqrt(pk_val)*field_ft[ci][1]/dtN;
