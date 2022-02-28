@@ -43,7 +43,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 	
 	
 
-	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail)&&(prn<=4);++step_cnt)
+	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail);++step_cnt)
 	{
 	   //dt=dti*sqrt(a/a_ini);
 
@@ -187,7 +187,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 			fa_k[0] = fa_val[ci][0]+ fa_val[ci][1]*da;
 			fa_k[1] = fa_val[ci][1]+ acc_fa*da;
 			
-			poisson_rhs = fa_val[ci][0]+ da*potn_a_part;
+			poisson_rhs = potn_val[ci]+ da*potn_a_part;
 			
 			
 			
@@ -275,7 +275,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 
 			
 
-			poisson_rhs = fa_k[0]+ da*potn_a_part;
+			poisson_rhs = potn_val[ci] + da*potn_a_part;
 			
 			phi.update_4pieGpsi(ci,poisson_rhs);
 			f_alpha.update(ind,fa_k[0],fa_k[1]);
