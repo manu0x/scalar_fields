@@ -164,6 +164,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 			ind[0] = i;ind[1] = j;ind[2] = k;
 
 
+			
+
 			potn_k = phi.get_potential(ci);
 			
 			if(step_cnt==0)
@@ -178,6 +180,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 			//c1 = phi.get_potn_spt_der(ind,potn_der);
 			c1  = f_alpha.get_field_alpha(ind,fa_val[ci]);///Check if this as intented
 
+			
+
 			c1 = phi.calc_vel(ind,potn_a_part,fa_val[ci][1],a,a_t,dx,omega_dm_0,Xb);
 
 
@@ -190,7 +194,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 			poisson_rhs = potn_val[ci]+ da*potn_a_part;
 			
 			
-			
+			//if(ci==10)
+			//printf("fb_a  %.10lf   fb_a10  %.15lf \n",(fb_acc-acc_fa)/fb_acc,(fa_val[ci][1]/fb_a)-1.0);
 			
 			//printf(" %d %lf %lf %lf\n",step_cnt,potn_t,acc_fa,fa_k[1]);
 

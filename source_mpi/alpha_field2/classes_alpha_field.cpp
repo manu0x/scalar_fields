@@ -762,8 +762,8 @@ class metric_potential_poisson_mpi
 			{fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/(1.0+da*k2fac/(3.0*a_t*a_t*a));
 			 fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/(1.0+da*k2fac/(3.0*a_t*a_t*a));
 		
-			 fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/(dtN);
-			 fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/(dtN);
+			 fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(dtN);
+			 fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(dtN);
 
 			 
 				
@@ -1385,8 +1385,8 @@ class field_alpha_mpi
 					//rho_fa = x4val*(3.0*H0*H0/(4.0*a3a03omega*twopie*Xb_0));
 					//Xb = Xb_0*pow(a0/a,6.0/(2.0*alpha-1.0));
 					
-
-					dc[ci] = (x4val/Xb)-1.0;
+					//if(ci==10)
+					//dc[ci] = (x4val/Xb)-1.0;
 					// printf("ci %d dc %.10lf  %.10lf %.10lf\n",ci,dc[ci],x4val,Xb);
 
 				}
