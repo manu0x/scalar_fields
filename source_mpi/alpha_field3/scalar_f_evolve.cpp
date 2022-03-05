@@ -137,9 +137,11 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 
 
 			
-
+			if(step_cnt==0)
+			potn_k = phi.get_value(ind);
+			else
 			potn_k = phi.get_potential(ci);
-			
+
 			if(step_cnt==0)
 			potn_a = 0.0;
 			else
@@ -150,7 +152,10 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 				
 
 			//c1 = phi.get_potn_spt_der(ind,potn_der);
-			f_a_val  = f_alpha.get_potential(ci);///Check if this as intented
+			if(step_cnt==0)
+			f_a_val  = f_alpha.get_value(ind);
+			else
+			f_a_val = f_alpha.get_potential(ci);
 
 			
 			(int * ind,double &potn_vel,double f_t,double potn,double potn_a,double a,double a_t,double *dx,double omega_dm_0,double Xb)
@@ -282,8 +287,8 @@ void evolve_hdf5_write(int *ind,metric_potential_poisson_mpi f_alpha,metric_pote
 	dspace_potn = H5Screate_simple(3, dim, NULL);
 	dspace_dc = H5Screate_simple(1, pdim, NULL);
 
-	status_falpha = f_alpha.write_hdf5_f_alpha_mpi(filename, dtype, dspace_falpha,dspace_dc,dc,a0,a,a_t,Xb,phi,cum_lin_id,get_dc);
-	
+	status_falpha = f_alpha.write_hdf5_values_mpi(filename, dtype, dspace_falpha,dspace_dc,dc,a0,a,a_t,Xb,phi,cum_lin_id,get_dc);
+	status_phi = phi.write_hdf5_values_mpi(filename, dtype, dspace_falpha,dspace_dc,dc,a0,a,a_t,Xb,phi,cum_lin_id,get_dc);
 	
 	//status_phi = phi.write_hdf5_potn_mpi(filename, dtype,dspace_potn);
 
@@ -291,6 +296,9 @@ void evolve_hdf5_write(int *ind,metric_potential_poisson_mpi f_alpha,metric_pote
 	H5Sclose(dspace_dc);
 	H5Sclose(dspace_potn);
 	H5Tclose(dtype);
+
+
+
 
 }
 
