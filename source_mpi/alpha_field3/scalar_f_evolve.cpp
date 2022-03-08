@@ -158,16 +158,16 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 			f_a_val = f_alpha.get_potential(ci);
 
 			
-			(int * ind,double &potn_vel,double f_t,double potn,double potn_a,double a,double a_t,double *dx,double omega_dm_0,double Xb)
-			c1 = phi.calc_vel(ind,potn_a_part,f_a_val,potn_k,potn_a,a,a_t,dx,omega_dm_0,Xb);
+			
+			c1 = phi.calc_vel(ind,potn_a_part,f_a_val,potn_k,potn_a,a,a_t,a_tt,dx,omega_dm_0,Xb);
 
 
-			c1 = f_alpha.calc_vel(ind,f_a_val,f_a_val,potn_k,potn_a,a,a_t,dx,omega_dm_0,Xb);
+			c1 = f_alpha.calc_vel(ind,f_a_a_part,f_a_val,potn_k,potn_a,a,a_t,a_tt,dx,omega_dm_0,Xb);
 				
 			
 			
 			potn_rhs = potn_val[ci]+ da*potn_a_part;
-			f_a_rhs = f_a_val + da*f_a_part;
+			f_a_rhs = f_a_val + da*f_a_a_part;
 			
 			
 			//if(ci==10)
@@ -175,7 +175,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 			
 			//printf(" %d %lf %lf %lf\n",step_cnt,potn_t,acc_fa,fa_k[1]);
 
-			if(isnan(potn_k+f_a_val)
+			if(isnan(potn_k+f_a_val))
 			{
 				//printf("Yfailed at step %d %lf %lf %lf\n",step_cnt,potn_k,potn_t,fa_k[1]);
 				fail=1;
@@ -268,7 +268,7 @@ void evolve_hdf5_write(int *ind,metric_potential_poisson_mpi f_alpha,metric_pote
 														int cum_lin_id,bool get_dc=false)
 {	
 	herr_t status_falpha,status_phi,status;	
-	hid_t file,dtype,dspace_falpha,dspace_potn,dspace_dc;
+	hid_t file,dtype,dspace_falpha,dspace_potn,dspace_dc,dspace_dc2;
 	hsize_t dim[3],pdim[1];
 	dim[0] = ind[0];
 	dim[1] = ind[1];
@@ -283,18 +283,32 @@ void evolve_hdf5_write(int *ind,metric_potential_poisson_mpi f_alpha,metric_pote
 	
 	dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
     	status = H5Tset_order(dtype, H5T_ORDER_LE);
-	dspace_falpha = H5Screate_simple(3, dim, NULL);
-	dspace_potn = H5Screate_simple(3, dim, NULL);
+	
+/*	dspace_potn = H5Screate_simple(3, dim, NULL);
 	dspace_dc = H5Screate_simple(1, pdim, NULL);
 
-	status_falpha = f_alpha.write_hdf5_values_mpi(filename, dtype, dspace_falpha,dspace_dc,dc,a0,a,a_t,Xb,phi,cum_lin_id,get_dc);
-	status_phi = phi.write_hdf5_values_mpi(filename, dtype, dspace_falpha,dspace_dc,dc,a0,a,a_t,Xb,phi,cum_lin_id,get_dc);
-	
-	//status_phi = phi.write_hdf5_potn_mpi(filename, dtype,dspace_potn);
+	printf("dim %d %d %d",dim[0],dim[1],dim[2]);
 
-	H5Sclose(dspace_falpha);
+	status_phi = phi.write_hdf5_values_mpi_p(filename, dtype, dspace_potn,dc,a0,a,a_t,Xb,phi,cum_lin_id);
+	H5Sclose(dspace_potn);	
 	H5Sclose(dspace_dc);
-	H5Sclose(dspace_potn);
+*/
+//$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
+	dspace_dc2 = H5Screate_simple(1, pdim, NULL);
+
+	
+	dspace_falpha = H5Screate_simple(3, dim, NULL);
+	
+	status_falpha = f_alpha.write_hdf5_values_mpi(filename, dtype, dspace_falpha,dspace_dc2,dc,a0,a,a_t,Xb,phi,cum_lin_id,get_dc);
+	H5Sclose(dspace_falpha);
+	H5Sclose(dspace_dc2);
+	
+	
+
+	
+	
+	
 	H5Tclose(dtype);
 
 
@@ -309,7 +323,7 @@ void evolve_hdf5_write(int *ind,metric_potential_poisson_mpi f_alpha,metric_pote
 
 
 
-
+/*
 int evolve_kdk(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_approx_1_t_mpi &phi,double k_grid[][3],int kbin_grid[],
 					double a_final,double a_ini,double a0,double omega_dm_0,double Xb_0,double *dx,double dk,int kbins,double dt,
 														int cum_lin_id,bool use_hdf_format)
@@ -318,7 +332,7 @@ int evolve_kdk(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potential_appr
 	return(0);
 }
 
-/*
+
 							
 {	printf("Yo\n");
 	double a,a_t,t,ak,a3a03omega,dti=dt;

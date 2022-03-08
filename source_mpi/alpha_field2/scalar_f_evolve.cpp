@@ -43,7 +43,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,field_alpha_mpi &f_alpha,metric_potenti
 	
 	
 
-	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail);++step_cnt)
+	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail)&&(step_cnt<1);++step_cnt)
 	{
 	   //dt=dti*sqrt(a/a_ini);
 

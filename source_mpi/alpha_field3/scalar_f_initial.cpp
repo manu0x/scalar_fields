@@ -371,8 +371,8 @@ void initialise_mpi(int * ind,int *ind_loc,metric_potential_poisson_mpi &falpha,
 			fa_t_val = sqrt(2.0*(Xb_0*pow(a0/a,6.0/(2.0*alpha-1.0)))*(1.0+ini_dc[ci]))/a_t;
 			
 			
-			falpha.update_value(ci, fa_t_val);
-			phi.update_value(ci, potn);
+			falpha.update_value(loc_ind, fa_t_val);
+			phi.update_value(loc_ind, potn);
 
 			
 			//potn = phi.get_potential(loc_ind);

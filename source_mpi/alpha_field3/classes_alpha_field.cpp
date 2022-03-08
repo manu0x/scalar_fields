@@ -525,7 +525,7 @@ class metric_potential_poisson_mpi
 	int n_loc[3];
 	int cum_lin_ind;
 	int potential;
-	scalar_field_3d phi_val;
+	scalar_field_3d_mpi phi_val;
 
 	double *pot_p;
 
@@ -539,7 +539,7 @@ class metric_potential_poisson_mpi
 	
 	public:
 	
-	metric_potential_poisson_mpi(int *ind,int *ind_loc,int cum_lin_ind_ar,int ptn,bool lb=false,bool sgb=false):phi_val(ind_loc,cum_lin_ind,lb,sgb)
+	metric_potential_poisson_mpi(int *ind,int *ind_loc,int cum_lin_ind_ar,int ptn,bool lb=false,bool sgb=false):phi_val(ind_loc,cum_lin_ind_ar,lb,sgb)
 	{
 		int l = ind[0]*ind[1]*ind[2];
 		n[0]=ind[0];n[1]=ind[1];n[2]=ind[2];
@@ -630,7 +630,7 @@ class metric_potential_poisson_mpi
 
 
 	
-	int calc_vel(int * ind,double &potn_vel,double f_t,double potn,double potn_a,double a,double a_t,double *dx,double omega_dm_0,double Xb)
+	int calc_vel(int * ind,double &potn_vel,double f_t,double potn,double potn_a,double a,double a_t,double a_tt,double *dx,double omega_dm_0,double Xb)
 	{
 		int ci;		
 		
@@ -649,7 +649,8 @@ class metric_potential_poisson_mpi
 		if(potential)
 		potn_vel = potn_vel_eqn(a,a_t,potn,f_t,omega_dm_0,Xb);
 		else
-		potn_vel = field_vel_eqn(f_t,potn,potn_a,a,a_t,a_tt);
+		potn_vel = field_acc_eqn(f_t,potn,potn_a,a,a_t,a_tt);
+		
 		
 
 		
@@ -661,7 +662,24 @@ class metric_potential_poisson_mpi
 	}
 
 	
-	
+	double cal_X_4vel(int * ind,double a,double a_t,double phi)
+	{
+		double fa_val,fa_t_val,s_der[3],X;	
+		int c1;	
+		
+		
+		fa_t_val = phi_val.get_field(ind,give_f);
+		fa_t_val = fa_t_val*a_t;
+
+		//c1 = f_alpha.get_field_spt_der(ind,s_der);
+
+		
+		X = fa_t_val*fa_t_val/(1.0+2.0*phi);//  - (s_der[0]*s_der[0]+s_der[1]*s_der[1]+s_der[2]*s_der[2])/(a*a*(1.0-2.0*phi));
+		X = 0.5*X;
+
+		return(X);
+
+	}
 	
 	void update_4pieGpsi(int ci,double val)
 	{
@@ -693,22 +711,22 @@ class metric_potential_poisson_mpi
 	double get_value(int *indi)
 	{
 		double val;
-		val = phi_val.get_field(indi,get_f);
+		val = phi_val.get_field(indi,give_f);
 
 		return val;
 
 
 	}
 
-.
-	
-	
 
 	
-
+	
 
 	
 
+
+	
+	
 
 	herr_t write_hdf5_values_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,hid_t dspace_dc_glbl,double *dc,double a0,double a,double a_t,double Xb,
 							metric_potential_poisson_mpi phi,int cum_lin_ind,bool get_dc=false)
@@ -720,35 +738,33 @@ class metric_potential_poisson_mpi
 		int i,j,k,locind[3],ci;
 		double fa_val,fa_t_val,x4val,rho_fa,phival;
 
-		
+		printf("POTENTIAL %d\n",potential);
 
-		
-
-    /*
-     * Create the dataset with default properties and close filespace.
-     */	       if(potential)
-   		dset_glbl = H5Dcreate(filename, "potential", dtype, dspace_glbl,
+		if(potential)
+		{ dset_glbl = H5Dcreate(filename, "potential", dtype, dspace_glbl,
 						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-	       else
-		dset_glbl = H5Dcreate(filename, "field_a", dtype, dspace_glbl,
+		  status = phi_val.write_hdf5_mpi( filename,dtype,dset_glbl);
+
+		  H5Dclose(dset_glbl);
+
+
+		}
+
+	
+		else
+		{ dset_glbl = H5Dcreate(filename, "field_a", dtype, dspace_glbl,
 						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-		
 
-		 		
-		
+		  status = phi_val.write_hdf5_mpi( filename,dtype,dset_glbl);
 
-		status = phi_val.write_hdf5_mpi( filename,dtype,dset_glbl_r);
-		
-		
-		
+		  H5Dclose(dset_glbl);
 
-		 FILE *test0; FILE *test1;
-		if((!potential)&&(get_dc))
-		{	
+		 if(get_dc)
+		 {	
 
 		 
 			
-		 for(i=0;i<n[0];++i)
+		  for(i=0;i<n[0];++i)
 		   {
 			for(j=0;j<n[1];++j)
 			{
@@ -756,14 +772,14 @@ class metric_potential_poisson_mpi
 				{	ci = (n[2]*n[1])*i + n[2]*j + k;
 					locind[0]=i; locind[1]=j; locind[2]=k;
 					
-					phival = phi.get_val(locind);	
+					phival = phi.get_potential(ci);	
 					
 
 					x4val = cal_X_4vel(locind,a,a_t,phival);	
 							
 
 					//rho_fa = x4val*(3.0*H0*H0/(4.0*a3a03omega*twopie*Xb_0));
-					Xb = Xb_0*pow(a0/a,6.0/(2.0*alpha-1.0));
+					//Xb = Xb_0*pow(a0/a,6.0/(2.0*alpha-1.0));
 					
 					//if(ci==10)
 					dc[ci] = (x4val/Xb)-1.0;
@@ -777,39 +793,51 @@ class metric_potential_poisson_mpi
 		
 
 
-		dataset = H5Dcreate(filename, "dc_alpha_field", dtype, dspace_dc_glbl,
+		  dataset = H5Dcreate(filename, "dc_alpha_field", dtype, dspace_dc_glbl,
 						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
 		
 
-		hsize_t count[1],offset[1];
-		count[0] = n[0]*n[1]*n[2];
-		offset[0] = cum_lin_ind*n[1]*n[2]; 
+		  hsize_t count[1],offset[1];
+	  	  count[0] = n[0]*n[1]*n[2];
+		  offset[0] = cum_lin_ind*n[1]*n[2]; 
 
-		dspace = H5Screate_simple(1, count, NULL);
+		  dspace = H5Screate_simple(1, count, NULL);
 
 
-		H5Sselect_hyperslab(dspace_dc_glbl, H5S_SELECT_SET, offset, NULL, count, NULL);
-		plist_id = H5Pcreate(H5P_DATASET_XFER);
-    		H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+		  H5Sselect_hyperslab(dspace_dc_glbl, H5S_SELECT_SET, offset, NULL, count, NULL);
+		  plist_id = H5Pcreate(H5P_DATASET_XFER);
+    		  H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
 		
 		
-		status = H5Dwrite(dataset, dtype, dspace, dspace_dc_glbl,
+		  status = H5Dwrite(dataset, dtype, dspace, dspace_dc_glbl,
 		      				plist_id,dc);
 
-		H5Sclose(dspace);
-		H5Dclose(dataset);
+		  H5Sclose(dspace);
+		  H5Dclose(dataset);
 
-	      }
+	         }
 
-		H5Dclose(dset_glbl_r);
-		H5Dclose(dset_glbl_i);
-		return(status);
 
+
+
+	
+		 
+	    }
+		  
 		
+		// status = phi_val.write_hdf5_mpi( filename,dtype,dset_glbl);
+		 H5Dclose(dset_glbl);
+
+
+
+		return(status);
 
 	}
 
+
+
+	
 
 
 
@@ -959,7 +987,7 @@ class metric_potential_poisson_mpi_ini
 
 	}
 
-
+/*
 	herr_t write_hdf5_potn_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl)
 	{
 
@@ -976,282 +1004,7 @@ class metric_potential_poisson_mpi_ini
 						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
 
-		hsize_t count[2],offset[2];
-		count[0] = dim[0]; count[1] = 2; offset[0] = cum_lin_ind; offset[1] = 0;
-
-		dspace = H5Screate_simple(2, count, NULL);
-
-
-
-		H5Sselect_hyperslab(dspace_glbl, H5S_SELECT_SET, offset, NULL, count, NULL);
-		plist_id = H5Pcreate(H5P_DATASET_XFER);
-    		H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
-		
-		
-		status = H5Dwrite(dset_glbl, dtype, dspace, dspace_glbl,
-		      				plist_id, fpGpsi);
-
-	
-    		H5Sclose(dspace);
-    		H5Pclose(plist_id);
-
-
-
-		return status;
-
-	}
-
-
-
-/*	int update(int * ind,double phi_val)
-	{
-		int c1;
-		c1 = phi.update_field(ind,phi_val);
-		
-		return (c1);
-	}
-
-*/
-
-
-};
-
-
-///##################################################################################################################################################################
-class field_alpha_mpi
-{
-	private:
-	scalar_field_3d_mpi f_alpha;
-	scalar_field_3d_mpi f_alpha_t;
-	int n[3];
-	
-	public:  
-	//int n[3];
-	field_alpha_mpi(int *ind,int cum_lin_ind,bool lb=false,bool sgb=false):f_alpha(ind,cum_lin_ind,lb,sgb),f_alpha_t(ind,cum_lin_ind,lb,sgb)
-	{
-		n[0] = ind[0];  n[1] = ind[1];  n[2] = ind[2];
-	}
-	
-	void test_ind()
-	{
-		f_alpha.test_ind();
-
-	}
-
-
-	void switch_fs()
-	{
-
-		f_alpha.switch_fs();
-		f_alpha_t.switch_fs();
-
-
-	}
-
-	void test_ind2()
-	{   int locind[3],i,j,k,ci;
-		double psi_r_val;
-		for(i=0;i<n[0];++i)
-		{
-			for(j=0;j<n[1];++j)
-			{
-				for(k=0;k<n[2];++k)
-				{	ci = (n[2]*n[1])*i + n[2]*j + k;
-					locind[0]=i; locind[1]=j; locind[2]=k;
-						psi_r_val=f_alpha.get_field(locind,give_f);
-
-				}
-			}
-		}
-
-		printf("\nTTTTTTTTTESSST 222 Done\n");
-	
-
-	}
-
-
-	
-	int calc_acc(int * ind,double &acc,double potn,double potn_t,double potn_x[3],double a,double a_t,double a_tt,double *dx)
-	{
-		int c1;		
-		double fa,f_val,fa_t_val,fa_lap,fa_der[3],fa_t_der[3];
-
-		//fa_val = f_alpha.get_field(ind,give_f);
-		fa_t_val = f_alpha_t.get_field(ind,give_f);
-
-		c1 = f_alpha.cal_spt_grads(ind,dx,true);
-		c1 = f_alpha_t.cal_spt_grads(ind,dx,true);
-
-		fa_lap = f_alpha.get_field(ind,give_f_lap);
-		c1 = f_alpha.get_field_spt_der(ind,fa_der);
-		c1 = f_alpha_t.get_field_spt_der(ind,fa_t_der);  
-
-		
-		//acc = field_acc_approx(fa_t_val,fa_der, fa_t_der,fa_lap,potn,potn_t, potn_x,a,a_t);
-		 acc = field_acc_eqn(fa_t_val,fa_der, fa_t_der,fa_lap,potn,potn_t, potn_x,a,a_t,a_tt);
-
-		//printf("%lf %lf\n",potn_x[0]+potn_x[1]+potn_x[2],fa_t);
-		if(isnan(acc))
-			return (-1);
-		else
-			return(1);
-	}
-
-	
-
-	int update(int * ind,double fa,double fa_t,int upd=1)
-	{
-		int c1,c2;
-		c1 = f_alpha.update_field(ind,fa,upd);
-		c2 = f_alpha_t.update_field(ind,fa_t,upd);
-		
-		return (c1*c2);
-	}
-
-	int get_field_alpha(int *ind,double *psi_ret,code1 c = give_f)
-	{
-		int c1=1;		
-		
-		psi_ret[0]= f_alpha.get_field(ind,c);
-		psi_ret[1] = f_alpha_t.get_field(ind,c);
-
-		return c1;
-
-
-
-
-	}
-
-
-	double cal_X_4vel(int * ind,double a,double a_t,double phi)
-	{
-		double fa_val,fa_t_val,s_der[3],X;	
-		int c1;	
-		
-		
-		fa_t_val = f_alpha_t.get_field(ind,give_f);
-		fa_t_val = fa_t_val*a_t;
-
-		c1 = f_alpha.get_field_spt_der(ind,s_der);
-
-		
-		X = fa_t_val*fa_t_val/(1.0+2.0*phi);//  - (s_der[0]*s_der[0]+s_der[1]*s_der[1]+s_der[2]*s_der[2])/(a*a*(1.0-2.0*phi));
-		X = 0.5*X;
-
-		return(X);
-
-	}
-
-	int mpi_send_recv()
-	{
-		int mpi_check;
-		mpi_check=f_alpha.mpi_send_recv();
-		mpi_check=f_alpha_t.mpi_send_recv();
-		return(mpi_check);
-
-
-	}
-
-
-
-
-	void write_f_alpha(FILE *fp_falpha,double *dc,double *dx,double a3a03omega,double a,bool get_dc=false, bool get_psi=true)
-	{	//printf("a3  %.10lf\n",a3a03omega);
-		int i,j,k,locind[3],ci;
-		double f_val,f_t_val;
-		for(i=0;i<n[0];++i)
-		{
-			for(j=0;j<n[1];++j)
-			{
-				for(k=0;k<n[2];++k)
-				{	ci = (n[2]*n[1])*i + n[2]*j + k;
-					locind[0]=i; locind[1]=j; locind[2]=k;
-					f_val = f_alpha.get_field(locind,give_f);
-					f_t_val = f_alpha.get_field(locind,give_f);	
-							
-
-					if(get_dc)
-					{
-					 // psi_amp2 = psi_r_val*psi_r_val + psi_i_val*psi_i_val;		
-					  //dc[ci]= a3a03omega*psi_amp2 - 1.0;
-					  //fprintf(fp_psi,
-						//"%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\n",
-						//	a,dx[0]*i,dx[1]*j,dx[2]*k,psi_r_val,psi_i_val,psi_amp2,dc[ci],a3a03omega);
-					}
-
-					else
-					{
-					  fprintf(fp_falpha,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",a,dx[0]*i,dx[1]*j,dx[2]*k,f_val,f_t_val);
-
-
-					}
-
-
-				}
-	
-			}
-
-		}
-		
-		fprintf(fp_falpha,"\n\n\n\n");
-
-	}
-
-
-	double cal_X_4vel(int * ind,double a,double a_t,double phi)
-	{
-		double fa_val,fa_t_val,s_der[3],X;	
-		int c1;	
-		
-		
-		fa_t_val = f_alpha_t.get_field(ind,give_f);
-		fa_t_val = fa_t_val*a_t;
-
-		c1 = f_alpha.get_field_spt_der(ind,s_der);
-
-		
-		X = fa_t_val*fa_t_val/(1.0+2.0*phi);//  - (s_der[0]*s_der[0]+s_der[1]*s_der[1]+s_der[2]*s_der[2])/(a*a*(1.0-2.0*phi));
-		X = 0.5*X;
-
-		return(X);
-
-	}
-
-
-
-
-	herr_t write_hdf5_f_alpha_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,hid_t dspace_dc_glbl,double *dc,double a0,double a,double a_t,double Xb,
-							metric_potential_poisson_mpi phi,int cum_lin_ind,bool get_dc=false)
-	{
-
-		hid_t dataset,dset_glbl_r,dset_glbl_i,dspace,plist_id;
-		herr_t status ;
-		int tN  = n[0]*n[1]*n[3];
-		int i,j,k,locind[3],ci;
-		double fa_val,fa_t_val,x4val,rho_fa,phival;
-
-		
-
-		
-
-    /*
-     * Create the dataset with default properties and close filespace.
-     */
-   		dset_glbl_r = H5Dcreate(filename, "field_alpha", dtype, dspace_glbl,
-						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-		dset_glbl_i = H5Dcreate(filename, "field_alpha_t", dtype, dspace_glbl,
-						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);   
-
-		 		
-		
-
-		status = f_alpha.write_hdf5_mpi( filename,dtype,dset_glbl_r);
-		
-		
-		status = f_alpha_t.write_hdf5_mpi( filename,dtype,dset_glbl_i);
-
-		 FILE *test0; FILE *test1;
-		if(get_dc)
+		hsize_t count[2],offset[2];if(get_dc)
 		{	
 
 		 
@@ -1310,24 +1063,47 @@ class field_alpha_mpi
 
 	      }
 
-		H5Dclose(dset_glbl_r);
-		H5Dclose(dset_glbl_i);
-		return(status);
+		count[0] = dim[0]; count[1] = 2; offset[0] = cum_lin_ind; offset[1] = 0;
 
+		dspace = H5Screate_simple(2, count, NULL);
+
+
+
+		H5Sselect_hyperslab(dspace_glbl, H5S_SELECT_SET, offset, NULL, count, NULL);
+		plist_id = H5Pcreate(H5P_DATASET_XFER);
+    		H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
 		
+		
+		status = H5Dwrite(dset_glbl, dtype, dspace, dspace_glbl,
+		      				plist_id, fpGpsi);
+
+	
+    		H5Sclose(dspace);
+    		H5Pclose(plist_id);
+
+
+
+		return status;
 
 	}
 
+*/
 
+/*	int update(int * ind,double phi_val)
+	{
+		int c1;
+		c1 = phi.update_field(ind,phi_val);
+		
+		return (c1);
+	}
 
-	
-
-	
-
+*/
 
 
 };
 
+
+///##################################################################################################################################################################
 
 
 
@@ -1750,3 +1526,64 @@ class gauss_rand_field_gen_mpi
 
 
 };
+
+////##################################################
+
+/*   if(0)
+		   {	
+
+		 
+			
+		   for(i=0;i<n[0];++i)
+		    {
+			 for(j=0;j<n[1];++j)
+			 {
+				for(k=0;k<n[2];++k)
+				{	ci = (n[2]*n[1])*i + n[2]*j + k;
+					locind[0]=i; locind[1]=j; locind[2]=k;
+					
+					phival = phi.get_value(locind);	
+					
+
+					x4val = cal_X_4vel(locind,a,a_t,phival);	
+							
+
+					//rho_fa = x4val*(3.0*H0*H0/(4.0*a3a03omega*twopie*Xb_0));
+					//Xb = Xb_0*pow(a0/a,6.0/(2.0*alpha-1.0));
+					
+					//if(ci==10)
+					dc[ci] = (x4val/Xb)-1.0;
+					// printf("ci %d dc %.10lf  %.10lf %.10lf\n",ci,dc[ci],x4val,Xb);
+
+				}
+	
+			}
+
+		    }
+		
+
+
+		  dataset = H5Dcreate(filename, "dc_alpha_field", dtype, dspace_dc_glbl,
+						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+		
+
+		hsize_t count[1],offset[1];
+		count[0] = n[0]*n[1]*n[2];
+		offset[0] = cum_lin_ind*n[1]*n[2]; 
+
+		dspace = H5Screate_simple(1, count, NULL);
+
+
+		H5Sselect_hyperslab(dspace_dc_glbl, H5S_SELECT_SET, offset, NULL, count, NULL);
+		plist_id = H5Pcreate(H5P_DATASET_XFER);
+    		H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+		
+		
+		//status = H5Dwrite(dataset, dtype, dspace, dspace_dc_glbl,
+		  //    				plist_id,dc);
+
+		H5Sclose(dspace);
+		H5Dclose(dataset);
+
+	      }*/
