@@ -155,7 +155,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 			else
 			f_a_val = f_alpha.get_potential(ci);
 
-			
+			phi.update_value(ind, potn_k);
+			f_alpha.update_value(ind, f_a_val);
 			
 			c1 = phi.calc_vel(ind,potn_a_part,f_a_val,potn_k,potn_a,a,a_t,a_tt,dx,omega_dm_0,Xb);
 
