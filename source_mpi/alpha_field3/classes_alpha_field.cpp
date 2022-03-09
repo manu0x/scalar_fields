@@ -661,14 +661,23 @@ class metric_potential_poisson_mpi
 			return(1);
 	}
 
+	double get_potential(int ci,int get_imag=0)
+	{
+		if(!get_imag)
+		return (fpGpsi[ci][0]);	
+		else
+		return(fpGpsi[ci][1]/sqrt(fpGpsi[ci][0]*fpGpsi[ci][0]+fpGpsi[ci][1]*fpGpsi[ci][1]));
+
+	}
+
 	
 	double cal_X_4vel(int * ind,double a,double a_t,double phi)
 	{
 		double fa_val,fa_t_val,s_der[3],X;	
 		int c1;	
 		
-		
-		fa_t_val = phi_val.get_field(ind,give_f);
+		c1 =  (n_loc[2]*n_loc[1])*ind[0] + n_loc[2]*ind[1] + ind[2];
+		fa_t_val = get_potential(c1);
 		fa_t_val = fa_t_val*a_t;
 
 		//c1 = f_alpha.get_field_spt_der(ind,s_der);
@@ -690,14 +699,7 @@ class metric_potential_poisson_mpi
 	}
 
 
-	double get_potential(int ci,int get_imag=0)
-	{
-		if(!get_imag)
-		return (fpGpsi[ci][0]);	
-		else
-		return(fpGpsi[ci][1]/sqrt(fpGpsi[ci][0]*fpGpsi[ci][0]+fpGpsi[ci][1]*fpGpsi[ci][1]));
-
-	}
+	
 
 
 	void update_value(int *indi,double phiv)
@@ -722,11 +724,7 @@ class metric_potential_poisson_mpi
 	
 	
 
-	
 
-
-	
-	
 
 	herr_t write_hdf5_values_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,hid_t dspace_dc_glbl,double *dc,double a0,double a,double a_t,double Xb,
 							metric_potential_poisson_mpi phi,int cum_lin_ind,bool get_dc=false)
@@ -738,10 +736,12 @@ class metric_potential_poisson_mpi
 		int i,j,k,locind[3],ci;
 		double fa_val,fa_t_val,x4val,rho_fa,phival;
 
-		printf("POTENTIAL %d\n",potential);
+		
 
 		if(potential)
-		{ dset_glbl = H5Dcreate(filename, "potential", dtype, dspace_glbl,
+		{ 
+		  
+		  dset_glbl = H5Dcreate(filename, "potential", dtype, dspace_glbl,
 						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 		  status = phi_val.write_hdf5_mpi( filename,dtype,dset_glbl);
 
@@ -764,12 +764,12 @@ class metric_potential_poisson_mpi
 
 		 
 			
-		  for(i=0;i<n[0];++i)
+		  for(i=0;i<n_loc[0];++i)
 		   {
-			for(j=0;j<n[1];++j)
+			for(j=0;j<n_loc[1];++j)
 			{
-				for(k=0;k<n[2];++k)
-				{	ci = (n[2]*n[1])*i + n[2]*j + k;
+				for(k=0;k<n_loc[2];++k)
+				{	ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;
 					locind[0]=i; locind[1]=j; locind[2]=k;
 					
 					phival = phi.get_potential(ci);	
@@ -791,7 +791,7 @@ class metric_potential_poisson_mpi
 
 		  }
 		
-
+		
 
 		  dataset = H5Dcreate(filename, "dc_alpha_field", dtype, dspace_dc_glbl,
 						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
@@ -799,13 +799,14 @@ class metric_potential_poisson_mpi
 		
 
 		  hsize_t count[1],offset[1];
-	  	  count[0] = n[0]*n[1]*n[2];
+	  	  count[0] = n_loc[0]*n_loc[1]*n_loc[2];
 		  offset[0] = cum_lin_ind*n[1]*n[2]; 
 
 		  dspace = H5Screate_simple(1, count, NULL);
-
-
+		 // printf("POTENTIAL %d %d %d\n",potential,count[0],n[0]);
+		  
 		  H5Sselect_hyperslab(dspace_dc_glbl, H5S_SELECT_SET, offset, NULL, count, NULL);
+		  
 		  plist_id = H5Pcreate(H5P_DATASET_XFER);
     		  H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
 		
@@ -826,11 +827,6 @@ class metric_potential_poisson_mpi
 	    }
 		  
 		
-		// status = phi_val.write_hdf5_mpi( filename,dtype,dset_glbl);
-		 H5Dclose(dset_glbl);
-
-
-
 		return(status);
 
 	}

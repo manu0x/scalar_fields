@@ -1,6 +1,4 @@
 
-
-
 int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,metric_potential_poisson_mpi &phi,double k_grid[][3],int kbin_grid[],
 					double a_final,double a_ini,double a0,double omega_dm_0,double Xb_0,double *dx,double dk,int kbins,double da,
 							int cum_lin_id,bool use_hdf_format)
@@ -99,13 +97,13 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 				H5Pclose(plist_id);
 
 				printf("hdf5 %s\n",fp_hdf5_name);
-				printf("pwr spec name %s\n",fp_pwr_spec_name);		
+						
 				
 				evolve_hdf5_write(n_glbl,f_alpha, phi,filename,dc,a0,a,a_t,Xb,cum_lin_id,true);
 				status=H5Fclose(filename);
 				//cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
 				fclose(fpwr_spec);	
-				
+				printf("pwr spec name %s\n",fp_pwr_spec_name);
 				++prn;
 
 			}
@@ -175,7 +173,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 			
 			//printf(" %d %lf %lf %lf\n",step_cnt,potn_t,acc_fa,fa_k[1]);
 
-			if(isnan(potn_k+f_a_val))
+			if(isnan(potn_rhs+f_a_rhs))
 			{
 				//printf("Yfailed at step %d %lf %lf %lf\n",step_cnt,potn_k,potn_t,fa_k[1]);
 				fail=1;
@@ -284,25 +282,26 @@ void evolve_hdf5_write(int *ind,metric_potential_poisson_mpi f_alpha,metric_pote
 	dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
     	status = H5Tset_order(dtype, H5T_ORDER_LE);
 	
-/*	dspace_potn = H5Screate_simple(3, dim, NULL);
+	dspace_potn = H5Screate_simple(3, dim, NULL);
 	dspace_dc = H5Screate_simple(1, pdim, NULL);
-
-	printf("dim %d %d %d",dim[0],dim[1],dim[2]);
-
-	status_phi = phi.write_hdf5_values_mpi_p(filename, dtype, dspace_potn,dc,a0,a,a_t,Xb,phi,cum_lin_id);
-	H5Sclose(dspace_potn);	
-	H5Sclose(dspace_dc);
-*/
-//$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-
-	dspace_dc2 = H5Screate_simple(1, pdim, NULL);
-
-	
 	dspace_falpha = H5Screate_simple(3, dim, NULL);
+
 	
-	status_falpha = f_alpha.write_hdf5_values_mpi(filename, dtype, dspace_falpha,dspace_dc2,dc,a0,a,a_t,Xb,phi,cum_lin_id,get_dc);
+
+	
+	
+	
+	status_falpha = f_alpha.write_hdf5_values_mpi(filename, dtype, dspace_falpha,dspace_dc,dc,a0,a,a_t,Xb,phi,cum_lin_id,get_dc);
 	H5Sclose(dspace_falpha);
-	H5Sclose(dspace_dc2);
+
+	
+
+	status_phi = phi.write_hdf5_values_mpi(filename, dtype, dspace_potn,dspace_dc,dc,a0,a,a_t,Xb,phi,cum_lin_id,get_dc);
+	H5Sclose(dspace_potn);	
+
+
+
+	H5Sclose(dspace_dc);
 	
 	
 
