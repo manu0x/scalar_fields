@@ -677,11 +677,11 @@ class metric_potential_poisson_mpi
 		int c1;	
 		
 		c1 =  (n_loc[2]*n_loc[1])*ind[0] + n_loc[2]*ind[1] + ind[2];
-		fa_t_val = get_potential(c1);
+		fa_t_val = get_value(ind);
 		fa_t_val = fa_t_val*a_t;
 
 		//c1 = f_alpha.get_field_spt_der(ind,s_der);
-
+		
 		
 		X = fa_t_val*fa_t_val/(1.0+2.0*phi);//  - (s_der[0]*s_der[0]+s_der[1]*s_der[1]+s_der[2]*s_der[2])/(a*a*(1.0-2.0*phi));
 		X = 0.5*X;
@@ -772,7 +772,7 @@ class metric_potential_poisson_mpi
 				{	ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;
 					locind[0]=i; locind[1]=j; locind[2]=k;
 					
-					phival = phi.get_potential(ci);	
+					phival = phi.get_value(locind);	
 					
 
 					x4val = cal_X_4vel(locind,a,a_t,phival);	
@@ -781,9 +781,11 @@ class metric_potential_poisson_mpi
 					//rho_fa = x4val*(3.0*H0*H0/(4.0*a3a03omega*twopie*Xb_0));
 					//Xb = Xb_0*pow(a0/a,6.0/(2.0*alpha-1.0));
 					
-					//if(ci==10)
+					
 					dc[ci] = (x4val/Xb)-1.0;
-					// printf("ci %d dc %.10lf  %.10lf %.10lf\n",ci,dc[ci],x4val,Xb);
+					//if(ci<10)
+					//printf("ci %d dc %.10lf  %.10lf %.10lf  %.10lf\n",ci,dc[ci],x4val,Xb,phival);
+					 
 
 				}
 	
