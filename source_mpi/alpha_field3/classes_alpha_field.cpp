@@ -573,7 +573,7 @@ class metric_potential_poisson_mpi
 	}
 
 
-	void solve_poisson(double k_grid[][3],double a,double a_t,double da)
+	void solve_poisson(double k_grid[][3],double Xb,double a,double a_t,double da)
 	{
 		int i,j,k,ci,ind[3]{0,0,0},r;
 		double k2fac;
@@ -611,8 +611,20 @@ class metric_potential_poisson_mpi
 				
 			}	
 			else
-			{fpGpsi_ft[ci][0] = 0.0;
-			 fpGpsi_ft[ci][1] = 0.0;
+			{
+                   	    if(potential)
+			    {
+				fpGpsi_ft[ci][0] = 0.0;
+		        	fpGpsi_ft[ci][1] = 0.0;
+
+
+			    }
+			    else
+			    {   fpGpsi_ft[ci][0] = Xb;
+		        	fpGpsi_ft[ci][1] = Xb;
+
+			    }
+			 	
 			}
 
 			

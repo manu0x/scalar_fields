@@ -333,7 +333,7 @@ void initialise_mpi(int * ind,int *ind_loc,metric_potential_poisson_mpi &falpha,
 			ci = (n[2]*n[1])*i + n[2]*j + k;
 			loc_ind[0] = i;  loc_ind[1] = j;  loc_ind[2] = k;
 
-			 ini_dc[ci] = 0.0;
+			// ini_dc[ci] = 0.0;
 
 			 poisson_rhs = 1.5*omega_dm_0*H0*H0*pow(a0/ai,3.0*(1.0+w))*ini_dc[ci];
 

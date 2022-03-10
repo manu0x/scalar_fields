@@ -165,14 +165,16 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 				
 			
 			
-			potn_rhs = potn_val[ci]+ da*potn_a_part;
-			f_a_rhs = f_a_val + da*f_a_a_part;
+			potn_rhs = potn_val[ci];//+ da*potn_a_part;
+			f_a_rhs = f_a_val ;//+ da*f_a_a_part;
 			
 			
 			//if(ci==10)
 			//printf("fb_a  %.10lf   fb_a10  %.15lf \n",(fb_acc-acc_fa)/fb_acc,(fa_val[ci][1]/fb_a)-1.0);
 			
 			//printf(" %d %lf %lf %lf\n",step_cnt,potn_t,acc_fa,fa_k[1]);
+			//if(ci==100)
+			//printf("%lf %lf\n",potn_k,f_a_val);
 
 			if(isnan(potn_rhs+f_a_rhs))
 			{
@@ -202,8 +204,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 	
 
 
-	phi.solve_poisson(k_grid, a, a_t,da);
-	f_alpha.solve_poisson(k_grid, a, a_t,da);
+	phi.solve_poisson(k_grid,fb_a, a, a_t,da);
+	f_alpha.solve_poisson(k_grid,fb_a, a, a_t,da);
 	
 	
 
