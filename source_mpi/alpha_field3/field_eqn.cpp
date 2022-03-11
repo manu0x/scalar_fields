@@ -10,7 +10,7 @@ double field_acc_eqn(double f_a,double phi,double phi_a,double a,double a_t,doub
 	f_ssqr = f_x*f_x + f_y*f_y + f_z*f_z;
 
 */	
-	numer = 3.0*(-1.0+2.0*alpha*phi)*f_a/a + 2.0*(1.0+alpha)*f_a*phi_a  ;
+	numer = 3.0*(-1.0+2.0*alpha*phi)*f_a*a_t/a + 2.0*(1.0+alpha)*f_a*phi_a*a_t  ;
 			// + (-1.0+2.0*(-2.0+alpha)*phi)*(a_t/a)*f_ssqr/(f_t*a*a);
 	//numer+= ( phi_t*f_ssqr/(f_t*a*a) - (-1.0+2.0*alpha)*(-1.0+2.0*(-2.0+alpha)*phi)*( f_x*f_tx + f_y*f_ty + f_z*f_tz )/(f_t*a*a) 
 	//	   +( -2.0*(-1.0+alpha)*( f_x*phi_x + f_y*phi_y + f_z*phi_z )/(a*a) + (1.0-2.0*(-2.0+alpha)*phi)*lap_f/(a*a)  )     )/(H0*H0);
@@ -19,7 +19,7 @@ double field_acc_eqn(double f_a,double phi,double phi_a,double a,double a_t,doub
 
 
 
-	acc = (numer/denom) - a_tt*f_a/(a_t*a_t) ;//+ 4.0*phi*lap_f/((-1.0+2.0*alpha)*a*a*a_t*a_t);
+	acc = (numer/denom);// - a_tt*f_a/(a_t*a_t) ;//+ 4.0*phi*lap_f/((-1.0+2.0*alpha)*a*a*a_t*a_t);
 
 	//printf("acc %lf %.15lf\n",  pow(f_t, -1.0),f_t);
 

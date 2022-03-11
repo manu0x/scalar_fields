@@ -590,17 +590,17 @@ class metric_potential_poisson_mpi
 			ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;			
 			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
 			
-			if(k2fac>0.0)
+			//if(k2fac>0.0)
 			{
 			  if(potential)	
-			  {	fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/(1.0+da*k2fac/(3.0*a_t*a_t*a));
-			 	fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/(1.0+da*k2fac/(3.0*a_t*a_t*a));
+			  {	fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(1.0+da*k2fac/(3.0*a_t*a_t*a));
+			 	fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(1.0+da*k2fac/(3.0*a_t*a_t*a));
 			  }
 
 			  else
 			  {
-				fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/(1.0+da*k2fac/((2.0*alpha-1.0)*a_t*a_t*a*a));
-			 	fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/(1.0+da*k2fac/((2.0*alpha-1.0)*a_t*a_t*a*a));
+				fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(1.0+da*k2fac/((2.0*alpha-1.0)*a_t*a*a));
+			 	fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(1.0+da*k2fac/((2.0*alpha-1.0)*a_t*a*a));
 
 			  }
 		
@@ -609,8 +609,18 @@ class metric_potential_poisson_mpi
 
 			 
 				
-			}	
-			else
+			}
+
+			if(k2fac<=0.0)
+			{
+
+				 fpGpsi_ft[ci][0] = Xb;///(dtN);
+			 	 fpGpsi_ft[ci][1] = 0.0;///(dtN);
+
+			}
+
+	
+		/*	else
 			{
                    	    if(potential)
 			    {
@@ -621,12 +631,12 @@ class metric_potential_poisson_mpi
 			    }
 			    else
 			    {   fpGpsi_ft[ci][0] = Xb;
-		        	fpGpsi_ft[ci][1] = Xb;
+		        	fpGpsi_ft[ci][1] = 0.0;
 
 			    }
 			 	
 			}
-
+		*/
 			
 
 		    }
@@ -678,7 +688,7 @@ class metric_potential_poisson_mpi
 		if(!get_imag)
 		return (fpGpsi[ci][0]);	
 		else
-		return(fpGpsi[ci][1]/sqrt(fpGpsi[ci][0]*fpGpsi[ci][0]+fpGpsi[ci][1]*fpGpsi[ci][1]));
+		return(fpGpsi_ft[ci][0]);
 
 	}
 
@@ -689,13 +699,13 @@ class metric_potential_poisson_mpi
 		int c1;	
 		
 		c1 =  (n_loc[2]*n_loc[1])*ind[0] + n_loc[2]*ind[1] + ind[2];
-		fa_t_val = get_value(ind);
+		fa_t_val = get_potential(c1);
 		fa_t_val = fa_t_val*a_t;
 
 		//c1 = f_alpha.get_field_spt_der(ind,s_der);
 		
 		
-		X = fa_t_val*fa_t_val/(1.0+2.0*phi);//  - (s_der[0]*s_der[0]+s_der[1]*s_der[1]+s_der[2]*s_der[2])/(a*a*(1.0-2.0*phi));
+		X = fa_t_val*fa_t_val;///(1.0+2.0*phi);//  - (s_der[0]*s_der[0]+s_der[1]*s_der[1]+s_der[2]*s_der[2])/(a*a*(1.0-2.0*phi));
 		X = 0.5*X;
 
 		return(X);

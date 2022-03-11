@@ -9,7 +9,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 	double fa_vel[2],f_a_val,potn_val[n[0]*n[1]*n[2]],fa_k[2],potn,potn_k,
 					potn_a,potn_a_part,f_a_a_part,dc[n[0]*n[1]*n[2]],pwr_spec[n[0]*n[1]*n[2]],acc_fa,potn_rhs,f_a_rhs;
 
-	double fb_a,fb_a_k,fb_acc,fb_a_0,Xb;
+	double fb_a,fb_a_k,fb_acc,fb_a_0,Xb,f_a_avg;
 	double fa_retrive[2],potn_der[3],potn_retrive;
 	int i,j,k,ci,ind[3];
 	int c1,c2,fail=0;
@@ -48,7 +48,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 
 	  a_t = a*H0*sqrt(omega_dm_0*pow(a0/a,3.0*(1.0+w))+ (1.0-omega_dm_0));
           a_tt = a*H0*H0*(-0.5*omega_dm_0*pow(a0/a,3.0*(1.0+w))*(1.0+3.0*w) + (1.0-omega_dm_0) );
-	  fb_acc = -3.0*fb_a/(a*(2.0*alpha-1.0)) - a_tt*fb_a/(a_t*a_t);
+	  fb_acc = -3.0*fb_a*a_t/(a*(2.0*alpha-1.0));
 	  fb_a_k = fb_a + fb_acc*da;
 
 	  Xb = 0.5*fb_a*fb_a*a_t*a_t;
@@ -99,7 +99,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 				printf("hdf5 %s\n",fp_hdf5_name);
 						
 				
-				evolve_hdf5_write(n_glbl,f_alpha, phi,filename,dc,a0,a,a_t,Xb,cum_lin_id,true);
+				evolve_hdf5_write(n_glbl,f_alpha, phi,filename,dc,a0,a,a_t,0.5*f_a_avg*f_a_avg*a_t*a_t,cum_lin_id,true);
 				status=H5Fclose(filename);
 				//cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
 				fclose(fpwr_spec);	
@@ -120,7 +120,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 	
 	
 	
-	
+	f_a_avg = 0.0;
 
 	//printf("fb_t  %lf   fb_t_th  %lf\n",fb_t,fb_t_0*pow(a0/ak,3.0/(2.0*alpha-1.0)));
  #pragma omp parallel for private(j,k,ci,ind,c1,fa_k,fa_vel,potn,potn_k,potn_a,poisson_rhs,acc_fa,potn_der)
@@ -155,6 +155,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 			else
 			f_a_val = f_alpha.get_potential(ci);
 
+			f_a_avg+= f_a_val;
+
 			phi.update_value(ind, potn_k);
 			f_alpha.update_value(ind, f_a_val);
 			
@@ -165,8 +167,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 				
 			
 			
-			potn_rhs = potn_val[ci];//+ da*potn_a_part;
-			f_a_rhs = f_a_val ;//+ da*f_a_a_part;
+			potn_rhs = potn_val[ci]+da*potn_a_part;
+			f_a_rhs = f_a_val + da*f_a_a_part;
 			
 			
 			//if(ci==10)
@@ -174,7 +176,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 			
 			//printf(" %d %lf %lf %lf\n",step_cnt,potn_t,acc_fa,fa_k[1]);
 			//if(ci==100)
-			//printf("%lf %lf\n",potn_k,f_a_val);
+			//printf("%lf %lf\n",fb_a,f_a_val);
 
 			if(isnan(potn_rhs+f_a_rhs))
 			{
@@ -202,11 +204,23 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 	
 	
 	
+	f_a_avg=f_a_avg/((double)(n[0]*n[1]*n[2]));
+
+	//printf("Checking  %lf\n",(f_a_avg-fb_a)/fb_a);
+
+	 a_t = ak*H0*sqrt(omega_dm_0*pow(a0/ak,3.0*(1.0+w))+ (1.0-omega_dm_0));
+         a_tt = ak*H0*H0*(-0.5*omega_dm_0*pow(a0/ak,3.0*(1.0+w))*(1.0+3.0*w) + (1.0-omega_dm_0) );
+	 fb_acc = -3.0*fb_a_k*a_t/(ak*(2.0*alpha-1.0)) ;
+	 fb_a = fb_a + fb_acc*da;
+	 
 
 
 	phi.solve_poisson(k_grid,fb_a, a, a_t,da);
 	f_alpha.solve_poisson(k_grid,fb_a, a, a_t,da);
 	
+	double fcheck = f_alpha.get_potential(0,1);
+
+	//printf("Check f_a %.10lf %.10lf\n",fb_a,fcheck);
 	
 
 	a = a+da;
@@ -249,7 +263,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 			printf("hdf5 %s\n",fp_hdf5_name);
 			printf("pwr spec name %s\n",fp_pwr_spec_name);		
 			
-			evolve_hdf5_write(n_glbl,f_alpha, phi,filename,dc,a0,a,a_t,Xb,cum_lin_id,true);
+			evolve_hdf5_write(n_glbl,f_alpha, phi,filename,dc,a0,a,a_t,0.5*f_a_avg*f_a_avg*a_t*a_t,cum_lin_id,true);
 
 	
 			status=H5Fclose(filename);
