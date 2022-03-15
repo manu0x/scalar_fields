@@ -514,6 +514,90 @@ class param_alpha: public param_cosmo_sim
 
 
 
+class linear_poisson_field_mpi
+{
+
+	private:
+	double k[3],delta_k[3],delta_a_k[3];
+	public:
+	linear_poisson_field_mpi(double ki[3],double delta_ki[3],double delta_a_ki[3])
+	{
+
+		k[0] = ki[0]; k[1] = ki[1]; k[2] = ki[2];
+		delta_k[0] = delta_ki[0]; delta_k[1] = delta_ki[1]; delta_k[2] = delta_ki[2];
+		delta_a_k[0] = delta_a_ki[0]; delta_a_k[1] = delta_a_ki[1]; delta_a_k[2] = delta_a_ki[2];
+	}
+	
+	void evolve(double ai,double da,double omega_dm_0,double H0,double a0=1.0)
+	{
+		int i;
+		double a,z,a_t,ak,kdelta_k[3],kdelta_a_k[3], acc1[3], acc2[3],alpha_lin,beta_lin,omega,A;
+		double ini_delta_k[3],ini_delta_a_k[3];
+		FILE *fp_lin[3];
+
+		for(i=0;i<3;++i)
+		{
+			ini_delta_k[i] = delta_k[i];
+			ini_delta_a_k[i] = delta_a_k[i];
+		}
+
+		fp_lin[0] = fopen("linear_min.txt","w");
+		fp_lin[1] = fopen("linear_mid.txt","w");
+		fp_lin[2] = fopen("linear_max.txt","w");
+
+		for(a=ai;a<=a0;)
+		{
+			a_t = a*H0*sqrt(omega_dm_0*pow(a0/a,3.0*(1.0+w))+ (1.0-omega_dm_0));
+			omega = omega_dm_0*H0*H0*a*a/(a_t*a_t);
+			A = -1.5*(1.0+w)*omega_dm_0*pow(a/a0,-3.0*(1.0+w)-1.0)/(omega_dm_0*pow(a/a0,-3.0*(1.0+w))+(1.0-omega_dm_0));
+			z = a0/a -1.0;
+			
+			beta_lin = -3.0/a - (A - 3.0*(2.0*w-cs2))/a;
+			ak = a + da;
+	
+			for(i=0;i<3;++i)
+			{
+
+			  fprintf(fp_lin[i],"%lf\t%lf\t%lf\t%lf\t%lf\n",a,a/ai,z,delta_k[i],delta_k[i]/ini_delta_k[i]);
+				
+			  alpha_lin = 1.5*omega*(1.0-6.0*cs2+8.0*w-3.0*w*w)/(a*a) - k[i]*k[i]*cs2/(a_t*a_t) ;
+			
+			  acc1[i] = alpha_lin*delta_k[i] + beta_lin*delta_a_k[i];
+
+			  kdelta_a_k[i] = delta_a_k[i] + da*acc1[i];
+
+			  delta_k[i] = (delta_k[i]*(1.0 + 0.25*alpha_lin*da*da ) + (da + 0.5*beta_lin*da*da )*delta_a_k[i])/(1.0 - 0.5*alpha_lin*da*da);
+
+			}
+
+			a_t = ak*H0*sqrt(omega_dm_0*pow(a0/ak,3.0*(1.0+w))+ (1.0-omega_dm_0));
+			omega = omega_dm_0*H0*H0*ak*ak/(a_t*a_t);
+			A = -1.5*(1.0+w)*omega_dm_0*pow(ak/a0,-3.0*(1.0+w)-1.0)/(omega_dm_0*pow(ak/a0,-3.0*(1.0+w))+(1.0-omega_dm_0));
+			
+			beta_lin = -3.0/ak - (A - 3.0*(2.0*w-cs2))/ak;
+	
+			for(i=0;i<3;++i)
+			{
+				
+			  alpha_lin = 1.5*omega*(1.0-6.0*cs2+8.0*w-3.0*w*w)/(ak*ak) - k[i]*k[i]*cs2/(a_t*a_t) ;
+			
+			  acc2[i] = alpha_lin*delta_k[i] + beta_lin*kdelta_a_k[i];
+
+			  delta_a_k[i] = delta_a_k[i] + 0.5*da*(acc1[i]+acc1[i]);
+
+			  
+
+			}
+			
+
+		}
+
+
+	}
+
+
+};
+
 
 
 
