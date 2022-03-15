@@ -520,12 +520,12 @@ class linear_poisson_field_mpi
 	private:
 	double k[3],delta_k[3],delta_a_k[3];
 	public:
-	linear_poisson_field_mpi(double ki[3],double delta_ki[3],double delta_a_ki[3])
+	linear_poisson_field_mpi(double ki[3],double delta_ki,double delta_a_ki)
 	{
 
 		k[0] = ki[0]; k[1] = ki[1]; k[2] = ki[2];
-		delta_k[0] = delta_ki[0]; delta_k[1] = delta_ki[1]; delta_k[2] = delta_ki[2];
-		delta_a_k[0] = delta_a_ki[0]; delta_a_k[1] = delta_a_ki[1]; delta_a_k[2] = delta_a_ki[2];
+		delta_k[0] = delta_ki; delta_k[1] = delta_ki; delta_k[2] = delta_ki;
+		delta_a_k[0] = delta_a_ki; delta_a_k[1] = delta_a_ki; delta_a_k[2] = delta_a_ki;
 	}
 	
 	void evolve(double ai,double da,double omega_dm_0,double H0,double a0=1.0)
