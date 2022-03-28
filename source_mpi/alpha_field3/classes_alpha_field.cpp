@@ -545,7 +545,7 @@ class linear_poisson_field_mpi
 		fp_lin[1] = fopen("linear_mid.txt","w");
 		fp_lin[2] = fopen("linear_max.txt","w");
 
-		for(a=ai;a<=a0;)
+		for(a=ai;a<=a0;a+=da)
 		{
 			a_t = a*H0*sqrt(omega_dm_0*pow(a0/a,3.0*(1.0+w))+ (1.0-omega_dm_0));
 			omega = omega_dm_0*H0*H0*a*a/(a_t*a_t);
@@ -557,7 +557,7 @@ class linear_poisson_field_mpi
 	
 			for(i=0;i<3;++i)
 			{
-
+			  
 			  fprintf(fp_lin[i],"%lf\t%lf\t%lf\t%lf\t%lf\n",a,a/ai,z,delta_k[i],delta_k[i]/ini_delta_k[i]);
 				
 			  alpha_lin = 1.5*omega*(1.0-6.0*cs2+8.0*w-3.0*w*w)/(a*a) - k[i]*k[i]*cs2/(a_t*a_t) ;

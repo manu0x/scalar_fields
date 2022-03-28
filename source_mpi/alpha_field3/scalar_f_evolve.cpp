@@ -52,7 +52,9 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 	k2lin[1] = 	k_grid[midk][0]*k_grid[midk][0]+k_grid[midk][1]*k_grid[midk][1]+k_grid[midk][2]*k_grid[midk][2];
 	
 	linear_poisson_field_mpi lin_calc(k2lin,0.001,1.0);
+	printf("Running lin calc....\n");
 	lin_calc.evolve(0.001,da,omega_dm_0,H0);
+	printf("Lin_calc...Done...\n");
 
       }
 	MPI_Barrier(cart_comm);
