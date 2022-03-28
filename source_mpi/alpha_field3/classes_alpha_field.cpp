@@ -560,7 +560,7 @@ class linear_poisson_field_mpi
 			  
 			  fprintf(fp_lin[i],"%lf\t%lf\t%lf\t%lf\t%lf\n",a,a/ai,z,delta_k[i],delta_k[i]/ini_delta_k[i]);
 				
-			  alpha_lin = 1.5*omega*(1.0-6.0*cs2+8.0*w-3.0*w*w)/(a*a) - k[i]*k[i]*cs2/(a_t*a_t) ;
+			  alpha_lin = 1.5*omega*(1.0-6.0*cs2+8.0*w-3.0*w*w)/(a*a) - k[i]*k[i]*cs2/(a_t*a_t*a*a) ;
 			
 			  acc1[i] = alpha_lin*delta_k[i] + beta_lin*delta_a_k[i];
 
@@ -579,7 +579,7 @@ class linear_poisson_field_mpi
 			for(i=0;i<3;++i)
 			{
 				
-			  alpha_lin = 1.5*omega*(1.0-6.0*cs2+8.0*w-3.0*w*w)/(ak*ak) - k[i]*k[i]*cs2/(a_t*a_t) ;
+			  alpha_lin = 1.5*omega*(1.0-6.0*cs2+8.0*w-3.0*w*w)/(ak*ak) - k[i]*k[i]*cs2/(a_t*a_t*ak*ak) ;
 			
 			  acc2[i] = alpha_lin*delta_k[i] + beta_lin*kdelta_a_k[i];
 
