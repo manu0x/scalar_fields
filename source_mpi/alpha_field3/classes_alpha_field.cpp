@@ -524,7 +524,7 @@ class linear_poisson_field_mpi
 	{
 
 		k[0] = ki[0]; k[1] = ki[1]; k[2] = ki[2];
-		//k[0] = 0.007;k[1] = 0.07;
+		//k[0] = 0.5*h;
 		delta_k[0] = delta_ki; delta_k[1] = delta_ki; delta_k[2] = delta_ki;
 		delta_a_k[0] = delta_a_ki; delta_a_k[1] = delta_a_ki; delta_a_k[2] = delta_a_ki;
 	}
@@ -535,7 +535,7 @@ class linear_poisson_field_mpi
 		double a,z,a_t,ak,kdelta_k[3],kdelta_a_k[3], acc1[3], acc2[3],alpha_lin,beta_lin,omega,A;
 		double ini_delta_k[3],ini_delta_a_k[3];
 		FILE *fp_lin[3];
-
+		//da=0.01*da;
 		for(i=0;i<3;++i)
 		{
 			ini_delta_k[i] = delta_k[i];
@@ -571,7 +571,7 @@ class linear_poisson_field_mpi
 			
 			  acc1[i] = alpha_lin*delta_k[i] + beta_lin*delta_a_k[i];
 			 if(a==ai)
-			   printf("for i %d k is %lf  (h/Mpc)\n",i,k[i]*h);
+			   printf("for i %d k is %lf  (h/Mpc)\n",i,k[i]/h);
 			// printf("i %d acc1 %.10lf  %.10lf  %.10lf\n",i,k[i],cs2,beta_lin);
 
 			  kdelta_a_k[i] = delta_a_k[i] + da*acc1[i];

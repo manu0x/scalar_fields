@@ -60,7 +60,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 	MPI_Barrier(cart_comm);
 	
 
-	for(a=a_ini,a_print=a_ini,step_cnt=0;(a>=a0)&&(!fail);++step_cnt)
+	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail);++step_cnt)
 	{
 	   //dt=dti*sqrt(a/a_ini);
 
