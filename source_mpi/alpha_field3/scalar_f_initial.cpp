@@ -432,7 +432,7 @@ void initialise_mpi(int * ind,int *ind_loc,metric_potential_poisson_mpi &falpha,
 	fprintf(fp_sim_info,"	L is %lf\n",L[0]);
 	fprintf(fp_sim_info,"	dx is %lf req len res %lf\n",dx[0],len_res);
 	fprintf(fp_sim_info,"\nK details:\n	dk is %lf  per MPc\n",dk/lenfac);
-	fprintf(fp_sim_info,"	kmin %lf kmax %lf\n",sqrt(minkmagsqr),sqrt(maxkmagsqr));
+	fprintf(fp_sim_info,"	kmin %lf kmax %lf\n",dk,sqrt(maxkmagsqr));
 	fprintf(fp_sim_info,"	k_nyquist is %.5lf\n",k_nyq);
 
 	fprintf(fp_sim_info,"	kbins is %d   %d\n",kbins,(int)((sqrt(maxkmagsqr)-sqrt(minkmagsqr))/dk));

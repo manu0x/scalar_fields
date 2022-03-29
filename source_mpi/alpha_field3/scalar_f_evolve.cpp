@@ -44,15 +44,15 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 
       if(cum_lin_id==0)
       {
-	midk = (int)(((double)n_glbl[0])/2.0);
+	maxk = (int)(((double)n_glbl[0])/2.0)-1;
 	mink = 1;
-	maxk = n_glbl[0]-1;
-	k2lin[0] = 	k_grid[mink][0]*k_grid[mink][0]+k_grid[mink][1]*k_grid[mink][1]+k_grid[mink][2]*k_grid[mink][2];
-	k2lin[2] = 	k_grid[maxk][0]*k_grid[maxk][0]+k_grid[maxk][1]*k_grid[maxk][1]+k_grid[maxk][2]*k_grid[maxk][2];
-	k2lin[1] = 	k_grid[midk][0]*k_grid[midk][0]+k_grid[midk][1]*k_grid[midk][1]+k_grid[midk][2]*k_grid[midk][2];
+	//maxk = n_glbl[0]-1;
+	k2lin[0] = 	sqrt(k_grid[mink][0]*k_grid[mink][0]+k_grid[mink][1]*k_grid[mink][1]+k_grid[mink][2]*k_grid[mink][2]);
+	k2lin[2] = 	sqrt(k_grid[maxk][0]*k_grid[maxk][0]+k_grid[maxk][1]*k_grid[maxk][1]+k_grid[maxk][2]*k_grid[maxk][2]);
+	k2lin[1] = 	0.5*k2lin[2];
 	
 	linear_poisson_field_mpi lin_calc(k2lin,0.001,1.0);
-	printf("Running lin calc....\n");
+	printf("Running lin calc....%d\n",maxk);
 	lin_calc.evolve(0.001,da,omega_dm_0,H0);
 	printf("Lin_calc...Done...\n");
 

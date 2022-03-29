@@ -524,6 +524,7 @@ class linear_poisson_field_mpi
 	{
 
 		k[0] = ki[0]; k[1] = ki[1]; k[2] = ki[2];
+		//k[0] = 0.007;k[1] = 0.07;
 		delta_k[0] = delta_ki; delta_k[1] = delta_ki; delta_k[2] = delta_ki;
 		delta_a_k[0] = delta_a_ki; delta_a_k[1] = delta_a_ki; delta_a_k[2] = delta_a_ki;
 	}
@@ -545,11 +546,17 @@ class linear_poisson_field_mpi
 		fp_lin[1] = fopen("linear_mid.txt","w");
 		fp_lin[2] = fopen("linear_max.txt","w");
 
+		fprintf(fp_sim_info,"\n//#### LINEAR Calc...####\n");
+		fprintf(fp_sim_info,"k_min %lf (h/Mpc)\n",k[0]*h);
+		fprintf(fp_sim_info,"k_mid %lf (h/Mpc)\n",k[1]*h);
+		fprintf(fp_sim_info,"k_max %lf (h/Mpc)\n",k[2]*h);
+		
+
 		for(a=ai;a<=a0;a+=da)
 		{
 			a_t = a*H0*sqrt(omega_dm_0*pow(a0/a,3.0*(1.0+w))+ (1.0-omega_dm_0));
-			omega = omega_dm_0*H0*H0*a*a/(a_t*a_t);
-			A = -1.5*(1.0+w)*omega_dm_0*pow(a/a0,-3.0*(1.0+w)-1.0)/(omega_dm_0*pow(a/a0,-3.0*(1.0+w))+(1.0-omega_dm_0));
+			omega = omega_dm_0*pow(a/a0,-3.0*(1.0+w))*H0*H0*a*a/(a_t*a_t);
+			A = -1.5*(a/a0)*(1.0+w)*omega_dm_0*pow(a/a0,-3.0*(1.0+w)-1.0)/(omega_dm_0*pow(a/a0,-3.0*(1.0+w))+(1.0-omega_dm_0));
 			z = a0/a -1.0;
 			
 			beta_lin = -3.0/a - (A - 3.0*(2.0*w-cs2))/a;
@@ -563,16 +570,19 @@ class linear_poisson_field_mpi
 			  alpha_lin = 1.5*omega*(1.0-6.0*cs2+8.0*w-3.0*w*w)/(a*a) - k[i]*k[i]*cs2/(a_t*a_t*a*a) ;
 			
 			  acc1[i] = alpha_lin*delta_k[i] + beta_lin*delta_a_k[i];
+			 if(a==ai)
+			   printf("for i %d k is %lf  (h/Mpc)\n",i,k[i]*h);
+			// printf("i %d acc1 %.10lf  %.10lf  %.10lf\n",i,k[i],cs2,beta_lin);
 
 			  kdelta_a_k[i] = delta_a_k[i] + da*acc1[i];
 
-			  delta_k[i] = (delta_k[i]*(1.0 + 0.25*alpha_lin*da*da ) + (da + 0.5*beta_lin*da*da )*delta_a_k[i])/(1.0 - 0.5*alpha_lin*da*da);
+			  delta_k[i] = (delta_k[i]*(1.0 + 0.25*alpha_lin*da*da ) + (da + 0.5*beta_lin*da*da )*delta_a_k[i])/(1.0 - 0.25*alpha_lin*da*da);
 
 			}
 
 			a_t = ak*H0*sqrt(omega_dm_0*pow(a0/ak,3.0*(1.0+w))+ (1.0-omega_dm_0));
-			omega = omega_dm_0*H0*H0*ak*ak/(a_t*a_t);
-			A = -1.5*(1.0+w)*omega_dm_0*pow(ak/a0,-3.0*(1.0+w)-1.0)/(omega_dm_0*pow(ak/a0,-3.0*(1.0+w))+(1.0-omega_dm_0));
+			omega = omega_dm_0*pow(a/a0,-3.0*(1.0+w))*H0*H0*ak*ak/(a_t*a_t);
+			A = -1.5*(a/a0)*(1.0+w)*omega_dm_0*pow(ak/a0,-3.0*(1.0+w)-1.0)/(omega_dm_0*pow(ak/a0,-3.0*(1.0+w))+(1.0-omega_dm_0));
 			
 			beta_lin = -3.0/ak - (A - 3.0*(2.0*w-cs2))/ak;
 	

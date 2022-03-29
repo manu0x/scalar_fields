@@ -3,6 +3,7 @@ void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_0,param_al
 	double z = p.z_ini;
 	alpha = p.loc_alpha;
 	w = 1.0/(2.0*alpha-1.0);
+	cs2 = 1.0/(2.0*alpha-1.0);
 
 	c_box = p.loc_c_box;
 	pc_box = p.loc_pc_box;
