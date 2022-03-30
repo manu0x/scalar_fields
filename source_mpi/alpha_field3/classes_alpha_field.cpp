@@ -765,7 +765,10 @@ class metric_potential_poisson_mpi
 		if(potential)
 		potn_vel = potn_vel_eqn(a,a_t,potn,f_t,omega_dm_0,Xb);
 		else
-		potn_vel = field_acc_eqn(f_t,potn,potn_a,a,a_t,a_tt);
+		{ potn_vel = field_acc_eqn(f_t,potn,potn_a,a,a_t,a_tt);
+		  //if(ci==134)
+			//printf("potn_vel %.10lf\n",potn_vel);	
+		}
 		
 		
 
