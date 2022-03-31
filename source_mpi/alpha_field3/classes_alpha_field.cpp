@@ -711,6 +711,15 @@ class metric_potential_poisson_mpi
 				 fpGpsi_ft[ci][0] = Xb;///(dtN);
 			 	 fpGpsi_ft[ci][1] = 0.0;///(dtN);
 
+
+				if(potential)
+			      {
+				fpGpsi_ft[ci][0] = 0.0;
+		        	fpGpsi_ft[ci][1] = 0.0;
+
+
+			      }
+
 			}
 
 	

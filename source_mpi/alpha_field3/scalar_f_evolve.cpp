@@ -72,6 +72,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 
 	  Xb = 0.5*fb_a*fb_a*a_t*a_t;
 	  
+	  //printf("fb_a %lf\n",fb_a);
+	
 	  ak = a+da;
 
 
@@ -194,8 +196,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 			potn_rhs = potn_val[ci]+da*potn_a_part;
 			f_a_rhs = f_a_val + da*f_a_a_part;
 
-			//if(ci==134)
-			//printf("step_cnt %d i %d  f_a_val %.10lf  %.10lf  %.10lf\n",step_cnt,i,(f_a_val/fb_a)*(f_a_val/fb_a) -1.0,da*f_a_a_part,f_a_val);
+			if((ci==134))
+			printf("step_cnt %d ci %d  f_a_val %.10lf  %.10lf  %.10lf\n",step_cnt,ci,(f_a_val/fb_a)*(f_a_val/fb_a) -1.0,(a/0.01)*0.0637559713,f_a_a_part);
 			
 			
 			//if(ci==10)
