@@ -226,7 +226,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,f
 
 			c1 = f_alpha.calc_vel(ind,f_a_a_part,f_a_val,potn_k,potn_a,a,da,a_t,a_tt,dx,omega_dm_0,Xb);
 
-			acc1[ci] = f_a_alpha.calc_acc(ind, f_lap, potn_k,potn_a,a,a_t,a_tt);
+			acc1[ci] = f_a_alpha.calc_acc(ind, 0.0, potn_k,potn_a,a,a_t,a_tt);
 
 
 			potn_rhs = potn_val[ci]+da*potn_a_part;
@@ -320,7 +320,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,f
 	
 
 
-			acc2[ci] = f_a_alpha.calc_acc(ind, f_lap, potn_k,potn_a,ak,a_t,a_tt);
+			acc2[ci] = f_a_alpha.calc_acc(ind, 0.0, potn_k,potn_a,ak,a_t,a_tt);
 
 			
 			f_a_val = temp_f_a[ci] + 0.5*da*(acc1[ci]+acc2[ci]);
