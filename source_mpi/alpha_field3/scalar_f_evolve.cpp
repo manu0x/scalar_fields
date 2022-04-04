@@ -125,7 +125,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,f
 				printf("hdf5 %s\n",fp_hdf5_name);
 						
 				
-				evolve_hdf5_write(n_glbl,f_alpha, phi,filename,dc,a0,a,a_t,0.5*f_a_avg*f_a_avg*a_t*a_t,cum_lin_id,true);
+				evolve_hdf5_write(n_glbl,f_alpha,f_a_alpha, phi,filename,dc,a0,a,a_t,0.5*f_a_avg*f_a_avg*a_t*a_t,cum_lin_id,true);
 				status=H5Fclose(filename);
 				//cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
 				fclose(fpwr_spec);	
@@ -382,7 +382,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,f
 			printf("hdf5 %s\n",fp_hdf5_name);
 			printf("pwr spec name %s\n",fp_pwr_spec_name);		
 			
-			evolve_hdf5_write(n_glbl,f_alpha, phi,filename,dc,a0,a,a_t,0.5*f_a_avg*f_a_avg*a_t*a_t,cum_lin_id,true);
+			evolve_hdf5_write(n_glbl,f_alpha,f_a_alpha, phi,filename,dc,a0,a,a_t,0.5*f_a_avg*f_a_avg*a_t*a_t,cum_lin_id,true);
 
 	
 			status=H5Fclose(filename);
@@ -398,11 +398,12 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,f
 }
 
 	
-void evolve_hdf5_write(int *ind,metric_potential_poisson_mpi f_alpha,metric_potential_poisson_mpi phi,hid_t filename,double *dc,double a0,double a,double a_t,double Xb,
+void evolve_hdf5_write(int *ind,metric_potential_poisson_mpi f_alpha,field_vel_mpi f_a_alpha,
+				metric_potential_poisson_mpi phi,hid_t filename,double *dc,double a0,double a,double a_t,double Xb,
 														int cum_lin_id,bool get_dc=false)
 {	
-	herr_t status_falpha,status_phi,status;	
-	hid_t file,dtype,dspace_falpha,dspace_potn,dspace_dc,dspace_dc2;
+	herr_t status_falpha,status_f_a_alpha,status_phi,status;	
+	hid_t file,dtype,dspace_falpha,dspace_f_a_alpha,dspace_potn,dspace_dc,dspace_dc2;
 	hsize_t dim[3],pdim[1];
 	dim[0] = ind[0];
 	dim[1] = ind[1];
@@ -421,19 +422,23 @@ void evolve_hdf5_write(int *ind,metric_potential_poisson_mpi f_alpha,metric_pote
 	dspace_potn = H5Screate_simple(3, dim, NULL);
 	dspace_dc = H5Screate_simple(1, pdim, NULL);
 	dspace_falpha = H5Screate_simple(3, dim, NULL);
+	dspace_f_a_alpha = H5Screate_simple(3, dim, NULL);
 
 	
 
 	
 	
 	
-	status_falpha = f_alpha.write_hdf5_values_mpi(filename, dtype, dspace_falpha,dspace_dc,dc,a0,a,a_t,Xb,phi,cum_lin_id,get_dc);
+	status_falpha = f_alpha.write_hdf5_values_mpi(filename, dtype, dspace_falpha,a0,a,a_t,Xb,phi,cum_lin_id,get_dc);
 	H5Sclose(dspace_falpha);
 
 	
 
-	status_phi = phi.write_hdf5_values_mpi(filename, dtype, dspace_potn,dspace_dc,dc,a0,a,a_t,Xb,phi,cum_lin_id,get_dc);
+	status_phi = phi.write_hdf5_values_mpi(filename, dtype, dspace_potn,a0,a,a_t,Xb,phi,cum_lin_id,get_dc);
 	H5Sclose(dspace_potn);	
+
+	status_f_a_alpha = f_a_alpha.write_hdf5_values_mpi(filename, dtype, dspace_potn,dspace_dc,dc,a0,a,a_t,Xb,phi,cum_lin_id,get_dc);
+	H5Sclose(dspace_f_a_alpha);	
 
 
 

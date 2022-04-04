@@ -870,7 +870,7 @@ class metric_potential_poisson_mpi
 
 
 
-	herr_t write_hdf5_values_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,hid_t dspace_dc_glbl,double *dc,double a0,double a,double a_t,double Xb,
+	herr_t write_hdf5_values_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,double a0,double a,double a_t,double Xb,
 							metric_potential_poisson_mpi phi,int cum_lin_ind,bool get_dc=false)
 	{
 
