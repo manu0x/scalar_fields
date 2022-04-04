@@ -241,8 +241,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,f
 			f_a_alpha.update_value(ind, f_a_val);
 			
 
-			if((ci==134))
-			printf("step_cnt %d ci %d  f_a_val %.10lf  %.10lf  %.10lf\n",step_cnt,ci,(f_a_val/fb_a)*(f_a_val/fb_a) -1.0,(a/0.01)*0.0637559713,f_a_a_part);
+			//if((ci==134))
+			//printf("step_cnt %d ci %d  f_a_val %.10lf  %.10lf  %.10lf\n",step_cnt,ci,(f_a_val/fb_a)*(f_a_val/fb_a) -1.0,(a/0.01)*0.0637559713,f_a_a_part);
 			
 			
 			//if(ci==10)
@@ -437,7 +437,7 @@ void evolve_hdf5_write(int *ind,metric_potential_poisson_mpi f_alpha,field_vel_m
 	status_phi = phi.write_hdf5_values_mpi(filename, dtype, dspace_potn,a0,a,a_t,Xb,phi,cum_lin_id,get_dc);
 	H5Sclose(dspace_potn);	
 
-	status_f_a_alpha = f_a_alpha.write_hdf5_values_mpi(filename, dtype, dspace_potn,dspace_dc,dc,a0,a,a_t,Xb,phi,cum_lin_id,get_dc);
+	status_f_a_alpha = f_a_alpha.write_hdf5_values_mpi(filename, dtype, dspace_f_a_alpha,dspace_dc,dc,a0,a,a_t,Xb,phi,cum_lin_id,get_dc);
 	H5Sclose(dspace_f_a_alpha);	
 
 
