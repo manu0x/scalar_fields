@@ -1,5 +1,5 @@
 
-double field_acc_eqn(double f_a,double phi,double phi_a,double a,double a_t,double a_tt)
+double field_eqn(double f_a,double phi,double phi_a,double a,double da,double a_t,double a_tt)
 {
 	double numer,denom;	
 	double acc,phi_x,phi_y,phi_z,f_x,f_y,f_z,f_tx,f_ty,f_tz,f_ssqr;    
@@ -11,32 +11,48 @@ double field_acc_eqn(double f_a,double phi,double phi_a,double a,double a_t,doub
 
 */	
 
-	numer = 3.0*(-1.0+2.0*alpha*phi)*f_a*a_t/a + 2.0*(1.0+alpha)*f_a*phi_a*a_t  ;
-			// + (-1.0+2.0*(-2.0+alpha)*phi)*(a_t/a)*f_ssqr/(f_t*a*a);
-	//numer+= ( phi_t*f_ssqr/(f_t*a*a) - (-1.0+2.0*alpha)*(-1.0+2.0*(-2.0+alpha)*phi)*( f_x*f_tx + f_y*f_ty + f_z*f_tz )/(f_t*a*a) 
-	//	   +( -2.0*(-1.0+alpha)*( f_x*phi_x + f_y*phi_y + f_z*phi_z )/(a*a) + (1.0-2.0*(-2.0+alpha)*phi)*lap_f/(a*a)  )     )/(H0*H0);
+	
+	denom = (2.0*alpha-1.0)*(2.0*alpha*phi-1.0);	
 
-	denom = (1.0-2.0*alpha)*(-1.0+2.0*alpha*phi);	
+	numer = f_a*(1.0 +  0.5*da*(3.0/a - 6.0*alpha*phi - 2.0*phi_a*(1.0+alpha))/denom - 0.5*da*a_tt/(a_t*a_t)   );
+			
+
+	
 
 
 
-	acc = (numer/denom);// - a_tt*f_a/(a_t*a_t) ;//+ 4.0*phi*lap_f/((-1.0+2.0*alpha)*a*a*a_t*a_t);
-
-	//printf("acc %lf %.15lf\n",  pow(f_t, -1.0),f_t);
+	acc = numer;
 
 	return acc;
 
 
-	/*
-	
-		
-	numer = 3.0*(a_t/a)*f_t ;
+
+
+}
+
+
+
+
+
+double field_acc_eqn(double f_a,double phi,double phi_a,double lap_f,double a,double a_t,double a_tt)
+{
+	double numer,denom;	
+	double acc;    
 	
 
-	denom = (-1.0+2.0*alpha);
+	denom = (2.0*alpha-1.0)*(2.0*alpha*phi-1.0);	
+
+	numer =  f_a*((3.0/a - 6.0*alpha*phi - 2.0*phi_a*(1.0+alpha))/denom - a_tt/(a_t*a_t)   ) - lap_f/(a_t*a*a_t*a*(2.0*alpha-1.0));
+			
+
 	
 
-	acc = numer/denom;*/
+
+
+	acc = numer;
+	return acc;
+
+
 
 }
 

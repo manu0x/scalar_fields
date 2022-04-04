@@ -610,7 +610,6 @@ class linear_poisson_field_mpi
 
 
 
-
 class metric_potential_poisson_mpi
 {
 
@@ -693,8 +692,8 @@ class metric_potential_poisson_mpi
 
 			  else
 			  {
-				fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(1.0+da*k2fac/((2.0*alpha-1.0)*a_t*a*a));
-			 	fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(1.0+da*k2fac/((2.0*alpha-1.0)*a_t*a*a));
+				fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(1.0+0.5*da*da*k2fac/((2.0*alpha-1.0)*a_t*a_t*a*a));
+			 	fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(1.0+0.5*da*da*k2fac/((2.0*alpha-1.0)*a_t*a_t*a*a));
 
 			  }
 		
@@ -755,7 +754,7 @@ class metric_potential_poisson_mpi
 
 
 	
-	int calc_vel(int * ind,double &potn_vel,double f_t,double potn,double potn_a,double a,double a_t,double a_tt,double *dx,double omega_dm_0,double Xb)
+	int calc_vel(int * ind,double &potn_vel,double f_t,double potn,double potn_a,double a,double da,double a_t,double a_tt,double *dx,double omega_dm_0,double Xb)
 	{
 		int ci;		
 		
@@ -774,7 +773,7 @@ class metric_potential_poisson_mpi
 		if(potential)
 		potn_vel = potn_vel_eqn(a,a_t,potn,f_t,omega_dm_0,Xb);
 		else
-		{ potn_vel = field_acc_eqn(f_t,potn,potn_a,a,a_t,a_tt);
+		{ potn_vel = field_eqn(f_t,potn,potn_a,a,da,a_t,a_tt);
 		  //if(ci==134)
 			//printf("potn_vel %.10lf\n",potn_vel);	
 		}
@@ -849,6 +848,23 @@ class metric_potential_poisson_mpi
 	}
 
 
+	double get_lap_field(int *cind,double *dx)
+	{
+
+		double lap_f;
+		
+		if(!potential)
+		{ phi_val.cal_spt_grads(cind,dx,true);
+		 lap_f = phi_val.get_field(cind,give_f_lap);
+		}
+		else
+		 lap_f = 0.0;
+
+		return(lap_f);
+
+
+	}
+
 	
 	
 
@@ -880,10 +896,138 @@ class metric_potential_poisson_mpi
 
 	
 		else
-		{ dset_glbl = H5Dcreate(filename, "field_a", dtype, dspace_glbl,
+		{ dset_glbl = H5Dcreate(filename, "field", dtype, dspace_glbl,
 						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
 		  status = phi_val.write_hdf5_mpi( filename,dtype,dset_glbl);
+
+		  H5Dclose(dset_glbl);
+
+	
+		 
+	    }
+		  
+		
+		return(status);
+
+	}
+
+
+
+	
+
+
+
+
+
+};
+
+
+
+
+
+
+class field_vel_mpi
+{
+	private:
+	int n[3];
+	int n_loc[3];
+	int cum_lin_ind;
+	
+	scalar_field_3d_mpi f_a_val;
+
+
+	public:
+	
+	field_vel_mpi(int *ind,int *ind_loc,int cum_lin_ind_ar,bool lb=false,bool sgb=false):f_a_val(ind_loc,cum_lin_ind_ar,lb,sgb)
+	{
+		int l = ind[0]*ind[1]*ind[2];
+		n[0]=ind[0];n[1]=ind[1];n[2]=ind[2];
+		n_loc[0]=ind_loc[0];n_loc[1]=ind_loc[1];n_loc[2]=ind_loc[2];
+
+		cum_lin_ind = cum_lin_ind_ar;
+
+
+		
+	}
+
+
+	double calc_acc(int *cind,double f_lap,double potn,double potn_a,double a, double a_t,double a_tt)
+	{
+		double acc_val,f_a_ind;
+		
+		f_a_ind= f_a_val.get_field(cind,give_f);
+		
+		acc_val = f_a_ind*(3.0/a - 6.0*alpha*potn -2.0*potn_a*(1.0+alpha))/( (2.0*alpha-1.0)*(2.0*alpha*potn-1.0) )
+				+ f_lap/(a_t*a_t*a*a*(2.0*alpha-1.0)) - a_tt*f_a_ind/(a_t*a_t) ;
+
+		return(acc_val);
+
+
+	}
+
+
+	double get_value(int *cind)
+	{
+
+		double fval;
+		fval = f_a_val.get_field(cind,give_f);
+
+		return(fval);
+
+
+	}
+
+
+	void update_value(int *indi,double phiv)
+	{
+
+		f_a_val.update_field(indi,phiv,0);
+
+
+	}
+
+
+
+	double cal_X_4vel(int * ind,double a,double a_t,double phi)
+	{
+		double fa_val,fa_t_val,s_der[3],X;	
+		int c1;	
+		
+		c1 =  (n_loc[2]*n_loc[1])*ind[0] + n_loc[2]*ind[1] + ind[2];
+		fa_t_val = get_value(ind);
+		fa_t_val = fa_t_val*a_t;
+
+		//c1 = f_alpha.get_field_spt_der(ind,s_der);
+		
+		
+		X = fa_t_val*fa_t_val;///(1.0+2.0*phi);//  - (s_der[0]*s_der[0]+s_der[1]*s_der[1]+s_der[2]*s_der[2])/(a*a*(1.0-2.0*phi));
+		X = 0.5*X;
+
+		return(X);
+
+	}
+
+	herr_t write_hdf5_values_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,hid_t dspace_dc_glbl,double *dc,double a0,double a,double a_t,double Xb,
+							metric_potential_poisson_mpi phi,int cum_lin_ind,bool get_dc=false)
+	{
+
+		hid_t dataset,dset_glbl,dspace,plist_id;
+		herr_t status ;
+		int tN  = n[0]*n[1]*n[3];
+		int i,j,k,locind[3],ci;
+		double fa_val,fa_t_val,x4val,rho_fa,phival;
+
+		
+
+		
+
+	
+		
+		 dset_glbl = H5Dcreate(filename, "field_a", dtype, dspace_glbl,
+						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+		  status = f_a_val.write_hdf5_mpi( filename,dtype,dset_glbl);
 
 		  H5Dclose(dset_glbl);
 
@@ -954,7 +1098,7 @@ class metric_potential_poisson_mpi
 
 	
 		 
-	    }
+	  
 		  
 		
 		return(status);
@@ -963,13 +1107,10 @@ class metric_potential_poisson_mpi
 
 
 
-	
-
-
-
 
 
 };
+
 
 
 

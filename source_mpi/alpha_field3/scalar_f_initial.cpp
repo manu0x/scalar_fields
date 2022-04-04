@@ -140,7 +140,8 @@ void read_dc_from_hdf5(string fname,double *dc,int *ind, int cum_lin_ind)
 
 }
 
-void initialise_mpi(int * ind,int *ind_loc,metric_potential_poisson_mpi &falpha,metric_potential_poisson_mpi &phi,metric_potential_poisson_mpi_ini &poisson_phi,
+void initialise_mpi(int * ind,int *ind_loc,metric_potential_poisson_mpi &falpha,field_vel_mpi &f_a_alpha,metric_potential_poisson_mpi &phi,
+					metric_potential_poisson_mpi_ini &poisson_phi,
 				double k_grid[][3],int kbin_grid[],double a0,double ai,double Hi,double omega_dm_0,double & Xb_0,double *dx,double &dk,int & kbins,
 				ini_power_generator pk,gauss_rand_field_gen_mpi grf,bool use_hdf5_format,double boxlength,
 											double da,int cum_lin_ind,string fini_name="None")
@@ -371,7 +372,8 @@ void initialise_mpi(int * ind,int *ind_loc,metric_potential_poisson_mpi &falpha,
 			fa_t_val = sqrt(2.0*(Xb_0*pow(a0/a,6.0/(2.0*alpha-1.0)))*(1.0+ini_dc[ci]))/a_t;
 			
 			
-			falpha.update_value(loc_ind, fa_t_val);
+			f_a_alpha.update_value(loc_ind, fa_t_val);
+			falpha.update_value(loc_ind, 0.0);
 			phi.update_value(loc_ind, potn);
 
 			phi.update_4pieGpsi(ci,potn);

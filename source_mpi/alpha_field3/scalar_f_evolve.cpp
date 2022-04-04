@@ -1,15 +1,16 @@
 
-int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,metric_potential_poisson_mpi &phi,double k_grid[][3],int kbin_grid[],
+int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,field_vel_mpi &f_a_alpha,metric_potential_poisson_mpi &phi,double k_grid[][3],int kbin_grid[],
 					double a_final,double a_ini,double a0,double omega_dm_0,double Xb_0,double *dx,double dk,int kbins,double da,
 							int cum_lin_id,bool use_hdf_format)
 {	printf("OMP Yo\n");
 	double a,a_t,a_tt,t,ak,a3a03omega;
 	
 	double a_print;
-	double fa_vel[2],f_a_val,potn_val[n[0]*n[1]*n[2]],fa_k[2],potn,potn_k,
+	double fa_vel[2],f_a_val,f_val,potn_val[n[0]*n[1]*n[2]],fa_k[2],potn,potn_k,
 					potn_a,potn_a_part,f_a_a_part,dc[n[0]*n[1]*n[2]],pwr_spec[n[0]*n[1]*n[2]],acc_fa,potn_rhs,f_a_rhs;
 
 	double fb_a,fb_a_k,fb_acc,fb_a_0,Xb,f_a_avg;
+	double f_lap;
 	double fa_retrive[2],potn_der[3],potn_retrive;
 	int i,j,k,ci,ind[3];
 	int c1,c2,fail=0;
@@ -19,6 +20,10 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 	double z_cur;
 	
 	int prn=0;	
+
+	double *acc1 = new double [n[0]*n[1]*n[2]];
+	double *acc2 = new double [n[0]*n[1]*n[2]];
+	double *temp_f_a = new double [n[0]*n[1]*n[2]];
 	
 	int mpi_check;
 	MPI_Info info  = MPI_INFO_NULL;
@@ -145,6 +150,36 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 
 	//printf("fb_t  %lf   fb_t_th  %lf\n",fb_t,fb_t_0*pow(a0/ak,3.0/(2.0*alpha-1.0)));
  #pragma omp parallel for private(j,k,ci,ind,c1,fa_k,fa_vel,potn,potn_k,potn_a,poisson_rhs,acc_fa,potn_der)
+
+	for(i=0;i<n[0];++i)
+	 {
+		  for(j=0;j<n[1];++j)
+		  {
+		    for(k=0;k<n[2];++k)
+		    {
+
+
+			ci = (n[2]*n[1])*i + n[2]*j + k;
+			ind[0] = i;ind[1] = j;ind[2] = k;
+
+			if(step_cnt==0)
+			f_val  = f_alpha.get_value(ind);
+			else
+			f_val = f_alpha.get_potential(ci);
+
+
+			
+			f_alpha.update_value(ind, f_val);
+
+
+		    }
+		 }
+
+
+	}
+			
+
+
 	 for(i=0;i<n[0];++i)
 	 {
 		  for(j=0;j<n[1];++j)
@@ -171,30 +206,40 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 				
 
 			//c1 = phi.get_potn_spt_der(ind,potn_der);
-			if(step_cnt==0)
-			f_a_val  = f_alpha.get_value(ind);
-			else
-			f_a_val = f_alpha.get_potential(ci);
+			
+			f_a_val  = f_a_alpha.get_value(ind);
+
+			f_lap = f_alpha.get_lap_field(ind,dx);
+			
 
 			f_a_avg+= f_a_val;
 
 			
 
 			phi.update_value(ind, potn_k);
-			f_alpha.update_value(ind, f_a_val);
+			//f_alpha.update_value(ind, f_a_val);
 
 			
 			
-			c1 = phi.calc_vel(ind,potn_a_part,f_a_val,potn_k,potn_a,a,a_t,a_tt,dx,omega_dm_0,Xb);
+			c1 = phi.calc_vel(ind,potn_a_part,f_a_val,potn_k,potn_a,a,da,a_t,a_tt,dx,omega_dm_0,Xb);
 
 
-			c1 = f_alpha.calc_vel(ind,f_a_a_part,f_a_val,potn_k,potn_a,a,a_t,a_tt,dx,omega_dm_0,Xb);
-				
-			
-			
+			c1 = f_alpha.calc_vel(ind,f_a_a_part,f_a_val,potn_k,potn_a,a,da,a_t,a_tt,dx,omega_dm_0,Xb);
+
+			acc1[ci] = f_a_alpha.calc_acc(ind, f_lap, potn_k,potn_a,a,a_t,a_tt);
+
 
 			potn_rhs = potn_val[ci]+da*potn_a_part;
 			f_a_rhs = f_a_val + da*f_a_a_part;
+
+
+			
+
+			temp_f_a[ci] = f_a_val;
+			f_a_val = f_a_val + da*acc1[ci];
+
+			f_a_alpha.update_value(ind, f_a_val);
+			
 
 			if((ci==134))
 			printf("step_cnt %d ci %d  f_a_val %.10lf  %.10lf  %.10lf\n",step_cnt,ci,(f_a_val/fb_a)*(f_a_val/fb_a) -1.0,(a/0.01)*0.0637559713,f_a_a_part);
@@ -230,7 +275,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 
 	
 	
-	
+
 	
 	
 	f_a_avg=f_a_avg/((double)(n[0]*n[1]*n[2]));
@@ -241,11 +286,56 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
          a_tt = ak*H0*H0*(-0.5*omega_dm_0*pow(a0/ak,3.0*(1.0+w))*(1.0+3.0*w) + (1.0-omega_dm_0) );
 	 fb_acc = -3.0*fb_a_k*a_t/(ak*(2.0*alpha-1.0)) ;
 	 fb_a = fb_a + fb_acc*da;
+
 	 
 
 
 	phi.solve_poisson(k_grid,fb_a, a, a_t,da);
 	f_alpha.solve_poisson(k_grid,fb_a, a, a_t,da);
+
+
+
+	for(i=0;i<n[0];++i)
+	 {
+		  for(j=0;j<n[1];++j)
+		  {
+		    for(k=0;k<n[2];++k)
+		    {
+			ci = (n[2]*n[1])*i + n[2]*j + k;
+			ind[0] = i;ind[1] = j;ind[2] = k;
+
+
+			
+			
+			potn_k = phi.get_potential(ci);
+
+			if(step_cnt==0)
+			potn_a = 0.0;
+			else
+			potn_a = (potn_k-potn_val[ci])/da;
+
+			
+
+			f_lap = f_alpha.get_lap_field(ind,dx);
+	
+
+
+			acc2[ci] = f_a_alpha.calc_acc(ind, f_lap, potn_k,potn_a,ak,a_t,a_tt);
+
+			
+			f_a_val = temp_f_a[ci] + 0.5*da*(acc1[ci]+acc2[ci]);
+
+			f_a_alpha.update_value(ind, f_a_val);
+
+		
+		   }
+			
+
+		 }
+
+	 }
+	
+
 	
 	double fcheck = f_alpha.get_potential(0,1);
 
@@ -257,7 +347,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,m
 
 	
 	 if(isnan(a))
-	  {printf("FAILED  \n"); fail = 1;	break;
+	  {printf("FAILED  \n"); fail = 1;
 	  }
 
 	}

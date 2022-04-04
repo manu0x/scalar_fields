@@ -213,7 +213,9 @@ MPI_Status stdn,stup;
 	//field_alpha_mpi f_alpha(n_axis_loc,cum_lin_ind,true,true);
 	//metric_potential_approx_1_t_mpi phi(n_axis_loc,cum_lin_ind,true,true);
 	metric_potential_poisson_mpi_ini poisson_phi(n_axis,n_axis_loc,cum_lin_ind);
-	metric_potential_poisson_mpi phi(n_axis,n_axis_loc,cum_lin_ind,1),f_alpha(n_axis,n_axis_loc,cum_lin_ind,0);
+	metric_potential_poisson_mpi phi(n_axis,n_axis_loc,cum_lin_ind,1),f_alpha(n_axis,n_axis_loc,cum_lin_ind,0,1);
+	field_vel_mpi f_a_alpha(n_axis,n_axis_loc,cum_lin_ind);
+	
 	
 	//psi.test_ind();
 	//psi.test_ind2();
@@ -242,7 +244,7 @@ MPI_Status stdn,stup;
 	
 	double da = 0.25e-3;
 
-	initialise_mpi(n_axis,n_axis_loc,f_alpha,phi,poisson_phi,
+	initialise_mpi(n_axis,n_axis_loc,f_alpha,f_a_alpha,phi,poisson_phi,
 				k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,Xb_0,dx,dk,kbins,pk,grf,use_hdf5_format,p.box_length,da,cum_lin_ind,p.fini_dc);
 	
 	
@@ -251,7 +253,7 @@ MPI_Status stdn,stup;
 	
 
 	//if(use_omp)
-	fail = evolve_kdk_openmp(ind,n_axis_loc,f_alpha,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,Xb_0,dx,dk,kbins,da,cum_lin_ind,use_hdf5_format);
+	fail = evolve_kdk_openmp(ind,n_axis_loc,f_alpha,f_a_alpha,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,Xb_0,dx,dk,kbins,da,cum_lin_ind,use_hdf5_format);
 	//else
 	//fail = evolve_kdk(ind,n_axis_loc,f_alpha,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,Xb_0,dx,dk,kbins,0.2e-4,cum_lin_ind,use_hdf5_format);
 	
