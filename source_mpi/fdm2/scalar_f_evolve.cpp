@@ -24,26 +24,6 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,f
 	double *acc1 = new double [n[0]*n[1]*n[2]];
 	double *acc2 = new double [n[0]*n[1]*n[2]];
 	double *temp_f_a = new double [n[0]*n[1]*n[2]];
-	double *bin_coef = new double [binomial_n];
-
-	if(X_POWER)
-	{
- 	   
-	  double fac = 1.0;
-
-	  bin_coef[0] = 1.0;
-
-	  for(i = 1;i<binomial_n;++i)
-	  {
-		
-		fac*= ((alpha+1.0-((double)(i)))/((double)(i)));
-		bin_coef[i] = fac;
-
-
-	  }
-
-	}
-
 	
 	int mpi_check;
 	MPI_Info info  = MPI_INFO_NULL;
@@ -241,10 +221,10 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,f
 
 			
 			
-			c1 = phi.calc_vel(ind,potn_a_part,f_a_val,potn_k,potn_a,a,da,a_t,a_tt,dx,omega_dm_0,Xb,bin_coef);
+			c1 = phi.calc_vel(ind,potn_a_part,f_a_val,potn_k,potn_a,a,da,a_t,a_tt,dx,omega_dm_0,Xb);
 
 
-			c1 = f_alpha.calc_vel(ind,f_a_a_part,f_a_val,potn_k,potn_a,a,da,a_t,a_tt,dx,omega_dm_0,Xb,bin_coef);
+			c1 = f_alpha.calc_vel(ind,f_a_a_part,f_a_val,potn_k,potn_a,a,da,a_t,a_tt,dx,omega_dm_0,Xb);
 
 			acc1[ci] = f_a_alpha.calc_acc(ind, 0.0, potn_k,potn_a,a,a_t,a_tt);
 
@@ -261,10 +241,20 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,f
 			f_a_alpha.update_value(ind, f_a_val);
 			
 
-		
+			//if((ci==134))
+			//printf("step_cnt %d ci %d  f_a_val %.10lf  %.10lf  %.10lf\n",step_cnt,ci,(f_a_val/fb_a)*(f_a_val/fb_a) -1.0,(a/0.01)*0.0637559713,f_a_a_part);
+			
+			
+			//if(ci==10)
+			//printf("fb_a  %.10lf   fb_a10  %.15lf \n",(fb_acc-acc_fa)/fb_acc,(fa_val[ci][1]/fb_a)-1.0);
+			
+			//printf(" %d %lf %lf %lf\n",step_cnt,potn_t,acc_fa,fa_k[1]);
+			//if(ci==100)
+			//printf("%lf %lf\n",fb_a,f_a_val);
+
 			if(isnan(potn_rhs+f_a_rhs))
 			{
-				printf("Yfailed at step %d %lf %lf %lf\n",step_cnt,potn_k,f_lap,fa_k[1]);
+				//printf("Yfailed at step %d %lf %lf %lf\n",step_cnt,potn_k,potn_t,fa_k[1]);
 				fail=1;
 				break;
 

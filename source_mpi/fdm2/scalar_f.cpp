@@ -213,7 +213,8 @@ MPI_Status stdn,stup;
 	//field_alpha_mpi f_alpha(n_axis_loc,cum_lin_ind,true,true);
 	//metric_potential_approx_1_t_mpi phi(n_axis_loc,cum_lin_ind,true,true);
 	metric_potential_poisson_mpi_ini poisson_phi(n_axis,n_axis_loc,cum_lin_ind);
-	metric_potential_poisson_mpi phi(n_axis,n_axis_loc,cum_lin_ind,1),f_alpha(n_axis,n_axis_loc,cum_lin_ind,0,1);
+	metric_potential_poisson_mpi psi_i(n_axis,n_axis_loc,cum_lin_ind,1),psi_c(n_axis,n_axis_loc,cum_lin_ind,1);
+	metric_potential_poisson_mpi V(n_axis,n_axis_loc,cum_lin_ind,1)
 	field_vel_mpi f_a_alpha(n_axis,n_axis_loc,cum_lin_ind);
 	
 	
@@ -241,7 +242,6 @@ MPI_Status stdn,stup;
 	
 	set_back_cosmo(a0,ai,Hi,omega_dm_ini,p);
 	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n h is %lf\n",Hi,omega_dm_ini,ai,h);
-	printf("X_POWER is %d binomial_n is %d\n",X_POWER,binomial_n);
 	
 	double da = 0.25e-3;
 

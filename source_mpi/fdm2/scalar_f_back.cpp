@@ -1,10 +1,6 @@
 void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_0,param_alpha p)
 {
 	double z = p.z_ini;
-	
-	X_POWER  = p.X_POWER;
-	binomial_n = p.binomial_n;
-
 	alpha = p.loc_alpha;
 	w = 1.0/(2.0*alpha-1.0);
 	cs2 = 1.0/(2.0*alpha-1.0);

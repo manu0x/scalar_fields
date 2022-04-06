@@ -483,17 +483,12 @@ class param_alpha: public param_cosmo_sim
 	public:
 	double loc_hbar_by_m22, loc_alpha;
 	string fini_dc;
-	int X_POWER, binomial_n;
-	
 	void load_defaults()
 	{
 		load_default_cosmo_sim();
 
-		loc_alpha = 1e6;
-		fini_dc = "None";
-
-		X_POWER = 0;
-		binomial_n = 2;	
+		loc_alpha = 1e8;
+		fini_dc = "None";	
 	
 
 	}
@@ -759,8 +754,7 @@ class metric_potential_poisson_mpi
 
 
 	
-	int calc_vel(int * ind,double &potn_vel,double f_t,double potn,double potn_a,double a,double da,double a_t,double a_tt,double *dx,double omega_dm_0,
-												double Xb,double *bin_coef)
+	int calc_vel(int * ind,double &potn_vel,double f_t,double potn,double potn_a,double a,double da,double a_t,double a_tt,double *dx,double omega_dm_0,double Xb)
 	{
 		int ci;		
 		
@@ -777,7 +771,7 @@ class metric_potential_poisson_mpi
 	
 	
 		if(potential)
-		potn_vel = potn_vel_eqn(a,a_t,potn,f_t,omega_dm_0,Xb,bin_coef);
+		potn_vel = potn_vel_eqn(a,a_t,potn,f_t,omega_dm_0,Xb);
 		else
 		{ potn_vel = field_eqn(f_t,potn,potn_a,a,da,a_t,a_tt);
 		  //if(ci==134)

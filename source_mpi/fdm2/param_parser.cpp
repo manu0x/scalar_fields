@@ -32,13 +32,6 @@ int parser(char * param_file_name, param_alpha &p)
 		   if(read_key=="h")
 			p.loc_h = num_val;
 		   else
-		   if(read_key=="X_POWER")
-			p.X_POWER = num_val;
-		   else
-		   if(read_key=="binomial_n")
-			p.binomial_n = num_val;
-		   else
-
 		   if(read_key=="omega_dm_0")
 			p.omega_dm_0 = num_val;
 		   else

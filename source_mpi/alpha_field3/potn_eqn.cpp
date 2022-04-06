@@ -1,27 +1,32 @@
 
 
-double potn_vel_eqn(double a,double a_t,double phi,double f_a,double omega_dm_0,double Xb,double a0=1.0)
+double potn_vel_eqn(double a,double a_t,double phi,double f_a,double omega_dm_0,double Xb,double *bin_coef,double a0=1.0)
 {     
-     double potn_t,lambda=1.0,x_power_approx;//  x_power_approx (approx.)= pow(0.5*f_t*f_t/Mfield, alpha-1)
-	//double Xb = Xb_0*pow(a0/a,6.0/(2.0*alpha-1.0));
-	x_power_approx = 3.0*H0*H0*(omega_dm_0)*pow(a,-3.0*(1.0+w))/(4.0*twopie*Xb*(2.0*alpha-1.0));
+     double potn_t,lambda=1.0,epsilon,x_power_approx;//  x_power_approx (approx.)= pow(0.5*f_t*f_t/Mfield, alpha-1)
 	
-	potn_t = -phi/(a) - 0.5*(H0*H0)*(omega_dm_0)*pow(a/a0,-3.0*(1.0+w))*(a/a_t)*(0.5*f_a*f_a*a_t/Xb - 1.0/a_t) ;
+	int i;
 
+	if(X_POWER)
+	{
+	  
+	  epsilon = ((0.5*f_a*f_a*a_t*a_t)/Xb - 1.0);
+	  x_power_approx = 1.0;
 
-// potn_t = -phi*(a_t/a) + lap_phi/(3.0*a_t*a) + 2.0*twopie*G*a*(2.0*alpha-1.0)*x_power_approx*((Xb/(H0*H0))-0.5*f_t*f_t/(1.0+2.0*phi))/(3.0*a_t); (x->dimless(x))
+	   for(i=1;i<binomial_n;++i)
+	   {
+		x_power_approx+= bin_coef[i]*pow(epsilon,(double)(i));
+		
 
-    
-//	printf("lap_potn %.10lf %.10lf %.10lf\n",potn_t, (2.0*alpha-1.0)*2.0*twopie*G*a*x_power_approx*((Xb/(H0*H0))-0.5*f_t*f_t)/(3.0*a_t) ,
-//	2.0*(2.0*alpha-1.0)*twopie*G*a*alpha*x_power_approx*f_t*f_t*phi/(3.0*a_t)  );
+	   }
+	
 
-	/*
-		 potn_t  = // (2.0*alpha-1.0)*2.0*twopie*G*a*x_power_approx*((Xb/(H0*H0))-0.5*f_t*f_t)/(3.0*a_t) 
-		//+ 2.0*(2.0*alpha-1.0)*twopie*G*a*alpha*x_power_approx*f_t*f_t*phi/(3.0*a_t) 
-		+ lap_phi/(3.0*a*a_t)- phi*(a_t/a);
+	}
 
+	else
+	x_power_approx = 0.5*f_a*f_a*a_t*a_t/Xb;
 
-	*/
+	
+	potn_t = -phi/(a) - 0.5*(H0*H0)*(omega_dm_0)*pow(a/a0,-3.0*(1.0+w))*(a/a_t)*(x_power_approx - 1.0)/a_t ;
 
 
 	return(potn_t);

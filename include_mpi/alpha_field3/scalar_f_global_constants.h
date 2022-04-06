@@ -2,6 +2,8 @@ double h,H0,Hi,space_mpc_to_dimless,lenfac;
 double c_box,pc_box,hbar_box;
 double alpha,w,cs2;
 
+int X_POWER, binomial_n;
+
 FILE *fp_sim_info;
 
 ////////////////////// MPI Globals....///////////////////
