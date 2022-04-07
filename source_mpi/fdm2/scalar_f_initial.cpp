@@ -168,7 +168,7 @@ void read_dc_from_hdf5(string fname,double *dc,double *theta,int *ind, int cum_l
 
 }
 
-void initialise_mpi(int * ind,int *ind_loc,metric_potential_poisson_mpi &psi_r,metric_potential_poisson_mpi &psi_c,metric_potential_poisson_mpi &phi,
+void initialise_mpi(int * ind,int *ind_loc,metric_potential_poisson_mpi &psi_r,metric_potential_poisson_mpi &psi_i,metric_potential_poisson_mpi &phi,
 					metric_potential_poisson_mpi_ini &poisson_phi,
 				double k_grid[][3],int kbin_grid[],double a0,double ai,double Hi,double omega_dm_0,double & Xb_0,double *dx,double &dk,int & kbins,
 				ini_power_generator pk,gauss_rand_field_gen_mpi grf,bool use_hdf5_format,double boxlength,
@@ -203,6 +203,7 @@ void initialise_mpi(int * ind,int *ind_loc,metric_potential_poisson_mpi &psi_r,m
 
       double ini_dc[tN],pwr_spec[tN],dc[tN];
       double poisson_rhs;
+      double psi_amp, psi_r_val, psi_i_val;
       double f_ini;
       double potn;
       double k_nyq;
@@ -395,17 +396,17 @@ void initialise_mpi(int * ind,int *ind_loc,metric_potential_poisson_mpi &psi_r,m
 
 			
 			
+			psi_amp = sqrt(omega_dm_ini*pow(a0/ai,3.0)*(1.0+ini_dc[ci]));
+			psi_r_val = psi_amp*cos(ini_theta[ci]);
+			psi_i_val = psi_amp*sin(ini_theta[ci]);
 			
-			//pow_arg = 3.0*(H0*H0)*pow(Mfield,(alpha-1.0))*(omega_dm_0*pow(a0/ai,3.0*(1.0+w))*(1.0+ini_dc[ci]))/(4.0*twopie*G*(2.0*alpha-1.0));
-			fa_t_val = sqrt(2.0*(Xb_0*pow(a0/a,6.0/(2.0*alpha-1.0)))*(1.0+ini_dc[ci]))/a_t;
 			
-			
-			f_a_alpha.update_value(loc_ind, fa_t_val);
-			falpha.update_value(loc_ind, 0.0);
+			psi_r.update_value(loc_ind, fa_t_val);
+			psi_i.update_value(loc_ind, 0.0);
 			phi.update_value(loc_ind, potn);
 
 			phi.update_4pieGpsi(ci,potn);
-			falpha.update_4pieGpsi(ci,fa_t_val);
+			
 
 			
 			//potn = phi.get_potential(loc_ind);

@@ -3,6 +3,6 @@ int evolve_kdk_openmp(int *,int *,metric_potential_poisson_mpi &,field_vel_mpi &
 
 
 void evolve_hdf5_write(int *,metric_potential_poisson_mpi,field_vel_mpi ,metric_potential_poisson_mpi ,hid_t ,double *,double ,double ,double ,double ,
-														int ,bool );
+														int ,double *,bool );
 
 #include "../../source_mpi/alpha_field3/scalar_f_evolve.cpp"

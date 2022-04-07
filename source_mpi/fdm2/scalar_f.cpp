@@ -1,5 +1,5 @@
 using namespace std;
-#include "../../include_mpi/alpha_field3/include_custom.h"
+#include "../../include_mpi/fdm2/include_custom.h"
 
 
 
@@ -213,9 +213,9 @@ MPI_Status stdn,stup;
 	//field_alpha_mpi f_alpha(n_axis_loc,cum_lin_ind,true,true);
 	//metric_potential_approx_1_t_mpi phi(n_axis_loc,cum_lin_ind,true,true);
 	metric_potential_poisson_mpi_ini poisson_phi(n_axis,n_axis_loc,cum_lin_ind);
-	metric_potential_poisson_mpi psi_i(n_axis,n_axis_loc,cum_lin_ind,1),psi_c(n_axis,n_axis_loc,cum_lin_ind,1);
-	metric_potential_poisson_mpi V(n_axis,n_axis_loc,cum_lin_ind,1)
-	field_vel_mpi f_a_alpha(n_axis,n_axis_loc,cum_lin_ind);
+	metric_potential_poisson_mpi psi_r(n_axis,n_axis_loc,cum_lin_ind,0),psi_i(n_axis,n_axis_loc,cum_lin_ind,0);
+	metric_potential_poisson_mpi V(n_axis,n_axis_loc,cum_lin_ind,1);
+	
 	
 	
 	//psi.test_ind();
@@ -245,7 +245,7 @@ MPI_Status stdn,stup;
 	
 	double da = 0.25e-3;
 
-	initialise_mpi(n_axis,n_axis_loc,f_alpha,f_a_alpha,phi,poisson_phi,
+	initialise_mpi(n_axis,n_axis_loc,psi_r,psi_i,phi,poisson_phi,
 				k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,Xb_0,dx,dk,kbins,pk,grf,use_hdf5_format,p.box_length,da,cum_lin_ind,p.fini_dc);
 	
 	

@@ -145,7 +145,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,f
 				printf("hdf5 %s\n",fp_hdf5_name);
 						
 				
-				evolve_hdf5_write(n_glbl,f_alpha,f_a_alpha, phi,filename,dc,a0,a,a_t,0.5*f_a_avg*f_a_avg*a_t*a_t,cum_lin_id,true);
+				evolve_hdf5_write(n_glbl,f_alpha,f_a_alpha, phi,filename,dc,a0,a,a_t,0.5*f_a_avg*f_a_avg*a_t*a_t,cum_lin_id,bin_coef,true);
 				status=H5Fclose(filename);
 				//cal_spectrum(dc,kbin_grid, kbins,n,pwr_spec, dk,a/a_ini,fpwr_spec);
 				fclose(fpwr_spec);	
@@ -392,7 +392,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,f
 			printf("hdf5 %s\n",fp_hdf5_name);
 			printf("pwr spec name %s\n",fp_pwr_spec_name);		
 			
-			evolve_hdf5_write(n_glbl,f_alpha,f_a_alpha, phi,filename,dc,a0,a,a_t,0.5*f_a_avg*f_a_avg*a_t*a_t,cum_lin_id,true);
+			evolve_hdf5_write(n_glbl,f_alpha,f_a_alpha, phi,filename,dc,a0,a,a_t,0.5*f_a_avg*f_a_avg*a_t*a_t,cum_lin_id,bin_coef,true);
 
 	
 			status=H5Fclose(filename);
@@ -410,7 +410,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,metric_potential_poisson_mpi &f_alpha,f
 	
 void evolve_hdf5_write(int *ind,metric_potential_poisson_mpi f_alpha,field_vel_mpi f_a_alpha,
 				metric_potential_poisson_mpi phi,hid_t filename,double *dc,double a0,double a,double a_t,double Xb,
-														int cum_lin_id,bool get_dc=false)
+												int cum_lin_id,double *bin_coef,bool get_dc=false)
 {	
 	herr_t status_falpha,status_f_a_alpha,status_phi,status;	
 	hid_t file,dtype,dspace_falpha,dspace_f_a_alpha,dspace_potn,dspace_dc,dspace_dc2;
@@ -447,7 +447,7 @@ void evolve_hdf5_write(int *ind,metric_potential_poisson_mpi f_alpha,field_vel_m
 	status_phi = phi.write_hdf5_values_mpi(filename, dtype, dspace_potn,a0,a,a_t,Xb,phi,cum_lin_id,get_dc);
 	H5Sclose(dspace_potn);	
 
-	status_f_a_alpha = f_a_alpha.write_hdf5_values_mpi(filename, dtype, dspace_f_a_alpha,dspace_dc,dc,a0,a,a_t,Xb,phi,cum_lin_id,get_dc);
+	status_f_a_alpha = f_a_alpha.write_hdf5_values_mpi(filename, dtype, dspace_f_a_alpha,dspace_dc,dc,a0,a,a_t,Xb,phi,cum_lin_id,bin_coef,get_dc);
 	H5Sclose(dspace_f_a_alpha);	
 
 

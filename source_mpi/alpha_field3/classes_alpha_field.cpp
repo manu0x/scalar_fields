@@ -1015,7 +1015,7 @@ class field_vel_mpi
 	}
 
 	herr_t write_hdf5_values_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,hid_t dspace_dc_glbl,double *dc,double a0,double a,double a_t,double Xb,
-							metric_potential_poisson_mpi phi,int cum_lin_ind,bool get_dc=false)
+							metric_potential_poisson_mpi phi,int cum_lin_ind,double *bin_coef,bool get_dc=false)
 	{
 
 		hid_t dataset,dset_glbl,dspace,plist_id;
@@ -1023,6 +1023,8 @@ class field_vel_mpi
 		int tN  = n[0]*n[1]*n[3];
 		int i,j,k,locind[3],ci;
 		double fa_val,fa_t_val,x4val,rho_fa,phival;
+		double x_power_approx,epsilon;
+		int ii;
 
 		
 
@@ -1054,13 +1056,33 @@ class field_vel_mpi
 					
 
 					x4val = cal_X_4vel(locind,a,a_t,phival);	
+					if(X_POWER)
+					{
+	  
+	 				 epsilon = (x4val/Xb - 1.0);
+	 				 x_power_approx = 1.0;
+
+	 				  for(ii=1;ii<binomial_n;++ii)
+	   				  {
+					    x_power_approx+= bin_coef[ii]*pow(epsilon,(double)(ii));
+		
+
+	   				  }
+	
+
+				       }
+
+					else
+	      				x_power_approx = x4val/Xb;
+
+		
 							
 
 					//rho_fa = x4val*(3.0*H0*H0/(4.0*a3a03omega*twopie*Xb_0));
 					//Xb = Xb_0*pow(a0/a,6.0/(2.0*alpha-1.0));
 					
 					
-					dc[ci] = (x4val/Xb)-1.0;
+					dc[ci] = x_power_approx-1.0;
 					//if(ci<10)
 					//printf("ci %d dc %.10lf  %.10lf %.10lf  %.10lf\n",ci,dc[ci],x4val,Xb,phival);
 					 
