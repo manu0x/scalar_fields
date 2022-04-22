@@ -478,7 +478,7 @@ class param_cosmo_sim
 };
 
 
-class param_alpha: public param_cosmo_sim
+class param_fdm: public param_cosmo_sim
 {
 	public:
 	double loc_hbar_by_m22, loc_alpha;
@@ -501,7 +501,7 @@ class param_alpha: public param_cosmo_sim
 		
 		fprintf(fp,"\n######## alpha info: ##########\n");
 		fprintf(fp,"alpha = %lf\n",loc_alpha);
-		fprintf(fp,"Mfield = %lf\n",Mfield);
+	
 		
 
 
@@ -610,6 +610,18 @@ class linear_poisson_field_mpi
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 class metric_potential_poisson_mpi
 {
 
@@ -632,7 +644,7 @@ class metric_potential_poisson_mpi
 	
 	public:
 	
-	metric_potential_poisson_mpi(int *ind,int *ind_loc,int cum_lin_ind_ar,int ftype,bool lb=false,bool sgb=false):phi_val(ind_loc,cum_lin_ind_ar,lb,sgb)
+	metric_potential_poisson_mpi(int *ind,int *ind_loc,int cum_lin_ind_ar,int ftype=0,bool lb=false,bool sgb=false):phi_val(ind_loc,cum_lin_ind_ar,lb,sgb)
 	{
 		int l = ind[0]*ind[1]*ind[2];
 		n[0]=ind[0];n[1]=ind[1];n[2]=ind[2];
@@ -642,7 +654,7 @@ class metric_potential_poisson_mpi
 
 
 		pot_p =  new double [ind_loc[0]*ind_loc[1]*ind_loc[2]];
-		potential = ptn;
+		
 
 		const ptrdiff_t n0 = n[0];
 		const ptrdiff_t n1 = n[1];
@@ -665,8 +677,8 @@ class metric_potential_poisson_mpi
 
 	}
 
-
-	void solve_poisson(double k_grid[][3],double Xb,double a,double a_t,double da)
+	
+	void solve_poisson(double k_grid[][3],double a,double a_t,double da)
 	{
 		int i,j,k,ci,ind[3]{0,0,0},r;
 		double k2fac;
@@ -685,24 +697,12 @@ class metric_potential_poisson_mpi
 			
 			//if(k2fac>0.0)
 			{
-			  if(ftype==0)	
-			  {	fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(1.0+da*k2fac/(3.0*a_t*a_t*a));
+			  	fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(1.0+da*k2fac/(3.0*a_t*a_t*a));
 			 	fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(1.0+da*k2fac/(3.0*a_t*a_t*a));
-			  }
 
-			  else
-			  if((ftype==1)||((ftype==2)))	
-			  {
-				fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(1.0 + hbar_by_m*hbar_by_m*da*da*k2fac*k2fac/(4.0*a*a*a*a));
-			 	fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(1.0 + hbar_by_m*hbar_by_m*da*da*k2fac*k2fac/(4.0*a*a*a*a));
-
-			  }
-
-			  
-				
 		
-			 fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(dtN);
-			 fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(dtN);
+			 	fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(dtN);
+			 	fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(dtN);
 
 			 
 				
@@ -711,38 +711,16 @@ class metric_potential_poisson_mpi
 			if(k2fac<=0.0)
 			{
 
-				 fpGpsi_ft[ci][0] = Xb;///(dtN);
-			 	 fpGpsi_ft[ci][1] = 0.0;///(dtN);
-
-
-				if(potential)
-			      {
+				
 				fpGpsi_ft[ci][0] = 0.0;
 		        	fpGpsi_ft[ci][1] = 0.0;
 
 
-			      }
+			      
 
 			}
 
-	
-		/*	else
-			{
-                   	    if(potential)
-			    {
-				fpGpsi_ft[ci][0] = 0.0;
-		        	fpGpsi_ft[ci][1] = 0.0;
 
-
-			    }
-			    else
-			    {   fpGpsi_ft[ci][0] = Xb;
-		        	fpGpsi_ft[ci][1] = 0.0;
-
-			    }
-			 	
-			}
-		*/
 			
 
 		    }
@@ -758,7 +736,7 @@ class metric_potential_poisson_mpi
 
 
 	
-	int calc_vel(int * ind,double &potn_vel,double f_t,double potn,double potn_a,double a,double da,double a_t,double a_tt,double *dx,double omega_dm_0,double Xb)
+	int calc_vel(int * ind,double &potn_vel,double psi_amp2,double potn,double a,double da,double a_t,double a_tt,double *dx,double omega_dm_0)
 	{
 		int ci;		
 		
@@ -774,22 +752,9 @@ class metric_potential_poisson_mpi
 		//printf("lap_potn %lf %lf %lf\n",lap_potn,potn_val,f_t);
 	
 	
-		if(ftype==0)
-		potn_vel = potn_vel_eqn(a,a_t,potn,f_t,omega_dm_0,Xb);
+		
+		potn_vel = potn_vel_eqn(a,a_t,potn,psi_amp2,omega_dm_0);
 
-		else
-		if(ftype==1)
-		{ potn_vel = field_eqn_r(f_t,potn,potn_a,a,da,a_t,a_tt);
-		  //if(ci==134)
-			//printf("potn_vel %.10lf\n",potn_vel);	
-		}
-
-		else
-		if(ftype==2)
-		{ potn_vel = field_eqn_i(f_t,potn,potn_a,a,da,a_t,a_tt);
-		  //if(ci==134)
-			//printf("potn_vel %.10lf\n",potn_vel);	
-		}
 		
 		
 
@@ -806,29 +771,12 @@ class metric_potential_poisson_mpi
 		if(!get_imag)
 		return (fpGpsi[ci][0]);	
 		else
-		return(fpGpsi_ft[ci][0]);
+		return(fpGpsi_ft[ci][1]);
 
 	}
 
 	
-	double cal_X_4vel(int * ind,double a,double a_t,double phi)
-	{
-		double fa_val,fa_t_val,s_der[3],X;	
-		int c1;	
-		
-		c1 =  (n_loc[2]*n_loc[1])*ind[0] + n_loc[2]*ind[1] + ind[2];
-		fa_t_val = get_potential(c1);
-		fa_t_val = fa_t_val*a_t;
 
-		//c1 = f_alpha.get_field_spt_der(ind,s_der);
-		
-		
-		X = fa_t_val*fa_t_val;///(1.0+2.0*phi);//  - (s_der[0]*s_der[0]+s_der[1]*s_der[1]+s_der[2]*s_der[2])/(a*a*(1.0-2.0*phi));
-		X = 0.5*X;
-
-		return(X);
-
-	}
 	
 	void update_4pieGpsi(int ci,double val)
 	{
@@ -883,20 +831,15 @@ class metric_potential_poisson_mpi
 
 
 
-	herr_t write_hdf5_values_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,double a0,double a,double a_t,double Xb,
-							metric_potential_poisson_mpi phi,int cum_lin_ind,bool get_dc=false)
+	herr_t write_hdf5_values_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,double a0,double a,double a_t,int cum_lin_ind,bool get_dc=false)
 	{
 
 		hid_t dataset,dset_glbl,dspace,plist_id;
 		herr_t status ;
 		int tN  = n[0]*n[1]*n[3];
 		int i,j,k,locind[3],ci;
-		double fa_val,fa_t_val,x4val,rho_fa,phival;
-
 		
 
-		if(potential)
-		{ 
 		  
 		  dset_glbl = H5Dcreate(filename, "potential", dtype, dspace_glbl,
 						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
@@ -905,25 +848,16 @@ class metric_potential_poisson_mpi
 		  H5Dclose(dset_glbl);
 
 
-		}
+		
 
 	
-		else
-		{ dset_glbl = H5Dcreate(filename, "field", dtype, dspace_glbl,
-						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
-		  status = phi_val.write_hdf5_mpi( filename,dtype,dset_glbl);
-
-		  H5Dclose(dset_glbl);
-
 	
-		 
-	    }
 		  
 		
 		return(status);
 
 	}
+
 
 
 
@@ -936,6 +870,281 @@ class metric_potential_poisson_mpi
 };
 
 
+
+class fdm_poisson_mpi
+{
+
+	private:
+	int n[3];
+	int n_loc[3];
+	int cum_lin_ind;
+	int potential;
+	scalar_field_3d_mpi psi_ms;
+
+	double *pot_p;
+
+	fftw_complex *fpGpsi;
+	fftw_complex *fpGpsi_ft;
+	
+
+	fftw_plan plan_pois_f;
+	fftw_plan plan_pois_b;
+	
+	ptrdiff_t alloc_local, local_n0, local_0_start;
+	
+	public:
+	
+	fdm_poisson_mpi(int *ind,int *ind_loc,int cum_lin_ind_ar,bool lb=false,bool sgb=false):psi_ms(ind_loc,cum_lin_ind_ar,lb,sgb)
+	{
+		int l = ind[0]*ind[1]*ind[2];
+		n[0]=ind[0];n[1]=ind[1];n[2]=ind[2];
+		n_loc[0]=ind_loc[0];n_loc[1]=ind_loc[1];n_loc[2]=ind_loc[2];
+
+		cum_lin_ind = cum_lin_ind_ar;
+
+
+		pot_p =  new double [ind_loc[0]*ind_loc[1]*ind_loc[2]];
+		
+
+		const ptrdiff_t n0 = n[0];
+		const ptrdiff_t n1 = n[1];
+		const ptrdiff_t n2 = n[2];
+	
+		alloc_local = fftw_mpi_local_size_3d(n0, n1, n2,
+                                 cart_comm,
+                                 &local_n0, &local_0_start);
+		
+		fpGpsi = fftw_alloc_complex(alloc_local);
+		fpGpsi_ft = fftw_alloc_complex(alloc_local);
+		
+
+
+		plan_pois_f = fftw_mpi_plan_dft_3d(n0, n1,  n2,
+                               fpGpsi, fpGpsi_ft,
+                              cart_comm, FFTW_FORWARD, FFTW_ESTIMATE);
+		plan_pois_b = fftw_mpi_plan_dft_3d(n0, n1,  n2,
+                               fpGpsi_ft, fpGpsi,
+                              cart_comm, FFTW_BACKWARD, FFTW_ESTIMATE);
+
+	}
+
+
+	void solve_poisson(double k_grid[][3],double Xb[2],double a,double a_t,double da)
+	{
+		int i,j,k,ci,ind[3]{0,0,0},r;
+		double k2fac,lambda,Acomp_i,Acomp_r;
+		fftw_execute(plan_pois_f);
+		double sqrt_tN = sqrt((double)(n[0]*n[1]*n[2])); 
+		double dtN = (double)(n[0]*n[1]*n[2]);
+		
+
+		for(i=0;i<n_loc[0];++i)
+		{
+		  for(j=0;j<n_loc[1];++j)
+		  {
+		    for(k=0;k<n_loc[2];++k)
+		    {
+			ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;			
+			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
+			lambda = 0.5*da*k2fac*hbar_by_m/(a*a);
+			Acomp_r = fpGpsi_ft[ci][0];
+			Acomp_i = fpGpsi_ft[ci][1];
+			
+			//if(k2fac>0.0)
+			{
+				fpGpsi_ft[ci][0] = (Acomp_r + lambda*Acomp_i)/(1.0+lambda*lambda);
+			 	fpGpsi_ft[ci][1] = (Acomp_i - lambda*Acomp_r)/(1.0+lambda*lambda);
+			 
+	
+		
+			 	fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(dtN);
+			 	fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(dtN);
+
+			 
+				
+			}
+
+			if(k2fac<=0.0)
+			{
+
+				
+				fpGpsi_ft[ci][0] = Xb[0];
+		        	fpGpsi_ft[ci][1] = Xb[1];
+
+
+			      
+
+			}
+
+	
+	
+			
+
+		    }
+
+		  }
+
+		}
+		
+		fftw_execute(plan_pois_b);
+	
+
+	}
+
+
+
+	void get_fdm(int ci,double val[2])
+	{
+		val[0] = fpGpsi[ci][0];	
+		val[1] = fpGpsi[ci][1];	
+		
+
+	}
+
+	
+
+	void update_A(int ci,double potn,double a,double da)
+	{
+		double fdm_v_r,fdm_v_i,amp2;
+		fdm_v_r = fpGpsi[ci][0];
+		fdm_v_i = fpGpsi[ci][1];
+
+		amp2 = fdm_v_r*fdm_v_r + fdm_v_i*fdm_v_i;  
+		
+		fpGpsi[ci][0] = fdm_v_r + da*potn*fdm_v_i/(hbar_by_m);// Conversion from phi->phi_c has been done...
+		fpGpsi[ci][1] = fdm_v_i - da*potn*fdm_v_r/(hbar_by_m);
+	
+	}
+	
+	void update_fdm(int ci,double *val)
+	{
+		
+		
+		fpGpsi[ci][0] = val[0];
+		fpGpsi[ci][1] = val[1];
+	
+	}
+	
+
+
+
+	void update_amp2_value(int *indi)
+	{
+		double fdm_v_r,fdm_v_i,amp2;
+		int ci;
+
+		ci =  (n_loc[2]*n_loc[1])*indi[0] + n_loc[2]*indi[1] + indi[2];
+		
+		fdm_v_r = fpGpsi[ci][0];
+		fdm_v_i = fpGpsi[ci][1];
+
+		amp2 = fdm_v_r*fdm_v_r + fdm_v_i*fdm_v_i;
+
+		psi_ms.update_field(indi,amp2,0);
+
+
+	}
+
+	double get_value(int *indi)
+	{
+		double val;
+		val = psi_ms.get_field(indi,give_f);
+
+		return val;
+
+
+	}
+
+
+	
+
+
+
+	herr_t write_hdf5_values_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,hid_t dspace_dc_glbl,double *dc,double a0,double a,double a_t,double omega_dm_0,
+							metric_potential_poisson_mpi phi,int cum_lin_ind,bool get_dc=false)
+	{
+
+		hid_t dataset,dset_glbl,dspace,plist_id;
+		herr_t status ;
+		int tN  = n[0]*n[1]*n[3];
+		int i,j,k,locind[3],ci;
+		double psi_amp2;
+		
+
+	
+		 dset_glbl = H5Dcreate(filename, "psi_amp2", dtype, dspace_glbl,
+						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+		 status = psi_ms.write_hdf5_mpi( filename,dtype,dset_glbl);
+
+		 H5Dclose(dset_glbl);
+
+
+
+		 if(get_dc)
+		 {	
+
+		 
+			
+		  for(i=0;i<n_loc[0];++i)
+		   {
+			for(j=0;j<n_loc[1];++j)
+			{
+				for(k=0;k<n_loc[2];++k)
+				{	ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;
+					locind[0]=i; locind[1]=j; locind[2]=k;
+
+					psi_amp2 = psi_ms.get_field(locind,give_f);
+
+					dc[ci] = psi_amp2/(3.0*H0*H0*omega_dm_0*a0*a0*a0) - 1.0;
+					
+
+				}
+	
+			}
+
+		  }
+
+
+
+
+
+
+		  dataset = H5Dcreate(filename, "dc_fdm", dtype, dspace_dc_glbl,
+						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+		
+
+		  hsize_t count[1],offset[1];
+	  	  count[0] = n_loc[0]*n_loc[1]*n_loc[2];
+		  offset[0] = cum_lin_ind*n[1]*n[2]; 
+
+		  dspace = H5Screate_simple(1, count, NULL);
+		 // printf("POTENTIAL %d %d %d\n",potential,count[0],n[0]);
+		  
+		  H5Sselect_hyperslab(dspace_dc_glbl, H5S_SELECT_SET, offset, NULL, count, NULL);
+		  
+		  plist_id = H5Pcreate(H5P_DATASET_XFER);
+    		  H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+		
+		
+		  status = H5Dwrite(dataset, dtype, dspace, dspace_dc_glbl,
+		      				plist_id,dc);
+
+		  H5Sclose(dspace);
+		  H5Dclose(dataset);
+
+
+	   }
+
+		
+		return(status);
+
+	}
+
+
+
+};
 
 
 
@@ -965,19 +1174,6 @@ class field_vel_mpi
 	}
 
 
-	double calc_acc(int *cind,double f_lap,double potn,double potn_a,double a, double a_t,double a_tt)
-	{
-		double acc_val,f_a_ind;
-		
-		f_a_ind= f_a_val.get_field(cind,give_f);
-		
-		acc_val = f_a_ind*(3.0/a - 6.0*alpha*potn -2.0*potn_a*(1.0+alpha))/( (2.0*alpha-1.0)*(2.0*alpha*potn-1.0) )
-				+ f_lap/(a_t*a_t*a*a*(2.0*alpha-1.0)) - a_tt*f_a_ind/(a_t*a_t) ;
-
-		return(acc_val);
-
-
-	}
 
 
 	double get_value(int *cind)
@@ -1002,24 +1198,7 @@ class field_vel_mpi
 
 
 
-	double cal_X_4vel(int * ind,double a,double a_t,double phi)
-	{
-		double fa_val,fa_t_val,s_der[3],X;	
-		int c1;	
-		
-		c1 =  (n_loc[2]*n_loc[1])*ind[0] + n_loc[2]*ind[1] + ind[2];
-		fa_t_val = get_value(ind);
-		fa_t_val = fa_t_val*a_t;
 
-		//c1 = f_alpha.get_field_spt_der(ind,s_der);
-		
-		
-		X = fa_t_val*fa_t_val;///(1.0+2.0*phi);//  - (s_der[0]*s_der[0]+s_der[1]*s_der[1]+s_der[2]*s_der[2])/(a*a*(1.0-2.0*phi));
-		X = 0.5*X;
-
-		return(X);
-
-	}
 
 	herr_t write_hdf5_values_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,hid_t dspace_dc_glbl,double *dc,double a0,double a,double a_t,double Xb,
 							metric_potential_poisson_mpi phi,int cum_lin_ind,bool get_dc=false)
@@ -1060,7 +1239,7 @@ class field_vel_mpi
 					phival = phi.get_value(locind);	
 					
 
-					x4val = cal_X_4vel(locind,a,a_t,phival);	
+					
 							
 
 					//rho_fa = x4val*(3.0*H0*H0/(4.0*a3a03omega*twopie*Xb_0));
