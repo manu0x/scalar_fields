@@ -209,14 +209,17 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 			
 			psi.update_A( ci, potn_k, a,a_t, da);
 
-			c1 = phi.calc_vel(ind,potn_a_part,psi_amp2,potn_k,a,da,a_t,a_tt,dx,omega_dm_0);
+			//c1 = phi.calc_vel(ind,potn_a_part,psi_amp2,potn_k,a,da,a_t,a_tt,dx,omega_dm_0);
 
 
+
+			//if(ci<10)
+			//printf("%.15lf\n",potn_a_part);
 				
 
 
-			potn_rhs = potn_val[ci]+da*potn_a_part;
-			
+			//potn_rhs = potn_val[ci]+da*potn_a_part;
+			  potn_rhs = 0.5*psi_amp2-1.5*H0*H0*omega_dm_0*a0*a0*a0;
 
 
 			if(isnan(potn_rhs)||isnan(psi_amp2))

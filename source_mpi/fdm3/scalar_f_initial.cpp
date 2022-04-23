@@ -360,7 +360,8 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_poisson_mpi &psi,metric_potential
 			ci = (n[2]*n[1])*i + n[2]*j + k;
 			loc_ind[0] = i;  loc_ind[1] = j;  loc_ind[2] = k;
 
-			 ini_dc[ci] = 0.0;
+			// ini_dc[ci] = 0.0;
+			// ini_theta[ci] = 0.0;
 
 			 poisson_rhs = 1.5*omega_dm_0*H0*H0*pow(a0/ai,3.0*(1.0+w))*ini_dc[ci];
 
@@ -401,7 +402,7 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_poisson_mpi &psi,metric_potential
 			psi.update_fdm(ci,psi_val);
 			psi.update_amp2_value(loc_ind);
 
-			phi.update_value(loc_ind, potn);
+			phi.update_value(loc_ind, ai*potn);
 			
 			
 
