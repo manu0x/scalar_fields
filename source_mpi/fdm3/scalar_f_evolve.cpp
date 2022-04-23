@@ -219,9 +219,9 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 			
 
 
-			if(isnan(potn_rhs))
+			if(isnan(potn_rhs)||isnan(psi_amp2))
 			{
-				//printf("Yfailed at step %d %lf %lf %lf\n",step_cnt,potn_k,potn_t,fa_k[1]);
+				printf("Yfailed at step %d %lf %lf %lf\n",step_cnt,potn_k,potn_a,a_t);
 				fail=1;
 				break;
 

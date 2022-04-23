@@ -430,7 +430,7 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_poisson_mpi &psi,metric_potential
 
 	file = H5Fcreate("test_initial.hdf5", H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
 	H5Pclose(plist_id);
-	initial_hdf5_write_mpi(ind,ind_loc, psi, phi,file,dc,k_grid,x_grid,a3a03omega, ai,cum_lin_ind,true);
+	//initial_hdf5_write_mpi(ind,ind_loc, psi, phi,file,dc,k_grid,x_grid,a3a03omega, ai,cum_lin_ind,true);
 
 	H5Fclose(file);
 

@@ -254,9 +254,8 @@ MPI_Status stdn,stup;
 	
 
 	//if(use_omp)
-	//fail = evolve_kdk_openmp(ind,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,Xb_0,dx,dk,kbins,da,cum_lin_ind,use_hdf5_format);
-	//else
-	//fail = evolve_kdk(ind,n_axis_loc,f_alpha,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,Xb_0,dx,dk,kbins,0.2e-4,cum_lin_ind,use_hdf5_format);
+	fail = evolve_kdk_openmp(ind,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,Xb_0,dx,dk,kbins,da,cum_lin_ind,use_hdf5_format);
+	
 	
 	
 	printf("fail is %d\n",fail);

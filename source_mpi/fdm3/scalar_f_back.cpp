@@ -11,12 +11,13 @@ void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_0,param_fd
 	lenfac = p.loc_lenfac;
 	omega_dm_0 = p.omega_dm_0;
 	h = p.loc_h;
-	//hbar_by_m = hbar_box*c_box*(1e-8)/(alpha*pc_box);	
+	alpha = p.loc_alpha_m22;
+	hbar_by_m = 0.001*hbar_box*h*c_box*c_box/(alpha*pc_box);	
 	space_mpc_to_dimless = p.loc_space_mpc_to_dimless; ////	\tilde{x} (dimensionless) = physical{x (In Mpc)}*space_mpc_to_dimless  
 		
 	
 	
-	H0 = lenfac*(h/c_box)*0.001;
+	H0 = 100.0;
 	
 	
 	
