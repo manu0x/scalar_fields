@@ -947,7 +947,7 @@ class fdm_poisson_mpi
 		    {
 			ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;			
 			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
-			lambda = 0.5*da*k2fac*hbar_by_m/(a*a);
+			lambda = 0.5*da*k2fac*hbar_by_m/(a*a*a_t);
 			Acomp_r = fpGpsi_ft[ci][0];
 			Acomp_i = fpGpsi_ft[ci][1];
 			
@@ -1004,7 +1004,7 @@ class fdm_poisson_mpi
 
 	
 
-	void update_A(int ci,double potn,double a,double da)
+	void update_A(int ci,double potn,double a,double a_t,double da)
 	{
 		double fdm_v_r,fdm_v_i,amp2;
 		fdm_v_r = fpGpsi[ci][0];
@@ -1012,8 +1012,8 @@ class fdm_poisson_mpi
 
 		amp2 = fdm_v_r*fdm_v_r + fdm_v_i*fdm_v_i;  
 		
-		fpGpsi[ci][0] = fdm_v_r + da*potn*fdm_v_i/(hbar_by_m);// Conversion from phi->phi_c has been done...
-		fpGpsi[ci][1] = fdm_v_i - da*potn*fdm_v_r/(hbar_by_m);
+		fpGpsi[ci][0] = fdm_v_r + da*potn*fdm_v_i/(hbar_by_m*a_t);// Conversion from phi->phi_c has been done...
+		fpGpsi[ci][1] = fdm_v_i - da*potn*fdm_v_r/(hbar_by_m*a_t);
 	
 	}
 	

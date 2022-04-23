@@ -207,7 +207,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 		
 
 			
-			psi.update_A( ci, potn_k, a, da);
+			psi.update_A( ci, potn_k, a,a_t, da);
 
 			c1 = phi.calc_vel(ind,potn_a_part,psi_amp2,potn_k,a,da,a_t,a_tt,dx,omega_dm_0);
 
@@ -221,7 +221,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 
 			if(isnan(potn_rhs)||isnan(psi_amp2))
 			{
-				printf("Yfailed at step %d %lf %lf %lf\n",step_cnt,potn_k,potn_a,a_t);
+				//printf("Yfailed at step %d %lf %lf %lf\n",step_cnt,potn_k,potn_a,a_t);
 				fail=1;
 				break;
 
