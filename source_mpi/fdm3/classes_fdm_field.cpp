@@ -444,7 +444,7 @@ class param_cosmo_sim
 		omega_dm_0 = 0.29;
 		loc_h = 0.7;
 		//hbar_by_m = hbar_box*c_box*(1e-8)/(alpha*pc_box);	
-		loc_space_mpc_to_dimless = 0.001/loc_c_box; ////	\tilde{x} (dimensionless) = physical{x (In Mpc)}*space_mpc_to_dimless  
+		loc_space_mpc_to_dimless = 1.0;//0.001/loc_c_box; ////	\tilde{x} (dimensionless) = physical{x (In Mpc)}*space_mpc_to_dimless  
 
 		box_length = 1.0;
 		box_n = 128;
@@ -481,13 +481,14 @@ class param_cosmo_sim
 class param_fdm: public param_cosmo_sim
 {
 	public:
-	double loc_hbar_by_m22, loc_alpha;
+	double  loc_alpha_m22;
 	string fini_dc;
 	void load_defaults()
 	{
 		load_default_cosmo_sim();
 
-		loc_alpha = 1e8;
+		loc_alpha_m22 = 1.0;
+		
 		fini_dc = "None";	
 	
 
@@ -500,7 +501,7 @@ class param_fdm: public param_cosmo_sim
 		print_to_file_cosmo_sim(fp);
 		
 		fprintf(fp,"\n######## alpha info: ##########\n");
-		fprintf(fp,"alpha = %lf\n",loc_alpha);
+		fprintf(fp,"alpha = %lf\n",loc_alpha_m22);
 	
 		
 

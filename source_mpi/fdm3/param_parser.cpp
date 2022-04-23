@@ -36,14 +36,12 @@ int parser(char * param_file_name, param_fdm &p)
 			p.omega_dm_0 = num_val;
 		   else
 		   if(read_key=="alpha")
-			p.loc_alpha = num_val;
+			p.loc_alpha_m22 = num_val;
 		   else
 		   if(read_key=="z_ini")
 			p.z_ini = num_val;
 		
-		   else
-		   if(read_key=="h_bar_by_m22")
-			p.loc_hbar_by_m22 = num_val;
+		   
 		
 		   else
 			if(read_key=="box_n")

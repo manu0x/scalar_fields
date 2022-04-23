@@ -195,13 +195,19 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_poisson_mpi &psi,metric_potential
       
            
       int tN = ind_loc[0]*ind_loc[1]*ind_loc[2]; 
-      int kbin_count[tN];
+      int * kbin_count = new int[tN];
+      double * ini_dc = new double[tN];
+      double *ini_theta= new double[tN];
+      double *pwr_spec=new double[tN];
+      double *dc = new double[tN];
+	
 	double x_grid[tN][3];
    //   double kmag_grid[tN];
       int n[3]{ind_loc[0],ind_loc[1],ind_loc[2]};
       int loc_ind[3],err_hold;
 
-      double ini_dc[tN],ini_theta[tN],pwr_spec[tN],dc[tN];
+     
+
       double poisson_rhs;
       double psi_amp, psi_val[2];
       double f_ini;
@@ -256,13 +262,6 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_poisson_mpi &psi,metric_potential
 	xcntr[0] = cum_lin_ind -1;
 /////////////////////////////////////////////////////////////////////////////////////////////////
 	
-	//ini_rand_field();
-	//  read_ini_rand_field();
-
-	
-
-
-        printf("TTTT %d\n",tN);
 	for(ci = 0;ci <tN; ++ci)
 	{
 		kbin_count[ci]=0;
@@ -394,13 +393,15 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_poisson_mpi &psi,metric_potential
 
 			
 			
-			psi_amp = sqrt(omega_dm_0*pow(a0/ai,3.0)*(1.0+ini_dc[ci]));
+			psi_amp = sqrt(3.0*H0*H0*omega_dm_0*a0*a0*a0*(1.0+ini_dc[ci]));
 			psi_val[0] = psi_amp*cos(ini_theta[ci]);
 			psi_val[1] = psi_amp*sin(ini_theta[ci]);
 			
 			
 			psi.update_fdm(ci,psi_val);
 			psi.update_amp2_value(loc_ind);
+
+			phi.update_value(loc_ind, potn);
 			
 			
 
@@ -486,6 +487,12 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_poisson_mpi &psi,metric_potential
 	*/
 	printf("\nInitialization Complete from rank %d.\n",my_corank);
 	MPI_Barrier(cart_comm);
+
+      delete[] kbin_count ;
+      delete[] ini_dc;
+      delete[] ini_theta;
+      delete[] pwr_spec;
+      delete[] dc ;
 
 	fclose(fpstoreini);
 	
