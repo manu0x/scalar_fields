@@ -2,6 +2,7 @@ double hbar_by_m,h,H0,Hi,lenfac;
 double c_box,pc_box,hbar_box;
 double w,cs2;
 double space_mpc_to_dimless;
+double alpha;
 
 
 FILE *fp_sim_info;
