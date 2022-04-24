@@ -482,12 +482,14 @@ class param_fdm: public param_cosmo_sim
 {
 	public:
 	double  loc_alpha_m22;
+	int loc_method;
 	string fini_dc;
 	void load_defaults()
 	{
 		load_default_cosmo_sim();
 
 		loc_alpha_m22 = 1.0;
+		loc_method = 1;
 		
 		fini_dc = "None";	
 	
@@ -698,11 +700,16 @@ class metric_potential_poisson_mpi
 			
 			if(k2fac>0.0)
 			{
-			  	//fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(1.0+da*k2fac/(3.0*a_t*a_t*a));
-			 	//fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(1.0+da*k2fac/(3.0*a_t*a_t*a));
-			
-				fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/(k2fac);
-			 	fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/(k2fac);
+			  	
+				if(method==0)
+				{fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(1.0+da*k2fac/(3.0*a_t*a_t*a));
+			 	 fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(1.0+da*k2fac/(3.0*a_t*a_t*a));
+				}
+						
+				if(method==1)				
+				{fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/(k2fac);
+			 	 fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/(k2fac);
+				}
 
 		
 			 	fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(dtN);
@@ -1014,9 +1021,17 @@ class fdm_poisson_mpi
 		fdm_v_i = fpGpsi[ci][1];
 
 		amp2 = fdm_v_r*fdm_v_r + fdm_v_i*fdm_v_i;  
-		
-		fpGpsi[ci][0] = fdm_v_r + da*potn*fdm_v_i/(hbar_by_m*a*a_t);//Conv. from phi->phi_c has been done...But now it already phi_c so conversion not req. here
-		fpGpsi[ci][1] = fdm_v_i - da*potn*fdm_v_r/(hbar_by_m*a*a_t);
+			
+		if(method==0)		
+		{fpGpsi[ci][0] = fdm_v_r + da*potn*fdm_v_i/(hbar_by_m*a_t);//Conv. from phi->phi_c has been done...
+		 fpGpsi[ci][1] = fdm_v_i - da*potn*fdm_v_r/(hbar_by_m*a_t);
+		}		
+
+
+		if(method==1)		
+		{fpGpsi[ci][0] = fdm_v_r + da*potn*fdm_v_i/(hbar_by_m*a*a_t);//Conv. from phi->phi_c has been done...But now it already phi_c so conversion not req. here
+		 fpGpsi[ci][1] = fdm_v_i - da*potn*fdm_v_r/(hbar_by_m*a*a_t);
+		}
 	
 	}
 	

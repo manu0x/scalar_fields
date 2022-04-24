@@ -3,6 +3,7 @@ double c_box,pc_box,hbar_box;
 double w,cs2;
 double space_mpc_to_dimless;
 double alpha;
+int method;
 
 
 FILE *fp_sim_info;

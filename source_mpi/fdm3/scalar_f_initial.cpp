@@ -402,6 +402,11 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_poisson_mpi &psi,metric_potential
 			psi.update_fdm(ci,psi_val);
 			psi.update_amp2_value(loc_ind);
 
+
+			if(method==0)
+			phi.update_value(loc_ind, potn);
+			
+			if(method==1)
 			phi.update_value(loc_ind, ai*potn);
 			
 			

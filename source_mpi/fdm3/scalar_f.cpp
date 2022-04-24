@@ -189,6 +189,7 @@ MPI_Status stdn,stup;
 	}
 	
 	fprintf(fp_sim_info,"cO_RANK %d cords %d with nloc 0  %d and cum_ind %d\n",my_coords[0],my_corank,n_axis_loc[0],cum_lin_ind);
+	
 		
 
 
@@ -241,7 +242,9 @@ MPI_Status stdn,stup;
 	int kbins,kbin_grid[tN_loc];
 	
 	set_back_cosmo(a0,ai,Hi,omega_dm_ini,p);
-	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\n h is %lf\n",Hi,omega_dm_ini,ai,h);
+	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\nh is %lf\nMethod is %d\n",Hi,omega_dm_ini,ai,h,method);
+	fprintf(fp_sim_info,"Method is %d\n",method);
+
 	
 	double da = 0.25e-3;
 

@@ -209,7 +209,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 			
 			psi.update_A( ci, potn_k, a,a_t, da);
 
-			//c1 = phi.calc_vel(ind,potn_a_part,psi_amp2,potn_k,a,da,a_t,a_tt,dx,omega_dm_0);
+			if(method==0)
+			c1 = phi.calc_vel(ind,potn_a_part,psi_amp2,potn_k,a,da,a_t,a_tt,dx,omega_dm_0);
 
 
 
@@ -217,8 +218,9 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 			//printf("%.15lf\n",potn_a_part);
 				
 
-
-			//potn_rhs = potn_val[ci]+da*potn_a_part;
+			  if(method==0)
+			  potn_rhs = potn_val[ci]+da*potn_a_part;
+			  if(method==1)
 			  potn_rhs = 0.5*psi_amp2-1.5*H0*H0*omega_dm_0*a0*a0*a0;
 
 
@@ -256,8 +258,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
          a_tt = ak*H0*H0*(-0.5*omega_dm_0*pow(a0/ak,3.0*(1.0+w))*(1.0+3.0*w) + (1.0-omega_dm_0) );
 
 
-	phi.solve_poisson(k_grid, a, a_t,da);
-	psi.solve_poisson(k_grid,psi_b, a, a_t,da);
+	phi.solve_poisson(k_grid, ak, a_t,da);
+	psi.solve_poisson(k_grid,psi_b, ak, a_t,da);
 
 
 

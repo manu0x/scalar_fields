@@ -40,6 +40,10 @@ int parser(char * param_file_name, param_fdm &p)
 		   else
 		   if(read_key=="z_ini")
 			p.z_ini = num_val;
+
+		  else
+		   if(read_key=="method")
+			p.loc_method = (int)num_val;
 		
 		   
 		

@@ -14,6 +14,8 @@ void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_0,param_fd
 	alpha = p.loc_alpha_m22;
 	hbar_by_m = 0.001*hbar_box*h*c_box*c_box/(alpha*pc_box);	
 	space_mpc_to_dimless = p.loc_space_mpc_to_dimless; ////	\tilde{x} (dimensionless) = physical{x (In Mpc)}*space_mpc_to_dimless  
+
+	method = p.loc_method;
 		
 	
 	
