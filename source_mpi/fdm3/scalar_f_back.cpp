@@ -1,6 +1,7 @@
 void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_0,param_fdm p)
 {
 	double z = p.z_ini;
+	double kji,kj0;
 	
 	w = 0.0;//1.0/(2.0*alpha-1.0);
 	cs2 = 1.0;///(2.0*alpha-1.0);
@@ -26,7 +27,17 @@ void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_0,param_fd
 	a0 = p.a0;
 	ai = a0/(1.0+z);
 	Hi =   H0*sqrt(omega_dm_0*pow(a0/ai,3.0*(1.0+w))+ (1.0-omega_dm_0));
+	kji = pow(6.0*omega_dm_0/(1.0+p.z_ini),0.25)*sqrt(H0/hbar_by_m);
+	kj0 = pow(6.0*omega_dm_0,0.25)*sqrt(H0/hbar_by_m);
+	
 	printf("H0 %lf Hi  %e\n",H0,Hi);
+	printf("Jeans length at starting z is %lf kj is %lf\n",1.0/kji,kji);
+	printf("Jeans length at z = 0 is %lf kj is %lf\n",1.0/kj0,kj0);
+
+	fprintf(fp_sim_info,"Jeans length at starting z is %lf kj is %lf\n",1.0/kji,kji);
+	fprintf(fp_sim_info,"Jeans length at z = 0 is %lf kj is %lf\n",1.0/kj0,kj0);
+
+	
 
 	
 	p.print_to_file(fp_sim_info);

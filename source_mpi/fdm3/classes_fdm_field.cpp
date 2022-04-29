@@ -944,7 +944,9 @@ class fdm_poisson_mpi
 	{
 		int i,j,k,ci,ind[3]{0,0,0},r;
 		double k2fac,lambda,Acomp_i,Acomp_r;
+
 		fftw_execute(plan_pois_f);
+
 		double sqrt_tN = sqrt((double)(n[0]*n[1]*n[2])); 
 		double dtN = (double)(n[0]*n[1]*n[2]);
 		
@@ -1394,13 +1396,22 @@ class metric_potential_poisson_mpi_ini
 			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
 			
 			if(k2fac>0.0)
-			{fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/((k2fac/(a*a)) +3.0*Hc*Hc);
-			 fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/((k2fac/(a*a)) +3.0*Hc*Hc);
+			{
+			 if(method==0)
+			 { fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/((k2fac/(a*a)) +3.0*Hc*Hc);
+			   fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/((k2fac/(a*a)) +3.0*Hc*Hc);
+			 }
+
+
+			 if(method==1)
+			 { fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/((k2fac/(a*a)));
+			   fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/((k2fac/(a*a)));
+			 }
 		
-			 fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/(dtN);
-			 fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/(dtN);
+			  fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(dtN);
+			  fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(dtN);
 				
-			}	
+		       }	
 			else
 			{fpGpsi_ft[ci][0] = 0.0;
 			 fpGpsi_ft[ci][1] = 0.0;
