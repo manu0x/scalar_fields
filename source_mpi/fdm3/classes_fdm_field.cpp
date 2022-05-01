@@ -981,8 +981,8 @@ class fdm_poisson_mpi
 			{
 
 				
-				fpGpsi_ft[ci][0] = Xb[0];
-		        	fpGpsi_ft[ci][1] = Xb[1];
+				fpGpsi_ft[ci][0] = Xb[0]/(dtN);
+		        	fpGpsi_ft[ci][1] = Xb[1]/(dtN);
 
 
 			      
