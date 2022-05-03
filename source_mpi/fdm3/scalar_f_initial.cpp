@@ -434,9 +434,9 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_poisson_mpi &psi,metric_potential
 	plist_id = H5Pcreate(H5P_FILE_ACCESS);
         H5Pset_fapl_mpio(plist_id, cart_comm, info);
 
-	file = H5Fcreate("test_initial.hdf5", H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+	file = H5Fcreate("ini_grid.hdf5", H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
 	H5Pclose(plist_id);
-	//initial_hdf5_write_mpi(ind,ind_loc, psi, phi,file,dc,k_grid,x_grid,a3a03omega, ai,cum_lin_ind,true);
+	initial_hdf5_write_mpi(ind,ind_loc, psi, phi,file,dc,k_grid,x_grid,a3a03omega, ai,cum_lin_ind,true);
 
 	H5Fclose(file);
 
