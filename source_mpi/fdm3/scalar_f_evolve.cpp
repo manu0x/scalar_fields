@@ -10,6 +10,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 
 	double *pwr_spec = new double[n[0]*n[1]*n[2]];
 	double *dc = new double[n[0]*n[1]*n[2]];
+	double *fdc = new double[n[0]*n[1]*n[2]];
 	double *potn_val = new double[n[0]*n[1]*n[2]];
 
 	double psi_b[2],psi_amp2;
@@ -148,7 +149,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 				printf("hdf5 %s\n",fp_hdf5_name);
 						
 				
-				evolve_hdf5_write(n_glbl,psi, phi,filename,dc,a0,a,a_t,omega_dm_0,cum_lin_id,true);
+				evolve_hdf5_write(n_glbl,psi, phi,filename,dc,fdc,a0,a,a_t,omega_dm_0,cum_lin_id,true);
 				
 		
 				status=H5Fclose(filename);
@@ -310,7 +311,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 			printf("hdf5 %s\n",fp_hdf5_name);
 			//printf("pwr spec name %s\n",fp_pwr_spec_name);		
 			
-			evolve_hdf5_write(n_glbl,psi, phi,filename,dc,a0,a,a_t,omega_dm_0,cum_lin_id,true);
+			evolve_hdf5_write(n_glbl,psi, phi,filename,dc,fdc,a0,a,a_t,omega_dm_0,cum_lin_id,true);
 
 	
 			status=H5Fclose(filename);
@@ -332,7 +333,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 
 	
 void evolve_hdf5_write(int *ind,fdm_poisson_mpi psi,
-				metric_potential_poisson_mpi phi,hid_t filename,double *dc,double a0,double a,double a_t,double omega_dm_0,
+				metric_potential_poisson_mpi phi,hid_t filename,double *dc,double *fdc,double a0,double a,double a_t,double omega_dm_0,
 														int cum_lin_id,bool get_dc=false)
 {	
 	herr_t status_psi,status_phi,status;	
@@ -361,7 +362,7 @@ void evolve_hdf5_write(int *ind,fdm_poisson_mpi psi,
 
 	
 	
-	status_psi = psi.write_hdf5_values_mpi(filename, dtype, dspace_psi,dspace_dc,dc,a0,a,a_t,omega_dm_0,phi,cum_lin_id,get_dc);
+	status_psi = psi.write_hdf5_values_mpi(filename, dtype, dspace_psi,dspace_dc,dc,fdc,a0,a,a_t,omega_dm_0,phi,cum_lin_id,get_dc);
 	H5Sclose(dspace_psi);
 
 	

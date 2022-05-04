@@ -900,6 +900,13 @@ class fdm_poisson_mpi
 
 	fftw_plan plan_pois_f;
 	fftw_plan plan_pois_b;
+
+
+	fftw_complex *fp_dc;
+	fftw_complex *fp_dc_ft;
+	
+
+	fftw_plan plan_dc_f;
 	
 	ptrdiff_t alloc_local, local_n0, local_0_start;
 	
@@ -927,6 +934,9 @@ class fdm_poisson_mpi
 		
 		fpGpsi = fftw_alloc_complex(alloc_local);
 		fpGpsi_ft = fftw_alloc_complex(alloc_local);
+
+		fp_dc = fftw_alloc_complex(alloc_local);
+		fp_dc_ft = fftw_alloc_complex(alloc_local);
 		
 
 
@@ -936,6 +946,10 @@ class fdm_poisson_mpi
 		plan_pois_b = fftw_mpi_plan_dft_3d(n0, n1,  n2,
                                fpGpsi_ft, fpGpsi,
                               cart_comm, FFTW_BACKWARD, FFTW_ESTIMATE);
+
+		plan_dc_f = fftw_mpi_plan_dft_3d(n0, n1,  n2,
+                               fp_dc, fp_dc_ft,
+                              cart_comm, FFTW_FORWARD, FFTW_ESTIMATE);
 
 	}
 
@@ -1077,18 +1091,51 @@ class fdm_poisson_mpi
 	}
 
 
-	
+	int cal_dc_fc(double *dc,double *fdc)
+	{     int i,j,k,ci;
+	      double dtN = (double)(n[0]*n[1]*n[2]);
+
+		for(i=0;i<n_loc[0];++i)
+		{
+		  for(j=0;j<n_loc[1];++j)
+		  {
+		    for(k=0;k<n_loc[2];++k)
+		    {
+			ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;			
+			fp_dc[ci][0] = dc[ci]/sqrt(dtN);
+			fp_dc[ci][1] = 0.0;
+		    }
+		 }
+	        }
+
+		fftw_execute(plan_dc_f);
+
+		for(i=0;i<n_loc[0];++i)
+		{
+		  for(j=0;j<n_loc[1];++j)
+		  {
+		    for(k=0;k<n_loc[2];++k)
+		    {
+			ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;			
+			fdc[ci] = fp_dc_ft[ci][0]*fp_dc_ft[ci][0] + fp_dc_ft[ci][1]*fp_dc_ft[ci][1];
+		    }
+		  }
+	       }
+	   return(1);
+
+	}
 
 
 
-	herr_t write_hdf5_values_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,hid_t dspace_dc_glbl,double *dc,double a0,double a,double a_t,double omega_dm_0,
-							metric_potential_poisson_mpi phi,int cum_lin_ind,bool get_dc=false)
+	herr_t write_hdf5_values_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,hid_t dspace_dc_glbl,double *dc,double *fdc,
+								double a0,double a,double a_t,double omega_dm_0,
+								metric_potential_poisson_mpi phi,int cum_lin_ind,bool get_dc=false)
 	{
 
 		hid_t dataset,dset_glbl,dspace,plist_id;
 		herr_t status ;
 		int tN  = n[0]*n[1]*n[3];
-		int i,j,k,locind[3],ci;
+		int i,j,k,locind[3],ci,chk;
 		double psi_amp2;
 		
 
@@ -1151,6 +1198,30 @@ class fdm_poisson_mpi
 		
 		  status = H5Dwrite(dataset, dtype, dspace, dspace_dc_glbl,
 		      				plist_id,dc);
+
+		  H5Sclose(dspace);
+		  H5Dclose(dataset);
+
+
+		  chk = cal_dc_fc(dc,fdc);
+
+
+		  dataset = H5Dcreate(filename, "f2_dc_fdm", dtype, dspace_dc_glbl,
+						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+	
+
+		  dspace = H5Screate_simple(1, count, NULL);
+		 // printf("POTENTIAL %d %d %d\n",potential,count[0],n[0]);
+		  
+		  H5Sselect_hyperslab(dspace_dc_glbl, H5S_SELECT_SET, offset, NULL, count, NULL);
+		  
+		  plist_id = H5Pcreate(H5P_DATASET_XFER);
+    		  H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+		
+		
+		  status = H5Dwrite(dataset, dtype, dspace, dspace_dc_glbl,
+		      				plist_id,fdc);
 
 		  H5Sclose(dspace);
 		  H5Dclose(dataset);
