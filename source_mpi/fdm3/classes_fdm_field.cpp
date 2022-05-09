@@ -696,7 +696,8 @@ class metric_potential_poisson_mpi
 		    for(k=0;k<n_loc[2];++k)
 		    {
 			ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;			
-			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
+			k2fac = (k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
+				//twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
 			
 			if(k2fac>0.0)
 			{
@@ -972,7 +973,8 @@ class fdm_poisson_mpi
 		    for(k=0;k<n_loc[2];++k)
 		    {
 			ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;			
-			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
+			k2fac = (k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
+				//twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
 			lambda = 0.5*da*k2fac*hbar_by_m/(a*a*a_t);
 			Acomp_r = fpGpsi_ft[ci][0];
 			Acomp_i = fpGpsi_ft[ci][1];
@@ -981,7 +983,9 @@ class fdm_poisson_mpi
 			{
 				fpGpsi_ft[ci][0] = (Acomp_r + lambda*Acomp_i)/(1.0+lambda*lambda);
 			 	fpGpsi_ft[ci][1] = (Acomp_i - lambda*Acomp_r)/(1.0+lambda*lambda);
-			 
+
+				//if((i==0)&&(j==0)&&(k==0))
+			 	//printf("Acomp %lf %lf\n",Acomp_r,Acomp_i);
 	
 		
 			 	fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(dtN);
@@ -990,18 +994,20 @@ class fdm_poisson_mpi
 			 
 				
 			}
-
+/*
 			if(k2fac<=0.0)
 			{
 
 				
-				fpGpsi_ft[ci][0] = Xb[0]/(dtN);
-		        	fpGpsi_ft[ci][1] = Xb[1]/(dtN);
+				fpGpsi_ft[ci][0] = Xb[0];///(dtN);
+		        	fpGpsi_ft[ci][1] = Xb[1];///(dtN);
 
 
 			      
 
 			}
+
+*/
 
 	
 	
@@ -1464,7 +1470,8 @@ class metric_potential_poisson_mpi_ini
 		    for(k=0;k<n_loc[2];++k)
 		    {
 			ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;			
-			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
+			k2fac = (k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);			
+				//twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
 			
 			if(k2fac>0.0)
 			{

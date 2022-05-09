@@ -246,7 +246,7 @@ MPI_Status stdn,stup;
 	fprintf(fp_sim_info,"Method is %d\n",method);
 
 	
-	double da = 0.25e-4;
+	double da = 0.25e-5;
 
 	initialise_mpi(n_axis,n_axis_loc,psi,phi,poisson_phi,
 				k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,Xb_0,dx,dk,kbins,pk,grf,use_hdf5_format,p.box_length,da,cum_lin_ind,p.fini_dc);
