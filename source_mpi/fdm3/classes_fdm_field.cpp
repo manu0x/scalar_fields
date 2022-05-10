@@ -696,8 +696,8 @@ class metric_potential_poisson_mpi
 		    for(k=0;k<n_loc[2];++k)
 		    {
 			ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;			
-			k2fac = (k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
-				//twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
+			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
+				//(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
 			
 			if(k2fac>0.0)
 			{
@@ -973,7 +973,7 @@ class fdm_poisson_mpi
 		    for(k=0;k<n_loc[2];++k)
 		    {
 			ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;			
-			k2fac = (k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
+			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
 				//twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
 			lambda = 0.5*da*k2fac*hbar_by_m/(a*a*a_t);
 			Acomp_r = fpGpsi_ft[ci][0];
@@ -985,7 +985,7 @@ class fdm_poisson_mpi
 			 	fpGpsi_ft[ci][1] = (Acomp_i - lambda*Acomp_r)/(1.0+lambda*lambda);
 
 				//if((i==0)&&(j==0)&&(k==0))
-			 	//printf("Acomp %lf %lf\n",Acomp_r,Acomp_i);
+			 	//printf("Acomp %lf %lf %.13lf\n",Acomp_r,Acomp_i,lambda);
 	
 		
 			 	fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(dtN);
@@ -1057,6 +1057,28 @@ class fdm_poisson_mpi
 	
 	}
 	
+
+	void update_A_2o(int ci,double potn,double fr,double fi,double a,double a_t,double da)
+	{
+		double fdm_v_r,fdm_v_i,amp2;
+		fdm_v_r = fpGpsi[ci][0];
+		fdm_v_i = fpGpsi[ci][1];
+
+		amp2 = fdm_v_r*fdm_v_r + fdm_v_i*fdm_v_i;  
+			
+		if(method==0)		
+		{fpGpsi[ci][0] = fr + da*potn*fdm_v_i/(hbar_by_m*a_t);//Conv. from phi->phi_c has been done...
+		 fpGpsi[ci][1] = fi - da*potn*fdm_v_r/(hbar_by_m*a_t);
+		}		
+
+
+		if(method==1)		
+		{fpGpsi[ci][0] = fr + da*potn*fdm_v_i/(hbar_by_m*a*a_t);//Conv. from phi->phi_c has been done...But now it already phi_c so conversion not req. here
+		 fpGpsi[ci][1] = fi - da*potn*fdm_v_r/(hbar_by_m*a*a_t);
+		}
+	
+	}
+
 	void update_fdm(int ci,double *val)
 	{
 		
@@ -1470,7 +1492,7 @@ class metric_potential_poisson_mpi_ini
 		    for(k=0;k<n_loc[2];++k)
 		    {
 			ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;			
-			k2fac = (k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);			
+			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);		
 				//twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
 			
 			if(k2fac>0.0)

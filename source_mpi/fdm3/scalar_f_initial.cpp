@@ -360,8 +360,8 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_poisson_mpi &psi,metric_potential
 			ci = (n[2]*n[1])*i + n[2]*j + k;
 			loc_ind[0] = i;  loc_ind[1] = j;  loc_ind[2] = k;
 
-			// ini_dc[ci] = 0.0;
-			// ini_theta[ci] = 0.0;
+			 //ini_dc[ci] = 0.0;
+			 ini_theta[ci] = (1e-5)*ini_theta[ci];
 
 			 poisson_rhs = 1.5*omega_dm_0*H0*H0*pow(a0/ai,3.0*(1.0+w))*ini_dc[ci];
 
@@ -419,8 +419,8 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_poisson_mpi &psi,metric_potential
 
 			
 
-			fprintf(fpstoreini,"%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.22lf\t%.15lf\n",
-							a,dx[0]*i,dx[1]*j,dx[2]*k,fa[0],fa[1],potn,ini_dc[ci]);
+			fprintf(fpstoreini,"%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.22lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\n",
+							a,dx[0]*i,dx[1]*j,dx[2]*k,fa[0],fa[1],potn,ini_dc[ci],ini_theta[ci],sin(ini_theta[ci]),cos(ini_theta[ci]));
 
 	            }
 		  }
