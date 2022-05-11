@@ -36,6 +36,9 @@ void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_0,param_fd
 
 	fprintf(fp_sim_info,"Jeans length at starting z is %lf kj is %lf\n",1.0/kji,kji);
 	fprintf(fp_sim_info,"Jeans length at z = 0 is %lf kj is %lf\n",1.0/kj0,kj0);
+	fprintf(fp_sim_info,"\nhbar_by_m is %lf\n\n",hbar_by_m);
+	fprintf(fp_sim_info,"\nalpha is %lf\n\n",alpha);
+	fprintf(fp_sim_info,"\nspace_mpc_to_dimless is %lf\n\n",space_mpc_to_dimless);
 
 	
 
