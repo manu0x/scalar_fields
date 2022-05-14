@@ -106,7 +106,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	  
 
 
-	 if(a>=a_print)
+	 if((step_cnt%10000) == 0)
 	  {
 		
 		a_print+=1e-3;
@@ -177,9 +177,6 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
  #pragma omp parallel for private(j,k,ci,ind,c1,fa_k,fa_vel,potn,potn_k,potn_a,poisson_rhs,acc_fa,potn_der)
 
 
-	potn_k = phi.get_value(ind);		
-
-
 	 for(i=0;i<n[0];++i)
 	 {
 		  for(j=0;j<n[1];++j)
@@ -191,7 +188,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 
 
 		
-			
+			potn_k = 1.0 - twopie*M_PI*nwave_amp*nwave_amp/(alpha*alpha);
 	
 
 			
@@ -205,7 +202,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 
 			
 
-			if(isnan(potn_rhs)||isnan(psi_amp2))
+			if(isnan(psi_amp2))
 			{
 				//printf("Yfailed at step %d %lf %lf %lf\n",step_cnt,potn_k,potn_a,a_t);
 				fail=1;

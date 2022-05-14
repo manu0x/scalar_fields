@@ -29,7 +29,7 @@ void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_0,param_fd
 	
 	
 	a0 = 100.0*T;
-	ai = a0/(1.0+z);
+	ai = a0/(100.0);
 	Hi =   H0*sqrt(omega_dm_0*pow(a0/ai,3.0*(1.0+w))+ (1.0-omega_dm_0));
 	kji = pow(6.0*omega_dm_0/(1.0+p.z_ini),0.25)*sqrt(H0/hbar_by_m);
 	kj0 = pow(6.0*omega_dm_0,0.25)*sqrt(H0/hbar_by_m);
@@ -42,7 +42,7 @@ void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_0,param_fd
 	fprintf(fp_sim_info,"Jeans length at z = 0 is %lf kj is %lf\n",1.0/kj0,kj0);
 	fprintf(fp_sim_info,"\nnwave is %lf  %lf  %lf\n\n",nwave[0],nwave[1],nwave[2]);
 	fprintf(fp_sim_info,"\nalpha is %lf\n\n",alpha);
-	fprintf(fp_sim_info,"\nT is %lf\n\n",T);
+	fprintf(fp_sim_info,"\nT is %lf  a0 is %lf\n\n",T,a0);
 
 	
 

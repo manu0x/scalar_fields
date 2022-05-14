@@ -1,5 +1,5 @@
 using namespace std;
-#include "../../include_mpi/fdm3/include_custom.h"
+#include "../../include_mpi/fdm3sin/include_custom.h"
 
 
 
@@ -246,13 +246,14 @@ MPI_Status stdn,stup;
 	fprintf(fp_sim_info,"Method is %d\n",method);
 
 	
-	double da = 0.25e-4;
+	double da = (a0-ai)/100000.0;
 
 	initialise_mpi(n_axis,n_axis_loc,psi,phi,poisson_phi,
 				k_grid,kbin_grid,a0,ai,Hi,omega_dm_ini,Xb_0,dx,dk,kbins,pk,grf,use_hdf5_format,p.box_length,da,cum_lin_ind,p.fini_dc);
 	
 	
-	printf("\nHHHdk is %lf\n",dk);
+	printf("\ndk is %lf\n  da is %lf\n",dk,da);
+	printf("\n ai is %lf\n a0 is %lf\n",ai,a0);
 
 	
 
