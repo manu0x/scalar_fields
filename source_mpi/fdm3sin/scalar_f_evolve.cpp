@@ -106,7 +106,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	  
 
 
-	 if((step_cnt%10000) == 0)
+	 if((step_cnt%1000) == 0)
 	  {
 		
 		a_print+=1e-3;
@@ -125,7 +125,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 		
 	     
 
-		if((z_cur<=z_print_list[prn])||(a==a_ini))
+		//if((z_cur<=z_print_list[prn])||(a==a_ini))
 		{ 
 			if(use_hdf_format)
 			{
@@ -146,7 +146,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 		 		filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
 				H5Pclose(plist_id);
 
-				printf("hdf5 %s\n",fp_hdf5_name);
+				printf("hdf5 %s  %d\n",fp_hdf5_name,prn);
 						
 				
 				evolve_hdf5_write(n_glbl,psi, phi,filename,dc,fdc,a0,a,a_t,omega_dm_0,cum_lin_id,true);
@@ -306,16 +306,21 @@ void evolve_hdf5_write(int *ind,fdm_poisson_mpi psi,
 														int cum_lin_id,bool get_dc=false)
 {	
 	herr_t status_psi,status_phi,status;	
-	hid_t file,dtype,dspace_psi,dspace_potn,dspace_dc;
-	hsize_t dim[3],pdim[1];
+	hid_t file,dtype,dspace_psi,dspace_psi_comp,dspace_potn,dspace_dc;
+	hsize_t dim[3],dim_comp[2],pdim[1];
 	dim[0] = ind[0];
 	dim[1] = ind[1];
 	dim[2] = ind[2];
 
 	
+
+	
 	
 	int tN = ind[0]*ind[1]*ind[0];
 	pdim[0]= tN; 
+
+	dim_comp[0] = tN;
+	dim_comp[1] = 2;
 
 
 	
@@ -325,13 +330,14 @@ void evolve_hdf5_write(int *ind,fdm_poisson_mpi psi,
 	dspace_potn = H5Screate_simple(3, dim, NULL);
 	dspace_dc = H5Screate_simple(1, pdim, NULL);
 	dspace_psi = H5Screate_simple(3, dim, NULL);
+	dspace_psi_comp = H5Screate_simple(2, dim_comp, NULL);
 	
 
 	
 
 	
 	
-	status_psi = psi.write_hdf5_values_mpi(filename, dtype, dspace_psi,dspace_dc,dc,fdc,a0,a,a_t,omega_dm_0,phi,cum_lin_id,get_dc);
+	status_psi = psi.write_hdf5_values_mpi(filename, dtype, dspace_psi,dspace_psi_comp,dspace_dc,dc,fdc,a0,a,a_t,omega_dm_0,phi,cum_lin_id,get_dc);
 	H5Sclose(dspace_psi);
 
 	

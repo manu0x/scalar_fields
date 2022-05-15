@@ -1154,7 +1154,7 @@ class fdm_poisson_mpi
 
 
 
-	herr_t write_hdf5_values_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,hid_t dspace_dc_glbl,double *dc,double *fdc,
+	herr_t write_hdf5_values_mpi(hid_t filename,hid_t dtype,hid_t dspace_glbl,hid_t dspace_glbl_comp,hid_t dspace_dc_glbl,double *dc,double *fdc,
 								double a0,double a,double a_t,double omega_dm_0,
 								metric_potential_poisson_mpi phi,int cum_lin_ind,bool get_dc=false)
 	{
@@ -1252,6 +1252,35 @@ class fdm_poisson_mpi
 
 		  H5Sclose(dspace);
 		  H5Dclose(dataset);
+
+		  hsize_t count_c[2],offset_c[2];
+	  	  count_c[0] = n_loc[0]*n_loc[1]*n_loc[2];
+		  count_c[1] = 2;
+		  offset_c[0] = cum_lin_ind*n[1]*n[2]; 
+		  offset_c[1] = 0; 
+
+		  dataset = H5Dcreate(filename, "psi_comp", dtype, dspace_glbl_comp,
+						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+
+		
+		   dspace = H5Screate_simple(2, count_c, NULL);
+		 // printf("POTENTIAL %d %d %d\n",potential,count[0],n[0]);
+		  
+		  H5Sselect_hyperslab(dspace_glbl_comp, H5S_SELECT_SET, offset_c, NULL, count_c, NULL);
+		  
+		  plist_id = H5Pcreate(H5P_DATASET_XFER);
+    		  H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+		
+		
+		  status = H5Dwrite(dataset, dtype, dspace, dspace_glbl_comp,
+		      				plist_id,fpGpsi);
+
+		  H5Sclose(dspace);
+		  H5Dclose(dataset);
+
+
+
 
 
 	   }
