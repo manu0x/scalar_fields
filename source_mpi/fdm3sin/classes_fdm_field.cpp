@@ -481,7 +481,7 @@ class param_cosmo_sim
 class param_fdm: public param_cosmo_sim
 {
 	public:
-	double  loc_alpha_m22,nx,ny,nz;
+	double  loc_alpha_m22,nx,ny,nz,tot_steps;
 	int loc_method;
 	string fini_dc;
 	void load_defaults()
@@ -493,6 +493,7 @@ class param_fdm: public param_cosmo_sim
 		nx = 1.0;
 		ny = 1.0;
 		nz = 1.0;
+		tot_steps = 10000.0;
 		
 		fini_dc = "None";	
 	

@@ -696,7 +696,7 @@ class metric_potential_poisson_mpi
 		    for(k=0;k<n_loc[2];++k)
 		    {
 			ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;			
-			k2fac = (k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
+			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
 				//(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
 			
 			if(k2fac>0.0)

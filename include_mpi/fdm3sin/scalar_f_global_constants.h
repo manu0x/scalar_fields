@@ -7,6 +7,7 @@ int method;
 
 double nwave[3], nwave_amp;
 double T;
+double tot_steps;
 
 FILE *fp_sim_info;
 ////////////////////// MPI Globals....///////////////////

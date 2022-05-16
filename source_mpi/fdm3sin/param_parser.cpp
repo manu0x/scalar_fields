@@ -48,6 +48,10 @@ int parser(char * param_file_name, param_fdm &p)
 			p.nz = num_val;
 
 		   else
+		   if(read_key=="tot_steps")
+			p.tot_steps = num_val;
+
+		   else
 		   if(read_key=="alpha")
 			p.loc_alpha_m22 = num_val;
 		   else

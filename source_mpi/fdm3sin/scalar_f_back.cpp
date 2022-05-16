@@ -17,6 +17,7 @@ void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_0,param_fd
 	space_mpc_to_dimless = p.loc_space_mpc_to_dimless; ////	\tilde{x} (dimensionless) = physical{x (In Mpc)}*space_mpc_to_dimless  
 
 	method = p.loc_method;
+	tot_steps = p.tot_steps;
 
 	nwave[0] = p.nx; nwave[1] = p.ny; nwave[2] = p.nz;
 	nwave_amp = sqrt(nwave[0]*nwave[0] + nwave[1]*nwave[1] + nwave[2]*nwave[2]);
@@ -29,7 +30,7 @@ void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_0,param_fd
 	
 	
 	a0 = 100.0*T;
-	ai = a0/(100.0);
+	ai = 0.0;
 	Hi =   H0*sqrt(omega_dm_0*pow(a0/ai,3.0*(1.0+w))+ (1.0-omega_dm_0));
 	kji = pow(6.0*omega_dm_0/(1.0+p.z_ini),0.25)*sqrt(H0/hbar_by_m);
 	kj0 = pow(6.0*omega_dm_0,0.25)*sqrt(H0/hbar_by_m);
@@ -42,7 +43,8 @@ void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_0,param_fd
 	fprintf(fp_sim_info,"Jeans length at z = 0 is %lf kj is %lf\n",1.0/kj0,kj0);
 	fprintf(fp_sim_info,"\nnwave is %lf  %lf  %lf\n\n",nwave[0],nwave[1],nwave[2]);
 	fprintf(fp_sim_info,"\nalpha is %lf\n\n",alpha);
-	fprintf(fp_sim_info,"\nT is %lf  a0 is %lf\n\n",T,a0);
+	fprintf(fp_sim_info,"\nT is %lf  a0 is %lf  ai is %lf\n\n",T,a0,ai);
+	fprintf(fp_sim_info,"\ntot_steps are %lf\n\n",tot_steps);
 
 	
 
