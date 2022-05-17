@@ -342,11 +342,7 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_poisson_mpi &psi,metric_potential
 	//					ini_dc,ini_theta,a,a0,a_t,pk);
 	//ini_rand_field(ind,kmag_grid,ini_dc,ini_theta,a,a0,a_t,pk);
 	
-	if(fini_name=="None")
-	grf.gen(k_grid,ini_dc, pk,a_t,a,a0,f_ini);
-	else
-	read_dc_from_hdf5(fini_name,ini_dc,ini_theta,ind_loc, cum_lin_ind);
-	
+
 	
 
 	

@@ -106,12 +106,12 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	  
 
 
-	 if((step_cnt%1000) == 0)
+	 if((step_cnt%100) == 0)
 	  {
 		
 		a_print+=1e-3;
 		a3a03omega = pow(a/a0,3.0*(1.0+w))/omega_dm_0;
-		z_cur = ((a0/a) -1.0);
+		z_cur = a;
 
 		
 		char fp_phi_name[20]("phi_z_");
@@ -251,7 +251,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	}
 
 	a3a03omega = pow(a/a0,3.0*(1.0+w))/omega_dm_0;	
-	z_cur = ((a0/a) -1.0);
+	z_cur = a+10.0;
 
 	
 	//char fp_phi_name[20]("phi_z_");

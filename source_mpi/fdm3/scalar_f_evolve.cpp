@@ -48,7 +48,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	double k2lin[3];
 	int midk,mink,maxk;
 
-  /*    if(cum_lin_id==0)
+      if(cum_lin_id==0)
       {
 	maxk = (int)(((double)n_glbl[0])/2.0)-1;
 	mink = 1;
@@ -62,8 +62,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	lin_calc.evolve(0.001,da,omega_dm_0,H0);
 	printf("Lin_calc...Done...\n");
 
-      }*/
-	//MPI_Barrier(cart_comm);
+      }
+	MPI_Barrier(cart_comm);
 	
 
 	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail);++step_cnt)

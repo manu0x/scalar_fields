@@ -899,6 +899,8 @@ class fdm_poisson_mpi
 
 	double *pot_p;
 
+	FILE *fpmass;
+
 	fftw_complex *fpGpsi;
 	fftw_complex *fpGpsi_ft;
 	
@@ -916,6 +918,8 @@ class fdm_poisson_mpi
 	ptrdiff_t alloc_local, local_n0, local_0_start;
 	
 	public:
+
+	double mass_from_amp;
 	
 	fdm_poisson_mpi(int *ind,int *ind_loc,int cum_lin_ind_ar,bool lb=false,bool sgb=false):psi_ms(ind_loc,cum_lin_ind_ar,lb,sgb)
 	{
@@ -956,6 +960,8 @@ class fdm_poisson_mpi
                                fp_dc, fp_dc_ft,
                               cart_comm, FFTW_FORWARD, FFTW_ESTIMATE);
 
+		fpmass = fopen("mass_check.txt","w");
+
 	}
 
 
@@ -979,7 +985,7 @@ class fdm_poisson_mpi
 			ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;			
 			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
 				//twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
-			lambda = da*k2fac*M_PI/(alpha);
+			lambda = da*k2fac/(2.0*alpha);
 			Acomp_r = fpGpsi_ft[ci][0];
 			Acomp_i = fpGpsi_ft[ci][1];
 			
@@ -1050,6 +1056,10 @@ class fdm_poisson_mpi
 			
 		fpGpsi[ci][0] = fdm_v_r + da*potn*fdm_v_i*alpha;//Conv. from phi->phi_c has been done...
 		fpGpsi[ci][1] = fdm_v_i - da*potn*fdm_v_r*alpha;
+
+
+		//fpGpsi[ci][0] = fdm_v_r + da*fdm_v_i*alpha;//Conv. from phi->phi_c has been done...
+		//fpGpsi[ci][1] = fdm_v_i - da*fdm_v_r*alpha;
 				
 
 
@@ -1107,6 +1117,39 @@ class fdm_poisson_mpi
 
 
 	}
+	
+	void cal_mass(double a)
+	{
+		double fdm_v_r,fdm_v_i,amp2;
+		int ci,i,j,k;
+		mass_from_amp = 0.0;
+
+		for(i=0;i<n_loc[0];++i)
+		{
+		  for(j=0;j<n_loc[1];++j)
+		  {
+		    for(k=0;k<n_loc[2];++k)
+		    {
+			ci =  (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;
+		
+			fdm_v_r = fpGpsi[ci][0];
+			fdm_v_i = fpGpsi[ci][1];
+
+			amp2 = fdm_v_r*fdm_v_r + fdm_v_i*fdm_v_i;
+
+			mass_from_amp+=amp2;
+
+		     }
+
+		  }
+
+		}
+
+
+		fprintf(fpmass,"%lf\t%lf\n",a,mass_from_amp)'
+
+	}
+
 
 	double get_value(int *indi)
 	{

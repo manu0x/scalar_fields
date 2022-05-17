@@ -535,8 +535,10 @@ class linear_poisson_field_mpi
 	void evolve(double ai,double da,double omega_dm_0,double H0,double a0=1.0)
 	{
 		int i;
-		double a,z,a_t,ak,kdelta_k[3],kdelta_a_k[3], acc1[3], acc2[3],alpha_lin,beta_lin,omega,A;
+		double a,z,a_t,a_tk,ak,a_tt,a_ttk,kdelta_k[3],kdelta_a_k[3], acc1[3], acc2[3],cs2,cs2k,omega;
 		double ini_delta_k[3],ini_delta_a_k[3];
+		double alpha_lin,alpha_lin_k,beta_lin,beta_lin_k;
+	
 		FILE *fp_lin[3];
 		//da=0.01*da;
 		for(i=0;i<3;++i)
@@ -558,43 +560,51 @@ class linear_poisson_field_mpi
 		for(a=ai;a<=a0;a+=da)
 		{
 			a_t = a*H0*sqrt(omega_dm_0*pow(a0/a,3.0*(1.0+w))+ (1.0-omega_dm_0));
+			a_tt =  a*H0*H0*(-0.5*omega_dm_0*pow(a0/a,3.0*(1.0+w))*(1.0+3.0*w) + (1.0-omega_dm_0) );
 			omega = omega_dm_0*pow(a/a0,-3.0*(1.0+w))*H0*H0*a*a/(a_t*a_t);
-			A = -1.5*(a/a0)*(1.0+w)*omega_dm_0*pow(a/a0,-3.0*(1.0+w)-1.0)/(omega_dm_0*pow(a/a0,-3.0*(1.0+w))+(1.0-omega_dm_0));
+			
 			z = a0/a -1.0;
 			
-			beta_lin = -3.0/a - (A - 3.0*(2.0*w-cs2))/a;
+			
 			ak = a + da;
+			a_tk = ak*H0*sqrt(omega_dm_0*pow(a0/ak,3.0*(1.0+w))+ (1.0-omega_dm_0));
+			a_ttk =  ak*H0*H0*(-0.5*omega_dm_0*pow(a0/ak,3.0*(1.0+w))*(1.0+3.0*w) + (1.0-omega_dm_0) );
+
+			alpha_lin = 2.0/(a*a_t) + a_tt/(a_t*a_t);
+			alpha_lin_k = 2.0/(ak*a_tk) + a_ttk/(a_tk*a_tk);
+
 	
 			for(i=0;i<3;++i)
 			{
 			  
 			  fprintf(fp_lin[i],"%lf\t%lf\t%lf\t%lf\t%lf\n",a,a/ai,z,delta_k[i],delta_k[i]/ini_delta_k[i]);
-				
-			  alpha_lin = 1.5*omega*(1.0-6.0*cs2+8.0*w-3.0*w*w)/(a*a) - k[i]*k[i]*cs2/(a_t*a_t*a*a) ;
+
+			   cs2 = k[i]*k[i]*hbar_by_m*hbar_by_m/(4.0*a*a);
+			   cs2k = k[i]*k[i]*hbar_by_m*hbar_by_m/(4.0*ak*ak);
+
+			   beta_lin = k[i]*k[i]*cs2/(a_t*a*a_t*a) - 1.5*omega_dm_0*pow(a0/a,3.0*(1.0+w))/(a_t*a_t);
+			   beta_lin_k = k[i]*k[i]*cs2k/(a_tk*ak*a_tk*ak) - 1.5*omega_dm_0*pow(a0/ak,3.0*(1.0+w))/(a_tk*a_tk);	
+			  
 			
-			  acc1[i] = alpha_lin*delta_k[i] + beta_lin*delta_a_k[i];
+			  acc1[i] = beta_lin*delta_k[i] - alpha_lin*delta_a_k[i];
 			 if(a==ai)
 			   printf("for i %d k is %lf  (h/Mpc)\n",i,k[i]/h);
 			// printf("i %d acc1 %.10lf  %.10lf  %.10lf\n",i,k[i],cs2,beta_lin);
 
 			  kdelta_a_k[i] = delta_a_k[i] + da*acc1[i];
 
-			  delta_k[i] = (delta_k[i]*(1.0 + 0.25*alpha_lin*da*da ) + (da + 0.5*beta_lin*da*da )*delta_a_k[i])/(1.0 - 0.25*alpha_lin*da*da);
+			  delta_k[i] = (delta_k[i]*(1.0 - 0.25*beta_lin*da*da ) + (da - 0.5*alpha_lin*da*da )*delta_a_k[i])/(1.0 + 0.25*beta_lin_k*da*da);
 
 			}
 
-			a_t = ak*H0*sqrt(omega_dm_0*pow(a0/ak,3.0*(1.0+w))+ (1.0-omega_dm_0));
-			omega = omega_dm_0*pow(a/a0,-3.0*(1.0+w))*H0*H0*ak*ak/(a_t*a_t);
-			A = -1.5*(a/a0)*(1.0+w)*omega_dm_0*pow(ak/a0,-3.0*(1.0+w)-1.0)/(omega_dm_0*pow(ak/a0,-3.0*(1.0+w))+(1.0-omega_dm_0));
-			
-			beta_lin = -3.0/ak - (A - 3.0*(2.0*w-cs2))/ak;
+						
 	
 			for(i=0;i<3;++i)
 			{
 				
-			  alpha_lin = 1.5*omega*(1.0-6.0*cs2+8.0*w-3.0*w*w)/(ak*ak) - k[i]*k[i]*cs2/(a_t*a_t*ak*ak) ;
+			  
 			
-			  acc2[i] = alpha_lin*delta_k[i] + beta_lin*kdelta_a_k[i];
+			  acc2[i] = -beta_lin_k*delta_k[i] - alpha_lin_k*kdelta_a_k[i];
 
 			  delta_a_k[i] = delta_a_k[i] + 0.5*da*(acc1[i]+acc1[i]);
 
@@ -895,6 +905,8 @@ class fdm_poisson_mpi
 
 	double *pot_p;
 
+	FILE *fpmass;
+
 	fftw_complex *fpGpsi;
 	fftw_complex *fpGpsi_ft;
 	
@@ -912,6 +924,8 @@ class fdm_poisson_mpi
 	ptrdiff_t alloc_local, local_n0, local_0_start;
 	
 	public:
+
+	double mass_from_amp;
 	
 	fdm_poisson_mpi(int *ind,int *ind_loc,int cum_lin_ind_ar,bool lb=false,bool sgb=false):psi_ms(ind_loc,cum_lin_ind_ar,lb,sgb)
 	{
@@ -951,6 +965,8 @@ class fdm_poisson_mpi
 		plan_dc_f = fftw_mpi_plan_dft_3d(n0, n1,  n2,
                                fp_dc, fp_dc_ft,
                               cart_comm, FFTW_FORWARD, FFTW_ESTIMATE);
+
+		fpmass = fopen("mass_check.txt","w");
 
 	}
 
@@ -1107,6 +1123,42 @@ class fdm_poisson_mpi
 
 
 	}
+
+
+
+	void cal_mass(double a)
+	{
+		double fdm_v_r,fdm_v_i,amp2;
+		int ci,i,j,k;
+		mass_from_amp = 0.0;
+
+		for(i=0;i<n_loc[0];++i)
+		{
+		  for(j=0;j<n_loc[1];++j)
+		  {
+		    for(k=0;k<n_loc[2];++k)
+		    {
+			ci =  (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;
+		
+			fdm_v_r = fpGpsi[ci][0];
+			fdm_v_i = fpGpsi[ci][1];
+
+			amp2 = fdm_v_r*fdm_v_r + fdm_v_i*fdm_v_i;
+
+			mass_from_amp+=amp2;
+
+		     }
+
+		  }
+
+		}
+
+
+		fprintf(fpmass,"%lf\t%lf\n",a,mass_from_amp);
+
+	}
+
+
 
 	double get_value(int *indi)
 	{
