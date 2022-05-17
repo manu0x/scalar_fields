@@ -570,8 +570,8 @@ class linear_poisson_field_mpi
 			a_tk = ak*H0*sqrt(omega_dm_0*pow(a0/ak,3.0*(1.0+w))+ (1.0-omega_dm_0));
 			a_ttk =  ak*H0*H0*(-0.5*omega_dm_0*pow(a0/ak,3.0*(1.0+w))*(1.0+3.0*w) + (1.0-omega_dm_0) );
 
-			alpha_lin = 2.0/(a*a_t) + a_tt/(a_t*a_t);
-			alpha_lin_k = 2.0/(ak*a_tk) + a_ttk/(a_tk*a_tk);
+			alpha_lin = 2.0/(a) + a_tt/(a_t*a_t);
+			alpha_lin_k = 2.0/(ak) + a_ttk/(a_tk*a_tk);
 
 	
 			for(i=0;i<3;++i)
@@ -582,13 +582,16 @@ class linear_poisson_field_mpi
 			   cs2 = k[i]*k[i]*hbar_by_m*hbar_by_m/(4.0*a*a);
 			   cs2k = k[i]*k[i]*hbar_by_m*hbar_by_m/(4.0*ak*ak);
 
-			   beta_lin = k[i]*k[i]*cs2/(a_t*a*a_t*a) - 1.5*omega_dm_0*pow(a0/a,3.0*(1.0+w))/(a_t*a_t);
-			   beta_lin_k = k[i]*k[i]*cs2k/(a_tk*ak*a_tk*ak) - 1.5*omega_dm_0*pow(a0/ak,3.0*(1.0+w))/(a_tk*a_tk);	
+			   cs2 = cs2/(1.0+k[i]*k[i]*hbar_by_m*hbar_by_m*(1e-10)/(4.0*a*a*c_box*c_box));
+			   cs2k = cs2k/(1.0+k[i]*k[i]*hbar_by_m*hbar_by_m*(1e-10)/(4.0*ak*ak*c_box*c_box));
+
+			   beta_lin = k[i]*k[i]*cs2/(a_t*a*a_t*a) - 1.5*H0*H0*omega_dm_0*pow(a0/a,3.0*(1.0+w))/(a_t*a_t);
+			   beta_lin_k = k[i]*k[i]*cs2k/(a_tk*ak*a_tk*ak) - 1.5*H0*H0*omega_dm_0*pow(a0/ak,3.0*(1.0+w))/(a_tk*a_tk);	
 			  
 			
-			  acc1[i] = beta_lin*delta_k[i] - alpha_lin*delta_a_k[i];
+			  acc1[i] = -beta_lin*delta_k[i] - alpha_lin*delta_a_k[i];
 			 if(a==ai)
-			   printf("for i %d k is %lf  (h/Mpc)\n",i,k[i]/h);
+			   printf("for i %d k is %lf  (h/Mpc)\n",i,k[i]);
 			// printf("i %d acc1 %.10lf  %.10lf  %.10lf\n",i,k[i],cs2,beta_lin);
 
 			  kdelta_a_k[i] = delta_a_k[i] + da*acc1[i];
