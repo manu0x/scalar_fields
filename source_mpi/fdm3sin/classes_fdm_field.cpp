@@ -1068,6 +1068,7 @@ class fdm_poisson_mpi
 	}
 	
 
+	
 	void update_A_2o(int ci,double potn,double fr,double fi,double a,double a_t,double da)
 	{
 		double fdm_v_r,fdm_v_i,amp2;
@@ -1076,18 +1077,20 @@ class fdm_poisson_mpi
 
 		amp2 = fdm_v_r*fdm_v_r + fdm_v_i*fdm_v_i;  
 			
-		if(method==0)		
-		{fpGpsi[ci][0] = fr + da*potn*fdm_v_i/(hbar_by_m*a_t);//Conv. from phi->phi_c has been done...
-		 fpGpsi[ci][1] = fi - da*potn*fdm_v_r/(hbar_by_m*a_t);
-		}		
+		
+
+		fpGpsi[ci][0] = fr + da*potn*(fdm_v_i)*alpha;//Conv. from phi->phi_c has been done...
+		fpGpsi[ci][1] = fi - da*potn*(fdm_v_r)*alpha;
+
+		//fpGpsi[ci][0] = fdm_v_r + da*fdm_v_i*alpha;//Conv. from phi->phi_c has been done...
+		//fpGpsi[ci][1] = fdm_v_i - da*fdm_v_r*alpha;
+				
 
 
-		if(method==1)		
-		{fpGpsi[ci][0] = fr + da*potn*fdm_v_i/(hbar_by_m*a*a_t);//Conv. from phi->phi_c has been done...But now it already phi_c so conversion not req. here
-		 fpGpsi[ci][1] = fi - da*potn*fdm_v_r/(hbar_by_m*a*a_t);
-		}
+		
 	
 	}
+	
 
 	void update_fdm(int ci,double *val)
 	{
@@ -1146,7 +1149,7 @@ class fdm_poisson_mpi
 		}
 
 
-		fprintf(fpmass,"%lf\t%lf\n",a,mass_from_amp)'
+		fprintf(fpmass,"%lf\t%lf\n",a,mass_from_amp);
 
 	}
 

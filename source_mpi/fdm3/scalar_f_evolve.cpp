@@ -53,8 +53,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	maxk = (int)(((double)n_glbl[0])/2.0)-1;
 	mink = 1;
 	//maxk = n_glbl[0]-1;
-	k2lin[0] = 	0.0*sqrt(k_grid[mink][0]*k_grid[mink][0]+k_grid[mink][1]*k_grid[mink][1]+k_grid[mink][2]*k_grid[mink][2]);
-	k2lin[2] = 	0.0*sqrt(k_grid[maxk][0]*k_grid[maxk][0]+k_grid[maxk][1]*k_grid[maxk][1]+k_grid[maxk][2]*k_grid[maxk][2]);
+	k2lin[0] = 	sqrt(k_grid[mink][0]*k_grid[mink][0]+k_grid[mink][1]*k_grid[mink][1]+k_grid[mink][2]*k_grid[mink][2]);
+	k2lin[2] = 	sqrt(k_grid[maxk][0]*k_grid[maxk][0]+k_grid[maxk][1]*k_grid[maxk][1]+k_grid[maxk][2]*k_grid[maxk][2]);
 	k2lin[1] = 	0.5*k2lin[2];
 	
 	linear_poisson_field_mpi lin_calc(k2lin,0.001,1.0);
@@ -66,7 +66,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	MPI_Barrier(cart_comm);
 	
 
-	for(a=a_ini,a_print=a_ini,step_cnt=0;(a>=a0)&&(!fail);++step_cnt)
+	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail);++step_cnt)
 	{
 	   //dt=dti*sqrt(a/a_ini);
 
@@ -159,6 +159,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 				++prn;
 
 			}
+
+			psi.cal_mass(a);
 
 		
 		}

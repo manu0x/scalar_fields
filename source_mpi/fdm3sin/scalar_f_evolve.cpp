@@ -11,7 +11,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	double *pwr_spec = new double[n[0]*n[1]*n[2]];
 	double *dc = new double[n[0]*n[1]*n[2]];
 	double *fdc = new double[n[0]*n[1]*n[2]];
-	double *potn_val = new double[n[0]*n[1]*n[2]];
+	double *fret_val = new double[n[0]*n[1]*n[2]*2];
+	double fd_val[2];
 
 	double psi_b[2],psi_amp2;
 	
@@ -126,7 +127,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	     
 
 		//if((z_cur<=z_print_list[prn])||(a==a_ini))
-		{ 
+		//{ 
 			if(use_hdf_format)
 			{
 				sprintf(fp_z_num,"%.2lf",z_cur);
@@ -160,8 +161,10 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 
 			}
 
+			psi.cal_mass(a);
+
 		
-		}
+		//}
 
 		
 	
@@ -190,6 +193,50 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 		
 			potn_k = 1.0 - twopie*M_PI*nwave_amp*nwave_amp/(alpha*alpha);
 	
+			psi.get_fdm( ci, fd_val);
+
+			fret_val[2*ci] = fd_val[0];
+			fret_val[2*ci+1] = fd_val[1];
+			
+			
+			psi_amp2 = psi.get_value(ind);				
+
+			psi.update_A( ci, potn_k, a,a_t, da);
+
+			if(isnan(psi_amp2))
+			{
+				//printf("Yfailed at step %d %lf %lf %lf\n",step_cnt,potn_k,potn_a,a_t);
+				fail=1;
+				break;
+
+			}
+
+			
+			
+
+		    }
+
+		   }
+	}
+
+
+
+	
+	psi.solve_poisson(k_grid,psi_b, ak, a_t,da);
+
+	 for(i=0;i<n[0];++i)
+	 {
+		 for(j=0;j<n[1];++j)
+		 {
+		    for(k=0;k<n[2];++k)
+		    {
+			ci = (n[2]*n[1])*i + n[2]*j + k;
+			ind[0] = i;ind[1] = j;ind[2] = k;
+
+
+		
+			potn_k = 1.0 - twopie*M_PI*nwave_amp*nwave_amp/(alpha*alpha);
+	
 
 			
 			
@@ -198,8 +245,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 
 			
 			
-			psi.update_A( ci, potn_k, a,a_t, da);
-
+			
+			psi.update_A_2o(ci,potn_k,fret_val[ci*2],fret_val[ci*2+1],a,a_t,da);
 			
 
 			if(isnan(psi_amp2))
@@ -210,34 +257,18 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 
 			}
 
-			else
-			{
-				
-				
-
-			}
+			
 			
 
 		    }
 
-		   }
+		}
 	}
 
-	
-	
 
-	
-	
-	
-
-	//printf("Checking  %lf\n",(f_a_avg-fb_a)/fb_a);
 
 	
 	psi.solve_poisson(k_grid,psi_b, ak, a_t,da);
-
-
-
-	//printf("Check f_a %.10lf %.10lf\n",fb_a,fcheck);
 	
 
 	a = a+da;
@@ -292,7 +323,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 
 	delete[] pwr_spec;
 	delete[] dc;
-	delete[] potn_val;
+	delete[] fret_val;
 
 		
 
