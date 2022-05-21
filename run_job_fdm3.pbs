@@ -1,0 +1,8 @@
+#!/bin/bash
+#PBS	-l select=1:ncpus=32,walltime=48:00:00	
+#PBS	-N test_fdm3	
+#PBS	-o out_file.txt	
+#PBS	-e err_file.txt	
+cd	$PBS_O_WORKDIR
+echo $PATH >> t.txt
+time mpirun -np 32 ./a.out p.txt
