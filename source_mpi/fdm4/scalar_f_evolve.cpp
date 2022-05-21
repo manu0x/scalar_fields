@@ -1,5 +1,5 @@
 
-int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_poisson_mpi &phi,double **k_grid,int* kbin_grid,
+int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_poisson_mpi &phi,double k_grid[][3],int kbin_grid[],
 					double a_final,double a_ini,double a0,double omega_dm_0,double Xb_0,double *dx,double dk,int kbins,double da,
 							int cum_lin_id,bool use_hdf_format)
 {	printf("OMP Yo %lf\n",3.0*H0*H0*omega_dm_0*a0*a0*a0);

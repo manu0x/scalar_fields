@@ -170,7 +170,7 @@ void read_dc_from_hdf5(string fname,double *dc,double *theta,int *ind, int cum_l
 
 void initialise_mpi(int * ind,int *ind_loc,fdm_poisson_mpi &psi,metric_potential_poisson_mpi &phi,
 					metric_potential_poisson_mpi_ini &poisson_phi,
-				double **k_grid,int *kbin_grid,double a0,double ai,double Hi,double omega_dm_0,double & Xb_0,double *dx,double &dk,int & kbins,
+				double k_grid[][3],int kbin_grid[],double a0,double ai,double Hi,double omega_dm_0,double & Xb_0,double *dx,double &dk,int & kbins,
 				ini_power_generator pk,gauss_rand_field_gen_mpi grf,bool use_hdf5_format,double boxlength,
 											double da,int cum_lin_ind,string fini_name="None")
 {
@@ -201,16 +201,7 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_poisson_mpi &psi,metric_potential
       double *pwr_spec=new double[tN];
       double *dc = new double[tN];
 	
-	double *x_grid_buff = new double[tN*3];
-	double **x_grid = new double *[tN];
-	for(i=0;i<tN;++i)
-	{
-	  x_grid[i] = x_grid_buff;
-	  x_grid_buff+=3;
-
-
-	}
-
+	double x_grid[tN][3];
    //   double kmag_grid[tN];
       int n[3]{ind_loc[0],ind_loc[1],ind_loc[2]};
       int loc_ind[3],err_hold;
@@ -508,7 +499,6 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_poisson_mpi &psi,metric_potential
       delete[] ini_theta;
       delete[] pwr_spec;
       delete[] dc ;
-      delete[] x_grid;
 
 	fclose(fpstoreini);
 	
@@ -518,7 +508,7 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_poisson_mpi &psi,metric_potential
 
 
 void initial_hdf5_write_mpi(int *ind,int *ind_loc,fdm_poisson_mpi psi,metric_potential_poisson_mpi phi,hid_t filename,
-								double *dc,double **k_grid,double **x_grid,
+								double *dc,double k_grid[][3],double x_grid[][3],
 													double a3a03omega,double a,int cum_lin_ind,bool get_dc=true)
 {	
 	herr_t status_psi,status_phi,status;	

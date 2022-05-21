@@ -1,5 +1,5 @@
 using namespace std;
-#include "../../include_mpi/fdm3/include_custom.h"
+#include "../../include_mpi/fdm4/include_custom.h"
 
 
 
@@ -238,20 +238,8 @@ MPI_Status stdn,stup;
 	
 
 	double a0,ai,omega_dm_ini,Xb_0;
-	double dx[3],dk;
-	double *k_grid_buff = new double[tN_loc*3];
-	double **k_grid = new double *[tN_loc];
-	for(i=0;i<tN_loc;++i)
-	{
-	  k_grid[i] = k_grid_buff;
-	  k_grid_buff+=3;
-
-
-	}
-
-
-	int kbins;
-	int *kbin_grid = new int [tN_loc];
+	double k_grid[tN_loc][3],dx[3],dk;
+	int kbins,kbin_grid[tN_loc];
 	
 	set_back_cosmo(a0,ai,Hi,omega_dm_ini,p);
 	printf("Hi %lf\nOmega_dm_ini %lf\nai %lf\nh is %lf\nMethod is %d\n",Hi,omega_dm_ini,ai,h,method);
@@ -271,8 +259,7 @@ MPI_Status stdn,stup;
 	//if(use_omp)
 	fail = evolve_kdk_openmp(ind,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,Xb_0,dx,dk,kbins,da,cum_lin_ind,use_hdf5_format);
 	
-	delete[] kbin_grid ;
-	delete[] k_grid ;
+	
 	
 	printf("fail is %d\n",fail);
 	fftw_mpi_cleanup();

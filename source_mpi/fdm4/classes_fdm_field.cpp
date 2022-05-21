@@ -694,7 +694,7 @@ class metric_potential_poisson_mpi
 	}
 
 	
-	void solve_poisson(double **k_grid,double a,double a_t,double da)
+	void solve_poisson(double k_grid[][3],double a,double a_t,double da)
 	{
 		int i,j,k,ci,ind[3]{0,0,0},r;
 		double k2fac;
@@ -974,7 +974,7 @@ class fdm_poisson_mpi
 	}
 
 
-	void solve_poisson(double **k_grid,double Xb[2],double a,double a_t,double da)
+	void solve_poisson(double k_grid[][3],double Xb[2],double a,double a_t,double da)
 	{
 		int i,j,k,ci,ind[3]{0,0,0},r;
 		double k2fac,lambda,Acomp_i,Acomp_r;
@@ -1532,7 +1532,7 @@ class metric_potential_poisson_mpi_ini
 	}
 
 
-	void solve_poisson(double **k_grid,double a,double Hc)
+	void solve_poisson(double k_grid[][3],double a,double Hc)
 	{
 		int i,j,k,ci,ind[3]{0,0,0},r;
 		double k2fac;
@@ -2062,7 +2062,7 @@ class gauss_rand_field_gen_mpi
 	}
 
 
-	void gen(double **k_grid,double *ini_dc, ini_power_generator p_k,double a_t,double a,double a0,double f_ini)
+	void gen(double k_grid[][3],double *ini_dc, ini_power_generator p_k,double a_t,double a,double a0,double f_ini)
 	{	int i,j,k,ci;
 		double ksqr,pk_val,dtN;
 

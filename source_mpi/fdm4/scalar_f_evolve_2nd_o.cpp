@@ -1,8 +1,8 @@
 
-int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_poisson_mpi &phi,double **k_grid,int* kbin_grid,
+int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_poisson_mpi &phi,double k_grid[][3],int kbin_grid[],
 					double a_final,double a_ini,double a0,double omega_dm_0,double Xb_0,double *dx,double dk,int kbins,double da,
 							int cum_lin_id,bool use_hdf_format)
-{	printf("OMP Yo %lf\n",3.0*H0*H0*omega_dm_0*a0*a0*a0);
+{	printf("Running 2nd order\n bf is %lf\n",3.0*H0*H0*omega_dm_0*a0*a0*a0);
 	double a,a_t,a_tt,t,ak,a3a03omega;
 	
 	double a_print;
@@ -12,6 +12,9 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	double *dc = new double[n[0]*n[1]*n[2]];
 	double *fdc = new double[n[0]*n[1]*n[2]];
 	double *potn_val = new double[n[0]*n[1]*n[2]];
+	double *fdm_val_str_r = new double[n[0]*n[1]*n[2]];
+	double *fdm_val_str_i = new double[n[0]*n[1]*n[2]];
+	double fdm_ret[2]; 
 
 	double psi_b[2],psi_amp2;
 	
@@ -48,7 +51,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	double k2lin[3];
 	int midk,mink,maxk;
 
-      if(cum_lin_id==0)
+  /*    if(cum_lin_id==0)
       {
 	maxk = (int)(((double)n_glbl[0])/2.0)-1;
 	mink = 1;
@@ -62,11 +65,11 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	lin_calc.evolve(0.001,da,omega_dm_0,H0);
 	printf("Lin_calc...Done...\n");
 
-      }
-	MPI_Barrier(cart_comm);
+      }*/
+	//MPI_Barrier(cart_comm);
 	
 
-	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail);++step_cnt)
+	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail)&&(prn<=1);++step_cnt)
 	{
 	   //dt=dti*sqrt(a/a_ini);
 
@@ -81,9 +84,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	
 	  ak = a+da;
 
-
-
-	   for(i=0;i<n[0];++i)
+	  for(i=0;i<n[0];++i)
 	   {
 		  for(j=0;j<n[1];++j)
 		  {
@@ -96,6 +97,13 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 
 			psi.update_amp2_value(ind);
 
+			if(step_cnt==0)
+			potn_k = phi.get_value(ind);
+			else
+			potn_k = phi.get_potential(ci);
+
+			phi.update_value(ind, potn_k);
+
 
 
 		    }
@@ -103,6 +111,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 
 
 	    }
+
+	 
 	  
 
 
@@ -160,8 +170,6 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 
 			}
 
-			psi.cal_mass(a);
-
 		
 		}
 
@@ -198,6 +206,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 			else
 			potn_k = phi.get_potential(ci);
 
+			phi.update_value(ind, potn_k);
+
 			if(step_cnt==0)
 			potn_a = 0.0;
 			else
@@ -205,13 +215,20 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 
 			potn_val[ci] = potn_k;
 
+		
+
 	
 			
 			psi_amp2 = psi.get_value(ind);				
 
 
-			phi.update_value(ind, potn_k);
-		
+			
+
+			psi.get_fdm(ci,fdm_ret);
+
+			fdm_val_str_r[ci] = fdm_ret[0];
+			fdm_val_str_i[ci] = fdm_ret[1];
+			
 
 			
 			psi.update_A( ci, potn_k, a,a_t, da);
@@ -265,8 +282,31 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
          a_tt = ak*H0*H0*(-0.5*omega_dm_0*pow(a0/ak,3.0*(1.0+w))*(1.0+3.0*w) + (1.0-omega_dm_0) );
 
 
-	phi.solve_poisson(k_grid, ak, a_t,da);
-	psi.solve_poisson(k_grid,psi_b, ak, a_t,da);
+	phi.solve_poisson(k_grid, a, a_t,da);
+	psi.solve_poisson(k_grid,psi_b, a, a_t,da);
+
+
+
+	  for(i=0;i<n[0];++i)
+	   {
+		  for(j=0;j<n[1];++j)
+		  {
+		    for(k=0;k<n[2];++k)
+		    {
+
+
+			ci = (n[2]*n[1])*i + n[2]*j + k;
+			ind[0] = i;ind[1] = j;ind[2] = k;
+
+			psi.update_amp2_value(ind);
+
+
+
+		    }
+		 }
+
+
+	    }
 
 
 
@@ -275,13 +315,73 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 
 	a = a+da;
 
+	 for(i=0;i<n[0];++i)
+	 {
+		  for(j=0;j<n[1];++j)
+		  {
+		    for(k=0;k<n[2];++k)
+		    {
+			ci = (n[2]*n[1])*i + n[2]*j + k;
+			ind[0] = i;ind[1] = j;ind[2] = k;
+
+			
+			psi_amp2 = psi.get_value(ind);		
+
+			potn_k = phi.get_potential(ci);		
+
+			
+			psi.update_A_2o( ci, potn_k,fdm_val_str_r[ci] ,fdm_val_str_i[ci] , a,a_t, da);
+			
+
+	
+
+			if(method==0)
+			c1 = phi.calc_vel(ind,potn_a_part,psi_amp2,potn_k,a,da,a_t,a_tt,dx,omega_dm_0);
+
+
+
+			//if(ci<10)
+			//printf("%.15lf\n",potn_a_part);
+				
+
+			  if(method==0)
+			  potn_rhs = potn_val[ci]+da*potn_a_part;
+			  if(method==1)
+			  potn_rhs = 0.5*psi_amp2-1.5*H0*H0*omega_dm_0*a0*a0*a0;
+
+
+			if(isnan(potn_rhs)||isnan(psi_amp2))
+			{
+				//printf("Yfailed at step %d %lf %lf %lf\n",step_cnt,potn_k,potn_a,a_t);
+				fail=1;
+				break;
+
+			}
+
+			else
+			{
+				phi.update_4pieGpsi(ci,potn_rhs);
+				
+
+			}
+			
+
+		    }
+
+		   }
+	}
+
+	phi.solve_poisson(k_grid, a, a_t,da);
+	psi.solve_poisson(k_grid,psi_b, a, a_t,da);
+
+
 
 	
 	 if(isnan(a))
 	  {printf("FAILED  \n"); fail = 1;
 	  }
 
-	}
+     }//a loop bracket
 
 	a3a03omega = pow(a/a0,3.0*(1.0+w))/omega_dm_0;	
 	z_cur = ((a0/a) -1.0);
