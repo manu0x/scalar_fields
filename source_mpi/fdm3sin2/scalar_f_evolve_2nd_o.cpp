@@ -2,7 +2,7 @@
 int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_poisson_mpi &phi,double k_grid[][3],int kbin_grid[],
 					double a_final,double a_ini,double a0,double omega_dm_0,double Xb_0,double *dx,double dk,int kbins,double da,
 							int cum_lin_id,bool use_hdf_format)
-{	printf("OMP Yo %lf\n",3.0*H0*H0*omega_dm_0*a0*a0*a0);
+{	printf("Running 2nd order\n bf is %lf\n",3.0*H0*H0*omega_dm_0*a0*a0*a0);
 	double a,a_t,a_tt,t,ak,a3a03omega;
 	
 	double a_print;
@@ -11,13 +11,15 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	double *pwr_spec = new double[n[0]*n[1]*n[2]];
 	double *dc = new double[n[0]*n[1]*n[2]];
 	double *fdc = new double[n[0]*n[1]*n[2]];
-	double *fret_val = new double[n[0]*n[1]*n[2]*2];
-	double fd_val[2];
+	double *potn_val = new double[n[0]*n[1]*n[2]];
+	double *fdm_val_str_r = new double[n[0]*n[1]*n[2]];
+	double *fdm_val_str_i = new double[n[0]*n[1]*n[2]];
+	double fdm_ret[2]; 
 
 	double psi_b[2],psi_amp2;
 	
 	double potn_retrive;
-	int i,j,k,ci,o,ind[3];
+	int i,j,k,ci,ind[3];
 	int c1,c2,fail=0;
 	int step_cnt;
 	int num_prints = 14;
@@ -67,7 +69,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	//MPI_Barrier(cart_comm);
 	
 
-	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail);++step_cnt)
+	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail)&&(prn<=1);++step_cnt)
 	{
 	   //dt=dti*sqrt(a/a_ini);
 
@@ -82,9 +84,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	
 	  ak = a+da;
 
-
-
-	   for(i=0;i<n[0];++i)
+	  for(i=0;i<n[0];++i)
 	   {
 		  for(j=0;j<n[1];++j)
 		  {
@@ -97,6 +97,13 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 
 			psi.update_amp2_value(ind);
 
+			if(step_cnt==0)
+			potn_k = phi.get_value(ind);
+			else
+			potn_k = phi.get_potential(ci);
+
+			phi.update_value(ind, potn_k);
+
 
 
 		    }
@@ -104,15 +111,17 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 
 
 	    }
+
+	 
 	  
 
 
-	 if((step_cnt%100) == 0)
+	 if(a>=a_print)
 	  {
 		
 		a_print+=1e-3;
 		a3a03omega = pow(a/a0,3.0*(1.0+w))/omega_dm_0;
-		z_cur = a;
+		z_cur = ((a0/a) -1.0);
 
 		
 		char fp_phi_name[20]("phi_z_");
@@ -126,8 +135,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 		
 	     
 
-		//if((z_cur<=z_print_list[prn])||(a==a_ini))
-		//{ 
+		if((z_cur<=z_print_list[prn])||(a==a_ini))
+		{ 
 			if(use_hdf_format)
 			{
 				sprintf(fp_z_num,"%.2lf",z_cur);
@@ -147,7 +156,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 		 		filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
 				H5Pclose(plist_id);
 
-				printf("hdf5 %s  %d\n",fp_hdf5_name,prn);
+				printf("hdf5 %s\n",fp_hdf5_name);
 						
 				
 				evolve_hdf5_write(n_glbl,psi, phi,filename,dc,fdc,a0,a,a_t,omega_dm_0,cum_lin_id,true);
@@ -161,10 +170,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 
 			}
 
-			psi.cal_mass(a);
-
 		
-		//}
+		}
 
 		
 	
@@ -180,49 +187,68 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
  #pragma omp parallel for private(j,k,ci,ind,c1,fa_k,fa_vel,potn,potn_k,potn_a,poisson_rhs,acc_fa,potn_der)
 
 
-	
+			
 
 
-
-	
-	
-	for(o=0;o<4;++o)
-	{ for(i=0;i<n[0];++i)
+	 for(i=0;i<n[0];++i)
 	 {
-		 for(j=0;j<n[1];++j)
-		 {
+		  for(j=0;j<n[1];++j)
+		  {
 		    for(k=0;k<n[2];++k)
 		    {
 			ci = (n[2]*n[1])*i + n[2]*j + k;
 			ind[0] = i;ind[1] = j;ind[2] = k;
 
 
+			
+			if(step_cnt==0)
+			potn_k = phi.get_value(ind);
+			else
+			potn_k = phi.get_potential(ci);
+
+			phi.update_value(ind, potn_k);
+
+			if(step_cnt==0)
+			potn_a = 0.0;
+			else
+			potn_a = (potn_k-potn_val[ci])/da;
+
+			potn_val[ci] = potn_k;
+
 		
-			potn_k = 1.0 - twopie*M_PI*nwave_amp*nwave_amp/(alpha*alpha);
+
 	
-
 			
-			
-			psi_amp2 = psi.get_value(ind);	
-
-			if(o==0)
-			{
-				psi.get_fdm( ci, fd_val);
-
-			 	fret_val[2*ci] = fd_val[0];
-				fret_val[2*ci+1] = fd_val[1];
-
-
-			}			
+			psi_amp2 = psi.get_value(ind);				
 
 
 			
-			
-			
-			psi.update_A_2o(ci,potn_k,fret_val[ci*2],fret_val[ci*2+1],a,a_t,da,o);
+
+			psi.get_fdm(ci,fdm_ret);
+
+			fdm_val_str_r[ci] = fdm_ret[0];
+			fdm_val_str_i[ci] = fdm_ret[1];
 			
 
-			if(isnan(psi_amp2))
+			
+			psi.update_A( ci, potn_k, a,a_t, da);
+
+			if(method==0)
+			c1 = phi.calc_vel(ind,potn_a_part,psi_amp2,potn_k,a,da,a_t,a_tt,dx,omega_dm_0);
+
+
+
+			//if(ci<10)
+			//printf("%.15lf\n",potn_a_part);
+				
+
+			  if(method==0)
+			  potn_rhs = potn_val[ci]+da*potn_a_part;
+			  if(method==1)
+			  potn_rhs = 0.5*psi_amp2-1.5*H0*H0*omega_dm_0*a0*a0*a0;
+
+
+			if(isnan(potn_rhs)||isnan(psi_amp2))
 			{
 				//printf("Yfailed at step %d %lf %lf %lf\n",step_cnt,potn_k,potn_a,a_t);
 				fail=1;
@@ -230,46 +256,124 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 
 			}
 
-			
+			else
+			{
+				phi.update_4pieGpsi(ci,potn_rhs);
+				
+
+			}
 			
 
 		    }
 
-		}
-	  }
-
-
-
-	
-	psi.solve_poisson(k_grid,psi_b, ak, a_t,da,o);
-	
-
-	
+		   }
 	}
 
-	for(i=0;i<n[0];++i)
+	
+	
+
+	
+	
+	
+
+	//printf("Checking  %lf\n",(f_a_avg-fb_a)/fb_a);
+
+	 a_t = ak*H0*sqrt(omega_dm_0*pow(a0/ak,3.0*(1.0+w))+ (1.0-omega_dm_0));
+         a_tt = ak*H0*H0*(-0.5*omega_dm_0*pow(a0/ak,3.0*(1.0+w))*(1.0+3.0*w) + (1.0-omega_dm_0) );
+
+
+	phi.solve_poisson(k_grid, a, a_t,da);
+	psi.solve_poisson(k_grid,psi_b, a, a_t,da);
+
+
+
+	  for(i=0;i<n[0];++i)
+	   {
+		  for(j=0;j<n[1];++j)
+		  {
+		    for(k=0;k<n[2];++k)
+		    {
+
+
+			ci = (n[2]*n[1])*i + n[2]*j + k;
+			ind[0] = i;ind[1] = j;ind[2] = k;
+
+			psi.update_amp2_value(ind);
+
+
+
+		    }
+		 }
+
+
+	    }
+
+
+
+	//printf("Check f_a %.10lf %.10lf\n",fb_a,fcheck);
+	
+
+	a = a+da;
+
+	 for(i=0;i<n[0];++i)
 	 {
-		 for(j=0;j<n[1];++j)
-		 {
+		  for(j=0;j<n[1];++j)
+		  {
 		    for(k=0;k<n[2];++k)
 		    {
 			ci = (n[2]*n[1])*i + n[2]*j + k;
 			ind[0] = i;ind[1] = j;ind[2] = k;
 
+			
+			psi_amp2 = psi.get_value(ind);		
 
-			psi.update_A_2o(ci,potn_k,fret_val[ci*2],fret_val[ci*2+1],a,a_t,da,4);
+			potn_k = phi.get_potential(ci);		
+
+			
+			psi.update_A_2o( ci, potn_k,fdm_val_str_r[ci] ,fdm_val_str_i[ci] , a,a_t, da);
+			
+
+	
+
+			if(method==0)
+			c1 = phi.calc_vel(ind,potn_a_part,psi_amp2,potn_k,a,da,a_t,a_tt,dx,omega_dm_0);
+
+
+
+			//if(ci<10)
+			//printf("%.15lf\n",potn_a_part);
+				
+
+			  if(method==0)
+			  potn_rhs = potn_val[ci]+da*potn_a_part;
+			  if(method==1)
+			  potn_rhs = 0.5*psi_amp2-1.5*H0*H0*omega_dm_0*a0*a0*a0;
+
+
+			if(isnan(potn_rhs)||isnan(psi_amp2))
+			{
+				//printf("Yfailed at step %d %lf %lf %lf\n",step_cnt,potn_k,potn_a,a_t);
+				fail=1;
+				break;
+
+			}
+
+			else
+			{
+				phi.update_4pieGpsi(ci,potn_rhs);
+				
+
+			}
 			
 
 		    }
 
-		}
-	  }
+		   }
+	}
 
+	phi.solve_poisson(k_grid, a, a_t,da);
+	psi.solve_poisson(k_grid,psi_b, a, a_t,da);
 
-
-	
-
-	a = a+da;
 
 
 	
@@ -277,10 +381,10 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	  {printf("FAILED  \n"); fail = 1;
 	  }
 
-	}
+     }//a loop bracket
 
 	a3a03omega = pow(a/a0,3.0*(1.0+w))/omega_dm_0;	
-	z_cur = a+10.0;
+	z_cur = ((a0/a) -1.0);
 
 	
 	//char fp_phi_name[20]("phi_z_");
@@ -321,7 +425,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 
 	delete[] pwr_spec;
 	delete[] dc;
-	delete[] fret_val;
+	delete[] potn_val;
 
 		
 
@@ -335,21 +439,16 @@ void evolve_hdf5_write(int *ind,fdm_poisson_mpi psi,
 														int cum_lin_id,bool get_dc=false)
 {	
 	herr_t status_psi,status_phi,status;	
-	hid_t file,dtype,dspace_psi,dspace_psi_comp,dspace_potn,dspace_dc;
-	hsize_t dim[3],dim_comp[2],pdim[1];
+	hid_t file,dtype,dspace_psi,dspace_potn,dspace_dc;
+	hsize_t dim[3],pdim[1];
 	dim[0] = ind[0];
 	dim[1] = ind[1];
 	dim[2] = ind[2];
 
 	
-
-	
 	
 	int tN = ind[0]*ind[1]*ind[0];
 	pdim[0]= tN; 
-
-	dim_comp[0] = tN;
-	dim_comp[1] = 2;
 
 
 	
@@ -359,19 +458,18 @@ void evolve_hdf5_write(int *ind,fdm_poisson_mpi psi,
 	dspace_potn = H5Screate_simple(3, dim, NULL);
 	dspace_dc = H5Screate_simple(1, pdim, NULL);
 	dspace_psi = H5Screate_simple(3, dim, NULL);
-	dspace_psi_comp = H5Screate_simple(2, dim_comp, NULL);
 	
 
 	
 
 	
 	
-	status_psi = psi.write_hdf5_values_mpi(filename, dtype, dspace_psi,dspace_psi_comp,dspace_dc,dc,fdc,a0,a,a_t,omega_dm_0,phi,cum_lin_id,get_dc);
+	status_psi = psi.write_hdf5_values_mpi(filename, dtype, dspace_psi,dspace_dc,dc,fdc,a0,a,a_t,omega_dm_0,phi,cum_lin_id,get_dc);
 	H5Sclose(dspace_psi);
 
 	
 	
-	//status_phi = phi.write_hdf5_values_mpi(filename, dtype, dspace_potn,a0,a,a_t,cum_lin_id,get_dc);
+	status_phi = phi.write_hdf5_values_mpi(filename, dtype, dspace_potn,a0,a,a_t,cum_lin_id,get_dc);
 	H5Sclose(dspace_potn);	
 
 		

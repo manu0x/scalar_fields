@@ -179,18 +179,11 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	//printf("fb_t  %lf   fb_t_th  %lf\n",fb_t,fb_t_0*pow(a0/ak,3.0/(2.0*alpha-1.0)));
  #pragma omp parallel for private(j,k,ci,ind,c1,fa_k,fa_vel,potn,potn_k,potn_a,poisson_rhs,acc_fa,potn_der)
 
-
-	
-
-
-
-	
-	
 	for(o=0;o<4;++o)
 	{ for(i=0;i<n[0];++i)
 	 {
-		 for(j=0;j<n[1];++j)
-		 {
+		  for(j=0;j<n[1];++j)
+		  {
 		    for(k=0;k<n[2];++k)
 		    {
 			ci = (n[2]*n[1])*i + n[2]*j + k;
@@ -200,28 +193,11 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 		
 			potn_k = 1.0 - twopie*M_PI*nwave_amp*nwave_amp/(alpha*alpha);
 	
+			psi.get_fdm( ci, fd_val);
 
-			
-			
-			psi_amp2 = psi.get_value(ind);	
+			psi_amp2 = psi.get_value(ind);		
 
-			if(o==0)
-			{
-				psi.get_fdm( ci, fd_val);
-
-			 	fret_val[2*ci] = fd_val[0];
-				fret_val[2*ci+1] = fd_val[1];
-
-
-			}			
-
-
-			
-			
-			
-			psi.update_A_2o(ci,potn_k,fret_val[ci*2],fret_val[ci*2+1],a,a_t,da,o);
-			
-
+			psi.update_psik(ind, potn_k,a,da,dx,o);
 			if(isnan(psi_amp2))
 			{
 				//printf("Yfailed at step %d %lf %lf %lf\n",step_cnt,potn_k,potn_a,a_t);
@@ -235,37 +211,17 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 
 		    }
 
-		}
+		   }
 	  }
 
-
-
-	
-	psi.solve_poisson(k_grid,psi_b, ak, a_t,da,o);
-	
-
-	
 	}
 
-	for(i=0;i<n[0];++i)
-	 {
-		 for(j=0;j<n[1];++j)
-		 {
-		    for(k=0;k<n[2];++k)
-		    {
-			ci = (n[2]*n[1])*i + n[2]*j + k;
-			ind[0] = i;ind[1] = j;ind[2] = k;
+
+	
 
 
-			psi.update_A_2o(ci,potn_k,fret_val[ci*2],fret_val[ci*2+1],a,a_t,da,4);
-			
 
-		    }
-
-		}
-	  }
-
-
+	
 
 	
 

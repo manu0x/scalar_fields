@@ -45,7 +45,6 @@ void set_back_cosmo(double &a0,double &ai,double &Hi,double &omega_dm_0,param_fd
 	fprintf(fp_sim_info,"\nalpha is %lf\n\n",alpha);
 	fprintf(fp_sim_info,"\nT is %lf  a0 is %lf  ai is %lf\n\n",T,a0,ai);
 	fprintf(fp_sim_info,"\ntot_steps are %lf\n\n",tot_steps);
-	fprintf(fp_sim_info,"\nhbar_by_m is %lf\n\n",hbar_by_m);
 
 	
 

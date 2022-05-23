@@ -902,9 +902,9 @@ class fdm_poisson_mpi
 	FILE *fpmass;
 
 	fftw_complex *fpGpsi;
-	fftw_complex *fpGpsi_ag;
 	fftw_complex *fpGpsi_ft;
-	
+	fftw_complex *fpGpsi_ag;
+
 
 	fftw_plan plan_pois_f;
 	fftw_plan plan_pois_b;
@@ -967,11 +967,130 @@ class fdm_poisson_mpi
 	}
 
 
-	void solve_poisson(double k_grid[][3],double Xb[2],double a,double a_t,double da,int o=0)
+	void cal_lap(int *ind,double *dx,double *lapsum,int o2 =0)
+	{
+	   	
+		int i,j;
+		int ci,cl1,cl2,cr1,cr2;
+		int w_ind[3]{ind[0],ind[1],ind[2]};
+		lapsum[0]=0.0,lapsum[1]=0.0;
+
+		double mr[3],mi[3];
+
+		for(i=0;i<3;++i)
+		{
+			ci = (n_loc[2]*n_loc[1])*ind[0] + n_loc[2]*ind[1] + ind[2];
+
+			w_ind[i] = (ind[i]+1)%n[i];
+			cr1 = (n_loc[2]*n_loc[1])*w_ind[0] + n_loc[2]*w_ind[1] + w_ind[2];
+
+			w_ind[i] = (ind[i]+2)%n[i];
+			cr2 = (n_loc[2]*n_loc[1])*w_ind[0] + n_loc[2]*w_ind[1] + w_ind[2];
+
+			w_ind[i] = (2*ind[i]-1)%n[i];
+			cl1 = (n_loc[2]*n_loc[1])*w_ind[0] + n_loc[2]*w_ind[1] + w_ind[2];
+
+			w_ind[i] = (2*ind[i]-2)%n[i];
+			cl2 = (n_loc[2]*n_loc[1])*w_ind[0] + n_loc[2]*w_ind[1] + w_ind[2];
+
+			w_ind[i] = ind[i];
+		
+						
+			if(o2>0)
+			{mr[0] = (16.0*fpGpsi_ft[cl1][0]+16.0*fpGpsi_ft[cr1][0]); 
+	      		 mr[1] = (-fpGpsi_ft[cl2][0]-fpGpsi_ft[cr2][0]);
+	      		 mr[2] = mr[0] + mr[1] -30.0*fpGpsi_ft[ci][0];
+	     		 lapsum[0]+= (mr[2]/(12.0*dx[i]*dx[i]));
+
+			 mi[0] = (16.0*fpGpsi_ft[cl1][1]+16.0*fpGpsi_ft[cr1][1]); 
+	      		 mi[1] = (-fpGpsi_ft[cl2][1]-fpGpsi_ft[cr2][1]);
+	      		 mi[2] = mi[0] + mi[1] -30.0*fpGpsi_ft[ci][1];
+	     		 lapsum[1]+= (mi[2]/(12.0*dx[i]*dx[i]));
+			}
+
+			else
+			{mr[0] = (16.0*fpGpsi[cl1][0]+16.0*fpGpsi[cr1][0]); 
+	      		 mr[1] = (-fpGpsi[cl2][0]-fpGpsi[cr2][0]);
+	      		 mr[2] = mr[0] + mr[1] -30.0*fpGpsi[ci][0];
+	     		 lapsum[0]+= (mr[2]/(12.0*dx[i]*dx[i]));
+
+			 mi[0] = (16.0*fpGpsi[cl1][1]+16.0*fpGpsi[cr1][1]); 
+	      		 mi[1] = (-fpGpsi[cl2][1]-fpGpsi[cr2][1]);
+	      		 mi[2] = mi[0] + mi[1] -30.0*fpGpsi[ci][1];
+	     		 lapsum[1]+= (mi[2]/(12.0*dx[i]*dx[i]));
+			}
+
+		}
+	
+	   	
+		//printf("\ni %d j %d k %d potn_val %.10lf potn_lap  %.15lf\n",ind_lw[0],ind_lw[1],ind_lw[2],m[1],f[ind_r1[0]][ind_r1[1]][ind_r1[2]]);
+		//printf("left1 i %d j %d k %d  %.10lf\n",ind_l1[0],ind_l1[1],ind_l1[2],f[65][62][0]);
+	     	
+	
+	}
+
+
+	
+	void update_psik(int *ind,double potn,double a,double da,double *dx,int o2=0)
+	{
+		int ci;
+		double fdm_v_r,fdm_v_i,amp2;
+		double lap[2];
+
+		ci = (n_loc[2]*n_loc[1])*ind[0] + n_loc[2]*ind[1] + ind[2];
+		double coef[4]{0.5,0.5,1.0,1.0};
+		double coef_sum[4]{1.0/6.0,2.0/6.0,2.0/6.0,1.0/6.0};
+
+		cal_lap(ind,dx,lap,o2);
+		
+		if(o2 == 0)
+		{
+
+			fpGpsi_ft[ci][0] = fpGpsi[ci][0];
+			fpGpsi_ft[ci][1] = fpGpsi[ci][1];
+
+			
+
+			
+
+		}
+
+
+
+
+		
+		 fdm_v_r = fpGpsi_ft[ci][0];
+		 fdm_v_i = fpGpsi_ft[ci][1];
+
+		
+			
+		 fpGpsi_ft[ci][0] = fpGpsi[ci][0] + coef[o2]*da*potn*fdm_v_i*alpha - 0.5*coef[o2]*da*lap[1]/alpha;//Conv. from phi->phi_c has been done...
+		 fpGpsi_ft[ci][1] = fpGpsi[ci][1] - coef[o2]*da*potn*fdm_v_r*alpha + 0.5*coef[o2]*da*lap[0]/alpha;
+		
+		 fpGpsi_ag[ci][0] = fpGpsi_ag[ci][0] + coef_sum[o2]*da*potn*fdm_v_i*alpha - 0.5*coef_sum[o2]*da*lap[1]/alpha;//Conv. from phi->phi_c has been done...
+		 fpGpsi_ag[ci][1] = fpGpsi_ag[ci][1] - coef_sum[o2]*da*potn*fdm_v_r*alpha + 0.5*coef_sum[o2]*da*lap[0]/alpha;
+
+
+		
+		if(o2 == 3)
+		{
+
+			fpGpsi[ci][0] = fpGpsi_ag[ci][0];
+			fpGpsi[ci][1] = fpGpsi_ag[ci][1];
+
+			
+
+		}
+
+
+
+	}
+
+
+	void solve_poisson(double k_grid[][3],double Xb[2],double a,double a_t,double da)
 	{
 		int i,j,k,ci,ind[3]{0,0,0},r;
 		double k2fac,lambda,Acomp_i,Acomp_r;
-		double fac[4]{0.5,0.5,1.0,1.0};
 
 		fftw_execute(plan_pois_f);
 
@@ -988,7 +1107,7 @@ class fdm_poisson_mpi
 			ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;			
 			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
 				//twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
-			lambda = da*k2fac*fac[o]/(2.0*alpha);
+			lambda = da*k2fac/(2.0*alpha);
 			Acomp_r = fpGpsi_ft[ci][0];
 			Acomp_i = fpGpsi_ft[ci][1];
 			
@@ -1049,24 +1168,16 @@ class fdm_poisson_mpi
 
 	
 
-	void update_A(int ci,double potn,double a,double a_t,double da,int o=0)
+	void update_A(int ci,double potn,double a,double a_t,double da)
 	{
 		double fdm_v_r,fdm_v_i,amp2;
-		double fac[4]{0.5,0.5,1.0,1.0};
-	
 		fdm_v_r = fpGpsi[ci][0];
 		fdm_v_i = fpGpsi[ci][1];
-
-
-		fpGpsi_ag[ci][0] = fpGpsi[ci][0];
-		fpGpsi_ag[ci][1] = fpGpsi[ci][1];
 
 		amp2 = fdm_v_r*fdm_v_r + fdm_v_i*fdm_v_i;  
 			
 		fpGpsi[ci][0] = fdm_v_r + da*potn*fdm_v_i*alpha;//Conv. from phi->phi_c has been done...
 		fpGpsi[ci][1] = fdm_v_i - da*potn*fdm_v_r*alpha;
-
-		
 
 
 		//fpGpsi[ci][0] = fdm_v_r + da*fdm_v_i*alpha;//Conv. from phi->phi_c has been done...
@@ -1080,52 +1191,23 @@ class fdm_poisson_mpi
 	
 
 	
-	void update_A_2o(int ci,double potn,double fr,double fi,double a,double a_t,double da,int o = 0)
+	void update_A_2o(int ci,double potn,double fr,double fi,double a,double a_t,double da)
 	{
 		double fdm_v_r,fdm_v_i,amp2;
-		double fac[4]{0.5,0.5,1.0,1.0};
-		double sum_fac[4]{1.0/6.0,2.0/6.0,2.0/6.0,1.0/6.0};
 		fdm_v_r = fpGpsi[ci][0];
 		fdm_v_i = fpGpsi[ci][1];
 
 		amp2 = fdm_v_r*fdm_v_r + fdm_v_i*fdm_v_i;  
-
-		if(o==0)
-		{
-			fpGpsi_ag[ci][0] = fpGpsi[ci][0];
-			fpGpsi_ag[ci][1] = fpGpsi[ci][1];
-
-
-		}
 			
-		if(o<=3)
-		{
-		 fpGpsi[ci][0] = fr + da*fac[o]*potn*(fdm_v_i)*alpha;//Conv. from phi->phi_c has been done...
-		 fpGpsi[ci][1] = fi - da*fac[o]*potn*(fdm_v_r)*alpha;
-
-
-		 if(o>0)
-		  { fpGpsi_ag[ci][0]+=  sum_fac[o-1]*(fdm_v_r - fr)/(fac[o-1]);
-		    fpGpsi_ag[ci][1]+=  sum_fac[o-1]*(fdm_v_i - fi)/(fac[o-1]);
-		  }
-		}
-		//fpGpsi[ci][0] = fdm_v_r + da*fdm_v_i*alpha;//Conv. from phi->phi_c has been done...
-		//fpGpsi[ci][1] = fdm_v_i - da*fdm_v_r*alpha;
-
 		
 
-		if(o==4)		
-		{
-			 fpGpsi_ag[ci][0]+=  sum_fac[o-1]*(fdm_v_r - fr)/(fac[o-1]);
-		 	 fpGpsi_ag[ci][1]+=  sum_fac[o-1]*(fdm_v_i - fi)/(fac[o-1]);
+		fpGpsi[ci][0] = fr + da*potn*(fdm_v_i)*alpha;//Conv. from phi->phi_c has been done...
+		fpGpsi[ci][1] = fi - da*potn*(fdm_v_r)*alpha;
 
-			
- 
-			 fpGpsi[ci][0] = fpGpsi_ag[ci][0];
-			 fpGpsi[ci][1] = fpGpsi_ag[ci][1];
+		//fpGpsi[ci][0] = fdm_v_r + da*fdm_v_i*alpha;//Conv. from phi->phi_c has been done...
+		//fpGpsi[ci][1] = fdm_v_i - da*fdm_v_r*alpha;
+				
 
-
-		}
 
 		
 	
