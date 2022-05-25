@@ -716,8 +716,8 @@ class metric_potential_poisson_mpi
 			{
 			  	
 				if(method==0)
-				{fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(1.0+da*(c_box*100000.0)*k2fac/(3.0*a_t*a_t*a));
-			 	 fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(1.0+da*(c_box*100000.0)*k2fac/(3.0*a_t*a_t*a));
+				{fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(1.0+da*(c_box*100000.0)*(c_box*100000.0)*k2fac/(3.0*a_t*a_t*a));
+			 	 fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(1.0+da*(c_box*100000.0)*(c_box*100000.0)*k2fac/(3.0*a_t*a_t*a));
 				}
 						
 				if(method==1)				
