@@ -716,8 +716,8 @@ class metric_potential_poisson_mpi
 			{
 			  	
 				if(method==0)
-				{fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(1.0+da*(c_box*100000.0)*(c_box*100000.0)*k2fac/(3.0*a_t*a_t*a));
-			 	 fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(1.0+da*(c_box*100000.0)*(c_box*100000.0)*k2fac/(3.0*a_t*a_t*a));
+				{fpGpsi_ft[ci][0] = fpGpsi_ft[ci][0]/(1.0+da*(c_box*100000.0/a_t)*(c_box*100000.0/a_t)*k2fac/(3.0*a));
+			 	 fpGpsi_ft[ci][1] = fpGpsi_ft[ci][1]/(1.0+da*(c_box*100000.0/a_t)*(c_box*100000.0/a_t)*k2fac/(3.0*a));
 				}
 						
 				if(method==1)				
@@ -1054,7 +1054,7 @@ class fdm_poisson_mpi
 	}
 
 	
-
+	
 	void update_A(int ci,double potn,double a,double a_t,double da)
 	{
 		double fdm_v_r,fdm_v_i,amp2;
@@ -1070,8 +1070,9 @@ class fdm_poisson_mpi
 
 
 		if(method==1)		
-		{fpGpsi[ci][0] = fdm_v_r + da*potn*fdm_v_i/(hbar_by_m*a*a_t);//Conv. from phi->phi_c has been done...But now it already phi_c so conversion not req. here
-		 fpGpsi[ci][1] = fdm_v_i - da*potn*fdm_v_r/(hbar_by_m*a*a_t);
+		{fpGpsi[ci][0] = fdm_v_r + da*potn*(c_box*100000.0)*(c_box*100000.0)*fdm_v_i/(hbar_by_m*a*a_t);
+									//Conv. from phi->phi_c has been done...But now it already phi_c so conversion not req. here
+		 fpGpsi[ci][1] = fdm_v_i - da*potn*(c_box*100000.0)*(c_box*100000.0)*fdm_v_r/(hbar_by_m*a*a_t);
 		}
 	
 	}
@@ -1553,8 +1554,8 @@ class metric_potential_poisson_mpi_ini
 			if(k2fac>0.0)
 			{
 			 if(method==0)
-			 { fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/((k2fac/(a*a)) +3.0*Hc*Hc);
-			   fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/((k2fac/(a*a)) +3.0*Hc*Hc);
+			 { fpGpsi_ft[ci][0] = -fpGpsi_ft[ci][0]/((k2fac/(a*a)));
+			   fpGpsi_ft[ci][1] = -fpGpsi_ft[ci][1]/((k2fac/(a*a)));
 			 }
 
 

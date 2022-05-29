@@ -168,6 +168,122 @@ void read_dc_from_hdf5(string fname,double *dc,double *theta,int *ind, int cum_l
 
 }
 
+void calc_theta_zeldo(int * ind,int *ind_loc, double **k_grid,double  *dc,double *theta,double ai,double a_t,double f_ini=1.0,double a0=1.0)
+{
+	double H_ini = a_t/ai;
+	int n[3],n_loc[3],i,j,k,ci;
+	double k2fac;
+
+	fftw_complex *fpth;
+	fftw_complex *fpth_ft;
+
+	
+	
+	n[0]=ind[0];n[1]=ind[1];n[2]=ind[2];
+	n_loc[0]=ind_loc[0];n_loc[1]=ind_loc[1];n_loc[2]=ind_loc[2];
+
+
+	const ptrdiff_t n0 = n[0];
+	const ptrdiff_t n1 = n[1];
+	const ptrdiff_t n2 = n[2];
+
+	ptrdiff_t alloc_local, local_n0, local_0_start;
+
+
+	double dtN = (double)(n[0]*n[1]*n[2]);
+	
+
+	fftw_plan plan_f_th;
+	fftw_plan plan_b_th;
+
+	alloc_local = fftw_mpi_local_size_3d(n0, n1, n2,
+                                 cart_comm,
+                                 &local_n0, &local_0_start);
+		
+	fpth = fftw_alloc_complex(alloc_local);
+	fpth_ft = fftw_alloc_complex(alloc_local);
+
+
+	plan_f_th = fftw_mpi_plan_dft_3d(n0, n1,  n2,
+                               fpth, fpth_ft,
+                              cart_comm, FFTW_FORWARD, FFTW_ESTIMATE);
+	plan_b_th = fftw_mpi_plan_dft_3d(n0, n1,  n2,
+                               fpth_ft, fpth,
+                              cart_comm, FFTW_BACKWARD, FFTW_ESTIMATE);
+
+	for(i=0;i<n_loc[0];++i)
+		{
+		  for(j=0;j<n_loc[1];++j)
+		  {
+		    for(k=0;k<n_loc[2];++k)
+		    {
+			ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;
+
+			
+
+			fpth[ci][0] = H_ini*f_ini*dc[ci]*(ai/a0)*(ai/a0)/hbar_by_m;
+			fpth[ci][1] = 0.0;	
+
+		    }
+		  }
+
+		}
+
+	fftw_execute(plan_f_th);
+
+	for(i=0;i<n_loc[0];++i)
+		{
+		  for(j=0;j<n_loc[1];++j)
+		  {
+		    for(k=0;k<n_loc[2];++k)
+		    {
+			ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;
+			k2fac = twopie*twopie*(k_grid[ci][0]*k_grid[ci][0]+k_grid[ci][1]*k_grid[ci][1]+k_grid[ci][2]*k_grid[ci][2]);
+
+			 if(k2fac>0.0)
+			 {fpth_ft[ci][0] = fpth_ft[ci][0]/k2fac;
+			  fpth_ft[ci][1] = fpth_ft[ci][1]/k2fac;	
+
+			 }
+
+			 else			
+			 {fpth_ft[ci][0] = 0.0;
+			  fpth_ft[ci][1] = 0.0;	
+
+			 }
+
+
+			fpth_ft[ci][0] = fpth_ft[ci][0]/dtN;
+			fpth_ft[ci][1] = fpth_ft[ci][1]/dtN;
+
+		    }
+		  }
+
+		}
+
+	fftw_execute(plan_b_th);
+
+
+	for(i=0;i<n_loc[0];++i)
+		{
+		  for(j=0;j<n_loc[1];++j)
+		  {
+		    for(k=0;k<n_loc[2];++k)
+		    {
+			ci = (n_loc[2]*n_loc[1])*i + n_loc[2]*j + k;
+			
+
+			theta[ci] = fpth[ci][0];
+
+		    }
+		  }
+
+		}
+
+	
+
+}
+
 void initialise_mpi(int * ind,int *ind_loc,fdm_poisson_mpi &psi,metric_potential_poisson_mpi &phi,
 					metric_potential_poisson_mpi_ini &poisson_phi,
 				double **k_grid,int *kbin_grid,double a0,double ai,double Hi,double omega_dm_0,double & Xb_0,double *dx,double &dk,int & kbins,
@@ -356,6 +472,8 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_poisson_mpi &psi,metric_potential
 	else
 	read_dc_from_hdf5(fini_name,ini_dc,ini_theta,ind_loc, cum_lin_ind);
 	
+	calc_theta_zeldo(ind,ind_loc, k_grid,ini_dc,ini_theta,ai, a_t);
+
 	
 	for(i=0;i<n[0];++i)
 		{
