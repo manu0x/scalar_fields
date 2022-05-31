@@ -13,6 +13,8 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	double *fdc = new double[n[0]*n[1]*n[2]];
 	double *potn_val = new double[n[0]*n[1]*n[2]];
 	double *psiamp2_val = new double[n[0]*n[1]*n[2]];
+	double *psi_hold=new double[n[0]*n[1]*n[2]*2];
+	double psi_obt[2];
 
 	double psi_b[2],psi_amp2;
 	
@@ -199,19 +201,19 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 			else
 			potn_k = phi.get_potential(ci);
 
-			if(step_cnt==0)
-			potn_a = 0.0;
-			else
-			potn_a = (potn_k-potn_val[ci])/da;
+			
 
 			potn_val[ci] = potn_k;
 
-	
+			psi.get_fdm(ci,psi_obt);
 			
-			psi_amp2 = psi.get_value(ind);				
+			psi_amp2 = psi.get_amp2_value(ci);				
 
 			psiamp2_val[ci] = psi_amp2;
 			phi.update_value(ind, potn_k);
+
+			psi_hold[2*ci] = psi_obt[0];
+			psi_hold[2*ci+1] = psi_obt[1];
 		
 
 			
@@ -269,6 +271,79 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	//phi.solve_poisson(k_grid, ak, a_t,da);
 
 	psi.solve_poisson(k_grid,psi_b, ak, a_t,da);
+	phi.solve_poisson(k_grid, ak, a_t,da);
+
+
+
+	 for(i=0;i<n[0];++i)
+	 {
+		  for(j=0;j<n[1];++j)
+		  {
+		    for(k=0;k<n[2];++k)
+		    {
+			ci = (n[2]*n[1])*i + n[2]*j + k;
+			ind[0] = i;ind[1] = j;ind[2] = k;
+
+
+			
+			if(step_cnt==0)
+			potn_k = phi.get_value(ind);
+			else
+			potn_k = phi.get_potential(ci);
+
+			
+
+	
+			
+			psi_amp2 = psi.get_amp2_value(ci);				
+
+			psiamp2_val[ci] = psi_amp2;
+			//phi.update_value(ind, potn_k);
+		
+
+			
+			
+			psi.update_A_2o(ci,potn_k,psi_hold[2*ci],psi_hold[2*ci+1],a,a_t,da);
+
+			if(method==0)
+			c1 = phi.calc_vel(ind,potn_a_part,psi_amp2,potn_k,a,da,a_t,a_tt,dx,omega_dm_0);
+
+
+
+			//if(ci<10)
+			//printf("%.15lf\n",potn_a_part);
+				
+
+			  if(method==0)
+			  potn_rhs = potn_val[ci]+da*potn_a_part;
+			//  if(method==1)
+			//  potn_rhs = 0.5*psi_amp2-1.5*H0*H0*omega_dm_0*a0*a0*a0;
+
+
+			if(isnan(potn_rhs)||isnan(psi_amp2))
+			{
+				//printf("Yfailed at step %d %lf %lf %lf\n",step_cnt,potn_k,potn_a,a_t);
+				fail=1;
+				break;
+
+			}
+
+			else
+			{
+				phi.update_4pieGpsi(ci,potn_rhs);
+				
+
+			}
+			
+
+		    }
+
+		   }
+	}
+
+	psi.solve_poisson(k_grid,psi_b, ak, a_t,da);
+	phi.solve_poisson(k_grid, ak, a_t,da);
+
 
     if(method==1)
     {
@@ -337,7 +412,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
    }
 
 
-	phi.solve_poisson(k_grid, ak, a_t,da);
+	
 
 
 	//printf("Check f_a %.10lf %.10lf\n",fb_a,fcheck);

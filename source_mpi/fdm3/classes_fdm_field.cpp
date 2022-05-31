@@ -1129,6 +1129,23 @@ class fdm_poisson_mpi
 	}
 
 
+	double get_amp2_value(int ci)
+	{
+		double fdm_v_r,fdm_v_i,amp2;
+		
+
+		
+		fdm_v_r = fpGpsi[ci][0];
+		fdm_v_i = fpGpsi[ci][1];
+
+		amp2 = fdm_v_r*fdm_v_r + fdm_v_i*fdm_v_i;
+
+		return amp2;
+
+
+	}
+
+
 
 	void cal_mass(double a)
 	{

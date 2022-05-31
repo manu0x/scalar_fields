@@ -547,7 +547,7 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_poisson_mpi &psi,metric_potential
 			
 
 			fprintf(fpstoreini,"%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.22lf\t%.15lf\t%.15lf\t%.15lf\t%.15lf\n",
-							a,dx[0]*i,dx[1]*j,dx[2]*k,fa[0],fa[1],potn,ini_dc[ci],ini_theta[ci],sin(ini_theta[ci]),cos(ini_theta[ci]));
+							a,dx[0]*i,dx[1]*j,dx[2]*k,psi_val[0],psi_val[1],potn,ini_dc[ci],ini_theta[ci],sin(ini_theta[ci]),cos(ini_theta[ci]));
 
 	            }
 		  }
