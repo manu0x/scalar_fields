@@ -87,14 +87,9 @@ MPI_Status stdn,stup;
 
 	
 
-	if(num_p<=8)
+	
 		nd_cart = 1;
-	else
-	{	if(num_p<20)
-			nd_cart = 2;
-		else
-			nd_cart = 3;
-	}
+
 
 	dims = new int [nd_cart];
 	periods = new int [nd_cart];

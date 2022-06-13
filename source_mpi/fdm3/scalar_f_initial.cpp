@@ -346,27 +346,27 @@ void initialise_mpi(int * ind,int *ind_loc,fdm_poisson_mpi &psi,metric_potential
 
 /////////////////////////	MPI and hdf5 variables	///////////////////////////////
 	
-	int my_corank,mpi_check;
+	int my_corank,mpicheck;
       
 	MPI_Comm_rank(cart_comm,&my_corank);
 
-	if(my_corank==0)
-	fpstoreini = fopen("initial1.txt","w");
-	else
-	if(my_corank==1)
-	fpstoreini = fopen("initial2.txt","w");
-	else
-	if(my_corank==2)
-	fpstoreini = fopen("initial3.txt","w");
-	else
-	if(my_corank==3)
-	fpstoreini = fopen("initial4.txt","w");
+
+      
+	char str_corank[10];
+	
+
+	
+	sprintf(str_corank,"%d",my_corank);
+	
+	strcat(str_corank,"_initial.txt");
+
+	fpstoreini = fopen(str_corank,"w");
 
 	MPI_Info info  = MPI_INFO_NULL;
 
 	hid_t file;
 	hid_t plist_id;
-	     
+	MPI_Comm_rank(cart_comm,&my_corank);     
 	 
 	f_ini=dlogD_dloga(a);
 
