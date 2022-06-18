@@ -264,7 +264,7 @@ MPI_Status stdn,stup;
 	
 
 	//if(use_omp)
-	fail = evolve_kdk_openmp(ind,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,Xb_0,dx,dk,kbins,da,cum_lin_ind,use_hdf5_format);
+	//fail = evolve_kdk_openmp(ind,n_axis_loc,psi,phi,k_grid,kbin_grid,a0,ai,a0,omega_dm_ini,Xb_0,dx,dk,kbins,da,cum_lin_ind,use_hdf5_format);
 	
 	delete[] kbin_grid ;
 	delete[] k_grid ;

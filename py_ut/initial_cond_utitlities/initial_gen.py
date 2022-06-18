@@ -27,7 +27,7 @@ a0_val = 1.0
 ai_val = 0.0078125
 a_print = (int)((a0_val-ai_val)/(10.0*da_val))
 print(a_print,hbar_by_m_val)
-hbar_by_m_val*pie*128
+
 
 
 
@@ -73,11 +73,11 @@ def pic_dc_construct(p,v,n,dx):
     
     for i in range(n_part):
         for j in range(8):
-            m = (128+(p_cube_ind[j,i,0]))%128
-            n = (128+(p_cube_ind[j,i,1]))%128
-            k = (128+(p_cube_ind[j,i,2]))%128
-            dc[m,n,k] = dc[m,n,k] + d[j,i]
-            vel[m,n,k] = vel[m,n,k]+d[j,i]*v[i]
+            m = (n+(p_cube_ind[j,i,0]))%n
+            q = (n+(p_cube_ind[j,i,1]))%n
+            k = (n+(p_cube_ind[j,i,2]))%n
+            dc[m,q,k] = dc[m,q,k] + d[j,i]
+            vel[m,q,k] = vel[m,q,k]+d[j,i]*v[i]
             
     dc = dc-1.0
             
