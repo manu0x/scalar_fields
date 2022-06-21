@@ -1,1 +1,1 @@
-# Python utilities for generating initial conditions from Gadgdet snapshots
+# Python utilities for generating initial conditions from Gadget snapshots
