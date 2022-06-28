@@ -904,7 +904,9 @@ class fdm_poisson_mpi
 	int n_loc[3];
 	int cum_lin_ind;
 	int potential;
+	int ma_rank;
 	scalar_field_3d_mpi psi_ms;
+
 
 	double *pot_p;
 
@@ -969,6 +971,9 @@ class fdm_poisson_mpi
                                fp_dc, fp_dc_ft,
                               cart_comm, FFTW_FORWARD, FFTW_ESTIMATE);
 
+		ma_rank = MPI_Comm_rank(cart_comm,&ma_rank);
+	
+		if(ma_rank==0)
 		fpmass = fopen("mass_check.txt","w");
 
 	}
@@ -1149,7 +1154,7 @@ class fdm_poisson_mpi
 
 	void cal_mass(double a)
 	{
-		double fdm_v_r,fdm_v_i,amp2;
+		double fdm_v_r,fdm_v_i,amp2,tot_mass;
 		int ci,i,j,k;
 		mass_from_amp = 0.0;
 
@@ -1174,8 +1179,10 @@ class fdm_poisson_mpi
 
 		}
 
-
-		fprintf(fpmass,"%lf\t%lf\n",a,mass_from_amp);
+		MPI_Reduce(&mass_from_amp, &tot_mass, 1, MPI_DOUBLE, MPI_SUM, 0,cart_comm);
+		
+		if(ma_rank==0)
+		fprintf(fpmass,"%lf\t%lf\n",a,tot_mass);
 
 	}
 
