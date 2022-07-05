@@ -796,7 +796,7 @@ class metric_potential_poisson_mpi
 		if(!get_imag)
 		return (fpGpsi[ci][0]);	
 		else
-		return(fpGpsi_ft[ci][1]);
+		return(fpGpsi[ci][1]);
 
 	}
 

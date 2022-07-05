@@ -76,7 +76,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	MPI_Barrier(cart_comm);
 	
 
-	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail);++step_cnt)
+	for(a=a_ini,a_print=a_ini,step_cnt=0;(a<=a0)&&(!fail)&&(prn<=3);++step_cnt)
 	{
 	   //dt=dti*sqrt(a/a_ini);
 
@@ -121,7 +121,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 				psi_sum[2*ci] =  psi_sum[2*ci]+fsrk[3]*(psi_obt[0]-psi_hold[2*ci]);
 				psi_sum[2*ci+1] =  psi_sum[2*ci+1]+fsrk[3]*(psi_obt[1]-psi_hold[2*ci+1]);
 				
-				phi_obt = phi.get_value(ind);							
+				phi_obt = phi.get_potential(ci);							
 				phi_sum[ci] =  phi_sum[ci]+fsrk[3]*(phi_obt-phi_hold[ci]);	
 
 
@@ -255,6 +255,14 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 			//psiamp2_val[ci] = psi_amp2;
 			phi.update_value(ind, phi_obt);
 
+
+			if(krk>0)
+			 { psi_sum[2*ci] =  psi_sum[2*ci]+fsrk[krk-1]*(psi_obt[0]-psi_hold[2*ci]);
+			   psi_sum[2*ci+1] =  psi_sum[2*ci+1]+fsrk[krk-1]*(psi_obt[1]-psi_hold[2*ci+1]);
+				
+								
+			   phi_sum[ci] =  phi_sum[ci]+fsrk[krk-1]*(phi_obt-phi_hold[ci]);
+			 }
 				
 
 			
