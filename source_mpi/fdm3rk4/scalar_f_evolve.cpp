@@ -89,7 +89,6 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	  
 	  //printf("fb_a %lf\n",fb_a);
 	
-	  ak = a+da;
 
 
 
@@ -151,13 +150,13 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	    }
 	  
 
-
-	 if(a>=a_print)
+	z_cur = ((a0/a) -1.0);
+	 if(z_cur<=z_print_list[prn])
 	  {
 		
 		a_print+=1e-3;
 		a3a03omega = pow(a/a0,3.0*(1.0+w))/omega_dm_0;
-		z_cur = ((a0/a) -1.0);
+		
 
 		
 		char fp_phi_name[20]("phi_z_");
@@ -217,12 +216,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 		
 
 	  }
-	
-	
-	
-	
-	//printf("fb_t  %lf   fb_t_th  %lf\n",fb_t,fb_t_0*pow(a0/ak,3.0/(2.0*alpha-1.0)));
- //#pragma omp parallel for private(j,k,ci,ind,c1,fa_k,fa_vel,potn,potn_k,potn_a,poisson_rhs,acc_fa,potn_der)
+
 
 
 			
@@ -310,7 +304,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	a_t = ak*H0*sqrt(omega_dm_0*pow(a0/ak,3.0*(1.0+w))+ (1.0-omega_dm_0));
         a_tt = ak*H0*H0*(-0.5*omega_dm_0*pow(a0/ak,3.0*(1.0+w))*(1.0+3.0*w) + (1.0-omega_dm_0) );
 
-    }
+      }
 
 	a = a+da;
 
@@ -320,7 +314,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 	  {printf("FAILED  \n"); fail = 1;
 	  }
 
-	}
+  }
 
 	a3a03omega = pow(a/a0,3.0*(1.0+w))/omega_dm_0;	
 	z_cur = ((a0/a) -1.0);
@@ -349,7 +343,7 @@ int evolve_kdk_openmp(int *n_glbl,int *n,fdm_poisson_mpi &psi,metric_potential_p
 		 	filename = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
 			H5Pclose(plist_id);
 
-			printf("hdf5 %s\n",fp_hdf5_name);
+			printf("final_hdf5 %s\n",fp_hdf5_name);
 			//printf("pwr spec name %s\n",fp_pwr_spec_name);		
 			
 			evolve_hdf5_write(n_glbl,psi, phi,filename,dc,fdc,a0,a,a_t,omega_dm_0,cum_lin_id,true);
