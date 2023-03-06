@@ -42,6 +42,56 @@ void vel(double v[2],double psi[2],double Vval,double lap_psi[2])
 
 }
 
+
+
+void lap2(double *lpsi,fftw_complex *psi, double dx,int N)
+{
+	int l1,l2,r1,r2,i;
+
+	double vl1,vl2,vr1,vr2,vc;
+   for(i=0;i<(N);++i)
+   {	l1 = ((N)+ (i-1))%(N);
+	l2 = ((N)+ (i-2))%(N);
+
+	r1 = (i+1)%(N);
+	r2 = (i+2)%(N);
+
+
+	vl1 = psi[l1][0];
+	vl2 = psi[l2][0];
+
+	vr1 = psi[r1][0];
+	vr2 = psi[r2][0];
+
+	vc = psi[i][0];
+	
+	*(lpsi+2*i) =  (-vr2 + 16.0*vr1 - 30.0*vc + 16.0*vl1 - vl2)/(12.0*dx*dx);
+
+	//if(i==0||i==1||i==2||i==(N-1))
+	//{printf("\n%d\t%d\t%d\t%d\t%d\n",l2,l1,i,r1,r2);
+	// printf("%lf\t%lf\t%lf\t%lf\t%lf\n",vl2,vl1,vc,vr1,vr2);
+	// printf("%lf\t%lf\n\n",(-vr2 + 16.0*vr1 - 30.0*vc + 16.0*vl1 - vl2),*(lpsi+2*i));
+	//}
+
+
+	vl1 = psi[l1][1];
+	vl2 = psi[l2][1];
+
+	vr1 = psi[r1][1];
+	vr2 = psi[r2][1];
+
+	vc = psi[i][1];
+	*(lpsi+2*i+1) = (-vr2 + 16.0*vr1 - 30.0*vc + 16.0*vl1 - vl2)/(12.0*dx*dx);
+
+    }		
+	
+	
+
+}
+
+
+
+
 void lap(double *lpsi,fftw_complex *psi, double dx,int N)
 {
 	int l1,l2,r1,r2,i;
@@ -189,7 +239,7 @@ int main()
 
 	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&(1);t+=dt,++tcntr)
 	{	
-		lap(lap_val,fpGpsi,dx,N);
+		lap2(lap_val,fpGpsi,dx,N);
 		avg_amp = 0.0;
 		for(i=0;i<N;++i)
 		{	
@@ -288,10 +338,11 @@ int main()
 		if((tcntr%printcntr)==0)  
 		{ fprintf(fp,"\n\n\n");
 		  fprintf(fpmass,"%lf\t%lf\n",t/t_end,avg_amp/((double)(N)));
+			printf("%lf\t%lf\n",t/t_end,avg_amp/((double)(N)));
 		}
 
 
-
+		
 			  
 
 	}
