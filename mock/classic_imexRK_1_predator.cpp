@@ -68,7 +68,7 @@ double f(double t,double x)
 		
 		r = ((double)rand())/((double) RAND_MAX);
 		r = 0.8 + r*(1.2-0.8);
-		printf("%lf %lf\n",x,r);
+		//printf("%lf %lf\n",x,r);
 	}
 
 	
@@ -104,7 +104,7 @@ void initialise(double *P,double *x,double *k,double dx,int N)
 {
 
 	int i,j; double di,dk;
-	dk = 1.0/(((double)(N))*dx);
+	dk = 2.0*pie/(((double)(N))*dx);
 	for(i=0;i<N;++i)
 	{
 	   di = (double)i;	
@@ -147,7 +147,7 @@ int main()
 	m  = 1.0;
 	n  = 1.0;
 	T = 2.0*pie*m;
-	diff = 0.04;
+	diff = 0.02;
 	N = 100;
 
 
@@ -160,14 +160,14 @@ int main()
 
 /////////////////////////////// Box & res. setting ///////////////////////////////////////////////
 
-	box_len = 2.0;
+	box_len = 1.0;
 	dx = box_len/(double(N-1));
 
 ////////////////////////////// Time & dt settings ////////////////////////////////////////////////
 	
 	t_start = 0.0;
 	t_end = 10.0;
-	t_steps = 100;
+	t_steps = 20000;
 	dt  = (t_end-t_start)/((double)t_steps);
 	printf("dt %lf\n",dt);
 	
@@ -221,6 +221,8 @@ int main()
 
 	int s_cntr,tcntr,printcntr,fail=0;
 	printcntr = (int)(((double) t_steps)/100.0);	printf("%d\n",printcntr);
+	if(t_steps<=100)
+		printcntr = 1.0;
 	double t,vel_val;
 
 
@@ -244,7 +246,7 @@ int main()
 			{
 			  
 			  
-			  fprintf(fp,"%lf\t%lf\n",i,P[i]);
+			  fprintf(fp,"%lf\t%lf\n",x[i],P[i]);
 			   
 			}
 			
@@ -252,7 +254,7 @@ int main()
 
 
 			fpGpsi_ft[i][0] = (fpGpsi_ft[i][0] + lambda*fpGpsi_ft[i][1])/(1.0+lambda*lambda);
-			fpGpsi_ft[i][1] = (fpGpsi_ft[i][1] - lambda*fpGpsi_ft[i][0])/(1.0+lambda*lambda);
+			fpGpsi_ft[i][1] = (fpGpsi_ft[i][1] + lambda*fpGpsi_ft[i][0])/(1.0+lambda*lambda);
 
 			fpGpsi_ft[i][0] = fpGpsi_ft[i][0]/((double)N);
 			fpGpsi_ft[i][1] = fpGpsi_ft[i][1]/((double)N);
@@ -314,7 +316,7 @@ int main()
 				lambda = k_grid[i]*k_grid[i]*im_a[s_cntr][s_cntr]*diff*dt;
 
 				fpGpsi_ft[i][0] = (fpGpsi_ft[i][0] + lambda*fpGpsi_ft[i][1])/(1.0+lambda*lambda);
-				fpGpsi_ft[i][1] = (fpGpsi_ft[i][1] - lambda*fpGpsi_ft[i][0])/(1.0+lambda*lambda);
+				fpGpsi_ft[i][1] = (fpGpsi_ft[i][1] + lambda*fpGpsi_ft[i][0])/(1.0+lambda*lambda);
 
 				
 
@@ -348,7 +350,7 @@ int main()
 		if((tcntr%printcntr)==0)  
 		{
 			  
-			   printf("%lf\n",t/t_end);
+			  // printf("%lf\n",t/t_end);
 		}
 			
 		
@@ -374,9 +376,9 @@ int main()
 			 	{
 
 					if(isnan(P[i]))
-					printf("!!!GONE NAN!!!!  %d\t%lf\n",i,P[i]);
+					printf("!!!GONE NAN!!!!  %d\tt %lf\t%lf\n",tcntr,t,P[i]);
 					if(P[i]<0.0)
-					printf("!!!+tivity broken!!!  %d\t%lf\n",i,P[i]);
+					printf("!!!+tivity broken!!!  %d\tt %lf\t%lf\n",tcntr,t,P[i]);
 					
 					fail = 1;
 
@@ -399,7 +401,7 @@ int main()
 			
 
 			if((tcntr%printcntr)==0)  
-			fprintf(fp2,"%lf\t%lf\t%lf\n",fpGpsi[i][0],fpGpsi[i][1],P[i]);
+			fprintf(fp2,"%lf\t%lf\t%lf\n",x[i],P[i],fpGpsi[i][0]);
 
 			
 
@@ -411,7 +413,7 @@ int main()
 		{ fprintf(fp,"\n\n\n");
 		  fprintf(fp2,"\n\n\n");
 		  fprintf(fpmass,"%lf\n",t/t_end);
-		  printf("%lf\n\n",t/t_end);
+		  printf("dt %lf\tt %lf\n\n",dt,t);
 		}
 		
 
