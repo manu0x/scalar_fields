@@ -285,8 +285,10 @@ int main()
 				if(j==0)
 				{
 
-					
-		    			vel_val = ex_vel(t+ex_c[s_cntr-1]*dt,x[i],fpGpsi[i][0]);
+					if(s_cntr==1)
+		    			vel_val = ex_vel(t+ex_c[s_cntr-1]*dt,x[i],P[i]);
+					else
+					vel_val = ex_vel(t+ex_c[s_cntr-1]*dt,x[i],fpGpsi[i][0]);
 
 		    			ex_K_P[s_cntr-1][i] = vel_val; 
 					im_K_P[s_cntr-1][i] = K[i][0]*diff; 
