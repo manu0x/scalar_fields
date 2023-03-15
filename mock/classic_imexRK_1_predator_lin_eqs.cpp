@@ -23,7 +23,7 @@ double m,n,T;
 const int imex_s = 3;
 const int im_s = imex_s;
 const int ex_s = imex_s;
-/*
+
 double im_a[im_s][im_s] = {2.0/11.0,0.0,0.0,  205.0/462.0,2.0/11.0,0.0,  2033.0/4620.0,21.0/110.0,2.0/11.0};
 double ex_a[ex_s][ex_s] = {0.0,0.0,0.0,  5.0/6.0,0.0,0.0,  11.0/24.0,11.0/24.0,0.0};
 
@@ -32,10 +32,10 @@ double ex_c[ex_s] = {0.0,5.0/6.0,11.0/12.0};
 
 double im_b[im_s] = {24.0/55.0,1.0/5.0,4.0/11.0};
 double ex_b[ex_s] = {24.0/55.0,1.0/5.0,4.0/11.0};
-*/
+
 
 //	/	/	/	/	/	/	/	/	/	/	
-
+/*
 double im_a[im_s][im_s] = {2.0/11.0,0.0,0.0,  41.0/154.0,2.0/11.0,0.0,  289.0/847.0,42.0/121.0,2.0/11.0};
 double ex_a[ex_s][ex_s] = {0.0,0.0,0.0,  0.5,0.0,0.0,  0.5,0.5,0.0};
 
@@ -44,7 +44,7 @@ double ex_c[ex_s] = {0.0,0.5,1.0};
 
 double im_b[im_s] = {1.0/3.0,1.0/3.0,1.0/3.0};
 double ex_b[ex_s] = {1.0/3.0,1.0/3.0,1.0/3.0};
-
+*/
 
 ////////////////////////////////////////////
 
@@ -154,8 +154,8 @@ void cr_invert_mat(double *Mp,int N, double dt, double dx, double diff,double ga
 		if(i==j)
 		{
 		  M[i][j] = 1.0 + 2.0*diff*gamma*mu;	
-		  M[i][j-1] = 1.0 - diff*gamma*mu;
-		  M[i][j+1] = 1.0 - diff*gamma*mu;
+		  M[i][j-1] =  - diff*gamma*mu;
+		  M[i][j+1] =  - diff*gamma*mu;
 
 		  gsl_matrix_set(gM, i, j,   M[i][j]);
 		  gsl_matrix_set(gM, i, j-1,   M[i][j-1]);
@@ -181,10 +181,10 @@ void cr_invert_mat(double *Mp,int N, double dt, double dx, double diff,double ga
 	 gsl_matrix_set(gM, N-1, j,   M[N-1][j]);
 	}
 
-	M[0][N-1] = 1.0 - diff*gamma*mu;
-	M[0][1] = 1.0 - diff*gamma*mu;
-	M[N-1][0] = 1.0 - diff*gamma*mu;
-	M[N-1][N-2] = 1.0 - diff*gamma*mu;
+	M[0][N-1] =  - diff*gamma*mu;
+	M[0][1] =  - diff*gamma*mu;
+	M[N-1][0] =  - diff*gamma*mu;
+	M[N-1][N-2] =  - diff*gamma*mu;
 
 	gsl_matrix_set( gM, 0, N-1,   M[0][N-1]);
 	gsl_matrix_set( gM, 0, 1,   M[0][1]);
@@ -395,6 +395,7 @@ int main()
 
 	FILE *fp = fopen("data_pred.txt","w");
 	FILE *fp2 = fopen("data2_pred.txt","w");
+	FILE *fptemp = fopen("temp.txt","w");
 	
 	FILE *fpmass = fopen("mass_pred.txt","w");
 
@@ -403,7 +404,7 @@ int main()
 	n  = 1.0;
 	T = 2.0*pie*m;
 	diff = 0.02;
-	N = 10;
+	N = 10000;
 
 
 
@@ -416,13 +417,13 @@ int main()
 /////////////////////////////// Box & res. setting ///////////////////////////////////////////////
 
 	box_len = 1.0;
-	dx = box_len/(double(N-1));
+	dx = box_len/(double(N));
 
 ////////////////////////////// Time & dt settings ////////////////////////////////////////////////
 	
 	t_start = 0.0;
 	t_end = 10.0;
-	t_steps = 20000;
+	t_steps = 40;
 	dt  = (t_end-t_start)/((double)t_steps);
 	printf("dt %lf\n",dt);
 	
@@ -459,12 +460,14 @@ int main()
     {
 	mat[i][j] = Mp[i*N+j];	
     }
+
+	Pb[i] = P[i];
   }
 
   delete [] Mp;
 
 
-/*
+
 
 ///////////////////////  Evolution ///////////////////////////////////////////////////////////////
 	srand(time(0));
@@ -484,7 +487,7 @@ int main()
 		
 	
 
-	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&(5);t+=dt,++tcntr)
+	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&(1);t+=dt,++tcntr)
 	{	
 		
 	
@@ -496,17 +499,20 @@ int main()
 			  
 			  
 			  fprintf(fp,"%lf\t%lf\n",x[i],P[i]);
+				if(i==5)
+			  fprintf(fptemp,"%lf\t%lf\n",t,P[i]);
+
 			   
 			}
 			
 			
 			Pk[i] = 0.0;
 
-			for(j=0;i<N;++j)	
-			{
+			for(j=0;j<N;++j)	
+			{	
 				Pk[i]+=mat[i][j]*Pb[j];
 
-
+			
 
 
 			}
@@ -535,22 +541,16 @@ int main()
 					vel_val = ex_vel(t+ex_c[s_cntr-1]*dt,x[i],Pk[i]);
 
 		    			ex_K_P[s_cntr-1][i] = vel_val; 
-					l1 = ((N)+ (i-1))%(N);
-	
 
+					l1 = ((N)+ (i-1))%(N);
 					r1 = (i+1)%(N);
 	
-
-
 					vl1 = Pk[l1];
-	
-
-					vr1 = Pk[r1];
-	
-
+					vr1 = Pk[r1];	
 					vc = Pk[i];
 	
 					im_K_P[s_cntr-1][i]  =  diff*(vr1 +vl1 - 2.0*vc )/(dx*dx);
+					//printf("%d %d %lf\n",s_cntr,i,im_K_P[s_cntr-1][i] );
 
 					Pb[i] = P[i] + dt*ex_a[s_cntr][j]*ex_K_P[j][i]+ dt*im_a[s_cntr][j]*im_K_P[j][i];
 					
@@ -575,17 +575,22 @@ int main()
 			  {	
 				Pk[i] = 0.0;
 
-				for(j=0;i<N;++j)	
+				for(j=0;j<N;++j)	
 				{
 					Pk[i]+=mat[i][j]*Pb[j];
-
-
 
 
 				}
 							
 
+			     if(Pk[i]<0.0)
+				{
 
+						printf("+ity broken interim %d %d %d %lf\n",s_cntr,j,i,Pk[i]);
+						fail = 1;				
+						break;
+
+				}
 		
 				
 			
@@ -599,7 +604,7 @@ int main()
 		if((tcntr%printcntr)==0)  
 		{
 			  
-			  // printf("%lf\n",t/t_end);
+			   printf("%lf\n",t/t_end);
 		}
 			
 		
@@ -627,22 +632,28 @@ int main()
 			   for(j=0;j<imex_s;++j)
 			   {	P[i]+=  dt*ex_b[j]*ex_K_P[j][i]+ dt*im_b[j]*im_K_P[j][i];
 				
-				
-				if(isnan(P[i])||(P[i]<0.0))
-			 	{
 
-					if(isnan(P[i]))
-					printf("!!!GONE NAN!!!!  %d\tt %lf\t%lf\n",tcntr,t,P[i]);
-					if(P[i]<0.0)
-					printf("!!!+tivity broken!!!  %d\tt %lf\t%lf\n",tcntr,t,P[i]);
-					
-					fail = 1;
-
-					break;
-				}
-		
-				
+			
+				//if(i==51)
+				//printf("!!!+tivity broken!!!j  %d\ti %d\t%lf\t%lf\n",j,i,P[i],im_K_P[j][i]);
 			    }
+
+
+				//if(isnan(P[i]))				
+			if(isnan(P[i])||(P[i]<0.0))
+			 {
+
+				if(isnan(P[i]))
+				printf("!!!GONE NAN!!!!  %d\tt %lf\t%lf\n",tcntr,t,P[i]);
+				if(P[i]<0.0)
+				printf("!!!+tivity broken!!!j  %d\ti %d\t%lf\t%lf\n",j,i,P[i],im_K_P[j][i]);
+					
+				fail = 1;
+
+				break;
+			}
+		
+
 
 			if(fail)
 			break;
@@ -680,7 +691,7 @@ int main()
 	
 
 
-*/
+
 
 
 	return(0);

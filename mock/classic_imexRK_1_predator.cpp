@@ -21,7 +21,7 @@ double m,n,T;
 const int imex_s = 3;
 const int im_s = imex_s;
 const int ex_s = imex_s;
-/*
+
 double im_a[im_s][im_s] = {2.0/11.0,0.0,0.0,  205.0/462.0,2.0/11.0,0.0,  2033.0/4620.0,21.0/110.0,2.0/11.0};
 double ex_a[ex_s][ex_s] = {0.0,0.0,0.0,  5.0/6.0,0.0,0.0,  11.0/24.0,11.0/24.0,0.0};
 
@@ -30,10 +30,10 @@ double ex_c[ex_s] = {0.0,5.0/6.0,11.0/12.0};
 
 double im_b[im_s] = {24.0/55.0,1.0/5.0,4.0/11.0};
 double ex_b[ex_s] = {24.0/55.0,1.0/5.0,4.0/11.0};
-*/
+
 
 //	/	/	/	/	/	/	/	/	/	/	
-
+/*
 double im_a[im_s][im_s] = {2.0/11.0,0.0,0.0,  41.0/154.0,2.0/11.0,0.0,  289.0/847.0,42.0/121.0,2.0/11.0};
 double ex_a[ex_s][ex_s] = {0.0,0.0,0.0,  0.5,0.0,0.0,  0.5,0.5,0.0};
 
@@ -42,7 +42,7 @@ double ex_c[ex_s] = {0.0,0.5,1.0};
 
 double im_b[im_s] = {1.0/3.0,1.0/3.0,1.0/3.0};
 double ex_b[ex_s] = {1.0/3.0,1.0/3.0,1.0/3.0};
-
+*/
 
 ////////////////////////////////////////////
 
@@ -138,8 +138,8 @@ int main()
 
 ///////////////////////////////File for data/////////////////////////////////////////////////////
 
-	FILE *fp = fopen("data_pred.txt","w");
-	FILE *fp2 = fopen("data2_pred.txt","w");
+	FILE *fp = fopen("data_predft.txt","w");
+	FILE *fp2 = fopen("data2_predft.txt","w");
 	
 	FILE *fpmass = fopen("mass_pred.txt","w");
 
@@ -167,7 +167,7 @@ int main()
 	
 	t_start = 0.0;
 	t_end = 10.0;
-	t_steps = 20000;
+	t_steps =40;
 	dt  = (t_end-t_start)/((double)t_steps);
 	printf("dt %lf\n",dt);
 	
@@ -253,8 +253,8 @@ int main()
 			lambda = k_grid[i]*k_grid[i]*im_a[0][0]*diff*dt;
 
 
-			fpGpsi_ft[i][0] = (fpGpsi_ft[i][0] + lambda*fpGpsi_ft[i][1])/(1.0+lambda*lambda);
-			fpGpsi_ft[i][1] = (fpGpsi_ft[i][1] + lambda*fpGpsi_ft[i][0])/(1.0+lambda*lambda);
+			fpGpsi_ft[i][0] = fpGpsi_ft[i][0]/(1.0+lambda);
+			fpGpsi_ft[i][1] = fpGpsi_ft[i][1]/(1.0+lambda);
 
 			fpGpsi_ft[i][0] = fpGpsi_ft[i][0]/((double)N);
 			fpGpsi_ft[i][1] = fpGpsi_ft[i][1]/((double)N);
@@ -317,8 +317,8 @@ int main()
 			  {	
 				lambda = k_grid[i]*k_grid[i]*im_a[s_cntr][s_cntr]*diff*dt;
 
-				fpGpsi_ft[i][0] = (fpGpsi_ft[i][0] + lambda*fpGpsi_ft[i][1])/(1.0+lambda*lambda);
-				fpGpsi_ft[i][1] = (fpGpsi_ft[i][1] + lambda*fpGpsi_ft[i][0])/(1.0+lambda*lambda);
+				fpGpsi_ft[i][0] = fpGpsi_ft[i][0]/(1.0+lambda);
+				fpGpsi_ft[i][1] = fpGpsi_ft[i][1]/(1.0+lambda);
 
 				
 
@@ -371,24 +371,28 @@ int main()
 	
 							
 			   for(j=0;j<imex_s;++j)
-			   {	P[i]+=  dt*ex_b[j]*ex_K_P[j][i]+ dt*im_b[j]*im_K_P[j][i];
+			   {	P[i]+=  dt*ex_b[j]*ex_K_P[j][i] + dt*im_b[j]*im_K_P[j][i];
 				
-				
-				if(isnan(P[i])||(P[i]<0.0))
-			 	{
 
-					if(isnan(P[i]))
-					printf("!!!GONE NAN!!!!  %d\tt %lf\t%lf\n",tcntr,t,P[i]);
-					if(P[i]<0.0)
-					printf("!!!+tivity broken!!!  %d\tt %lf\t%lf\n",tcntr,t,P[i]);
-					
-					fail = 1;
-
-					break;
-				}
-		
 				
 			    }
+
+
+							
+			if(isnan(P[i])||(P[i]<0.0))
+			 {
+
+				if(isnan(P[i]))
+				printf("!!!GONE NAN!!!!  %d\tt %lf\t%lf\n",tcntr,t,P[i]);
+				if(P[i]<0.0)
+				printf("!!!+tivity broken!!!  %d\tt %lf\t%lf\n",tcntr,t,P[i]);
+					
+				fail = 1;
+
+				break;
+			}
+		
+
 
 			if(fail)
 			break;
