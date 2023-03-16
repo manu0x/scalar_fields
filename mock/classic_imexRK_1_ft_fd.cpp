@@ -111,6 +111,53 @@ void ex_vel(double v[2],double psi[2],double Vval)
 
 }
 
+void simple_lap(double *lpsi,fftw_complex *psi, double dx,int N)
+{
+	int l1,l2,r1,r2,i;
+
+	double vl1,vl2,vr1,vr2,vc;
+   for(i=1;i<(N-1);++i)
+   {	l1 = i-1;
+	r1 = (i+1);
+
+	if(i==0)
+	l1 = N-2;
+	if(i==0)
+	r1 = N+2;
+	vl1 = psi[l1][0];
+	
+
+	vr1 = psi[r1][0];
+	
+
+	vc = psi[i][0];
+	
+	*(lpsi+2*i) =  (vl1+vr1-2.0*vc)/(dx*dx);
+
+	if(i==0)
+	
+	printf("lap i 0 %lf %lf %lf %d %d\n\n",*(lpsi+2*i),vl1,vr1,l1,r1);
+	//if(i==0||i==1||i==2||i==(N-1))
+	//{printf("\n%d\t%d\t%d\t%d\t%d\n",l2,l1,i,r1,r2);
+	// printf("%lf\t%lf\t%lf\t%lf\t%lf\n",vl2,vl1,vc,vr1,vr2);
+	// printf("%lf\t%lf\n\n",(-vr2 + 16.0*vr1 - 30.0*vc + 16.0*vl1 - vl2),*(lpsi+2*i));
+	//}
+
+
+	vl1 = psi[l1][1];
+	
+
+	vr1 = psi[r1][1];
+	
+
+	vc = psi[i][1];
+	
+	*(lpsi+2*i+1) =  (vl1+vr1-2.0*vc)/(dx*dx);
+
+    }		
+	
+	
+}
 
 void lap(double *lpsi,fftw_complex *psi, double dx,int N)
 {
@@ -163,42 +210,23 @@ void initialise(fftw_complex *psi,double *k,double dx,int N,int spd)
 {
 
 	int i,j; double di,dk;
-	dk = 2.0*pie/(((double)(N+2*spd))*dx);
+	dk = 2.0*pie/(((double)(N))*dx);
 	int nN = N+2*spd;
-	for(i=0;i<nN;++i)
+	for(i=0;i<N;++i)
 	{
-	   di = (double)i;
-	   if(i<N)	
-	  { psi[i][0] = sin(2.0*pie*n*di*dx);
-	    psi[i][1] = 0.0;
-	 }
-	   if(i<=(nN/2))
+	   di = (double)i;	
+	   psi[i][0] = sin(2.0*pie*n*di*dx);
+	   psi[i][1] = 0.0;
+
+           
+	  
+	    if(i<=(N/2))
 		*(k+i) = di*dk;
 	    else
-		*(k+i) = (di-((double) nN))*dk; 
-
-	/*    if(i<=(N/2))
-		*(k+i+spd) = di*dk;
-	    else
-		*(k+i+spd) = (di-((double) N))*dk; 
+		*(k+i) = (di-((double) N))*dk; 
 
 	//	printf("k %lf  %lf  dx %lf\n",dk,*(k+i),dx );
 
-		if((i<spd+1)&&(i>0))
-			{
-			  *(k+N+spd-1+i) = *(k+i+spd) ;
-			 
-				
-
-			}
-		if(i>(N-spd-1))
-			{
-			  *(k+i-N+spd) = *(k+i+spd-1) ;
-			  
-				
-
-			}
-	*/
 
 	}
 
@@ -250,14 +278,14 @@ int main()
 	
 	t_start = 0.0;
 	t_end = 2.0*T;
-	t_steps = 40000;
+	t_steps = 2000000;
 	dt  = (t_end-t_start)/((double)t_steps);
 	printf("dt %lf\n",dt);
 	
 
 ////////////////////////////// Psi variables  /////////////////////////////////////////////////////
 
-	double psi[N][2],lap_val[2*N],lambda;
+	double psi[N][2],lap_psi[2*N],lambda;
 
 	int spd =N/4;
 	int nN = N+ 2*spd;
@@ -275,18 +303,18 @@ int main()
 	fftw_plan plan_pois_b;
 	fftw_plan plan_imp_b;
 
-	fpGpsi = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (N+2*spd));
-	fpGpsi_ft =(fftw_complex*) fftw_malloc(sizeof(fftw_complex) *(N+2*spd));
+	fpGpsi = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (N));
+	fpGpsi_ft =(fftw_complex*) fftw_malloc(sizeof(fftw_complex) *(N));
 
-	K = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (N+2*spd));
-	K_ft =(fftw_complex*) fftw_malloc(sizeof(fftw_complex) *(N+2*spd));
+	K = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (N));
+	K_ft =(fftw_complex*) fftw_malloc(sizeof(fftw_complex) *(N));
 
 
-	plan_pois_f = fftw_plan_dft_1d(nN, fpGpsi, fpGpsi_ft, FFTW_FORWARD, FFTW_ESTIMATE);
-	plan_pois_b = fftw_plan_dft_1d(nN,fpGpsi_ft, fpGpsi, FFTW_BACKWARD, FFTW_ESTIMATE);
+	plan_pois_f = fftw_plan_dft_1d(N, fpGpsi, fpGpsi_ft, FFTW_FORWARD, FFTW_ESTIMATE);
+	plan_pois_b = fftw_plan_dft_1d(N,fpGpsi_ft, fpGpsi, FFTW_BACKWARD, FFTW_ESTIMATE);
 
 	
-	plan_imp_b = fftw_plan_dft_1d(nN,K_ft, K, FFTW_BACKWARD, FFTW_ESTIMATE);
+	plan_imp_b = fftw_plan_dft_1d(N,K_ft, K, FFTW_BACKWARD, FFTW_ESTIMATE);
 
 	initialise(psi,k_grid,dx,N,spd);
 
@@ -295,24 +323,11 @@ int main()
 	 	for(i=0;i<N;++i)
 		{	
 			
-			fpGpsi[i+spd][0] = psi[i][0] ;
-			fpGpsi[i+spd][1] = psi[i][1] ;
+			fpGpsi[i][0] = psi[i][0] ;
+			fpGpsi[i][1] = psi[i][1] ;
 
-			if((i<spd+1)&&(i>0))
-			{
-			  fpGpsi[N+spd-1+i][0] = psi[i][0] ;
-			  fpGpsi[N+spd-1+i][1] = psi[i][1] ;	
-				
-
-			}
-			if(i>(N-spd-1))
-			{
-			  fpGpsi[i-N+spd][0] = psi[i-1][0] ;
-			  fpGpsi[i-N+spd][1] = psi[i-1][1] ;	
-				
-
-			}
-
+			if(i==(N-1))
+		printf("iIni N-1 %lf %d\n",fpGpsi[i][0],i);
 					
 			
 		
@@ -324,9 +339,9 @@ int main()
 
 	int s_cntr,tcntr,printcntr,fail=0;
 	printcntr = (int)(((double) t_steps)/100.0);	printf("%d\n",printcntr);
-	double t,vel_val[2],c_psi[2],c_psi_amp,Vval,amp,avg_amp;
+	double t,vel_val[2],c_psi[2],c_psi_amp,Vval,amp,avg_amp,amp_ini;
 	double drc = 2.0*pie*n*2.0*pie*n;
-	double fdt,amp_ini;
+	double fdt;
 
 
 
@@ -337,18 +352,28 @@ int main()
 	{	
 		
 		avg_amp = 0.0;
+		/*simple_lap(lap_psi,fpGpsi, dx,N);
+		for(i=0;i<N;++i)
+		{	dbi = (double)i;
+			sol[0] = cos(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
+			sol[1] = -sin(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
+			
 
+			//fdt = (fpGpsi[i-1][0]+fpGpsi[i+1][0]-2.0*fpGpsi[i][0])/(dx*dx);
+		fprintf(fplap,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",dx*dbi,lap_psi[2*i],lap_psi[2*i+1],K[i][1],-drc*fpGpsi[i][0],-drc*fpGpsi[i][1],0.0);
+			
+		}
+		*/
 		  fftw_execute(plan_pois_f);
 
-	 	for(i=0;i<(N+2*spd);++i)
-		{	dbi = (double)(i-spd);
+	 	for(i=0;i<(N);++i)
+		{	dbi = (double)(i);
 			
 			if((tcntr%printcntr)==0)  
 			{
-			  if(i<N)
-			  {amp  = sqrt(psi[i][0]*psi[i][0] + psi[i][1]*psi[i][1]);				
-			   avg_amp+=amp;
-			  }
+			  
+			  amp  = sqrt(psi[i][0]*psi[i][0] + psi[i][1]*psi[i][1]);				
+			  avg_amp+=amp;
 			  sol[0] = cos(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
 			  sol[1] = -sin(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
 			  fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",dx*dbi,fpGpsi[i][0],fpGpsi[i][1],sol[0],sol[1],amp);
@@ -362,10 +387,10 @@ int main()
 			fpGpsi_ft[i][0] = (fpGpsi_ft[i][0] + lambda*fpGpsi_ft[i][1])/(1.0+lambda*lambda);
 			fpGpsi_ft[i][1] = (fpGpsi_ft[i][1] - lambda*fpGpsi_ft[i][0])/(1.0+lambda*lambda);
 
-			fpGpsi_ft[i][0] = fpGpsi_ft[i][0]/((double)nN);
-			fpGpsi_ft[i][1] = fpGpsi_ft[i][1]/((double)nN);
+			fpGpsi_ft[i][0] = fpGpsi_ft[i][0]/((double)N);
+			fpGpsi_ft[i][1] = fpGpsi_ft[i][1]/((double)N);
 
-			K_ft[i][0] = -fpGpsi_ft[i][0]*(k_grid[i]*k_grid[i]);
+			/*K_ft[i][0] = -fpGpsi_ft[i][0]*(k_grid[i]*k_grid[i]);
 			K_ft[i][1] = -fpGpsi_ft[i][1]*(k_grid[i]*k_grid[i]);
 
 			if(i==0)
@@ -373,29 +398,19 @@ int main()
 			 K_ft[i][0] = 0.0;
 			 K_ft[i][1] = 0.0;
 			}
-
+			*/
 		}
 
 		if(t==t_start)
 		amp_ini = avg_amp;
 
 		fftw_execute(plan_pois_b);
-		fftw_execute(plan_imp_b);
+		//fftw_execute(plan_imp_b);
+		simple_lap(lap_psi,fpGpsi, dx,N);
+		
 
-	/*	for(i=spd;i<(N+spd);++i)
-		{	dbi = (double)i;
-			sol[0] = cos(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
-			sol[1] = -sin(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
-			
-
-			fdt = (fpGpsi[i-1][0]+fpGpsi[i+1][0]-2.0*fpGpsi[i][0])/(dx*dx);
-			//fprintf(fplap,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",dx*dbi,K[i][0],K[i][1],-drc*fpGpsi[i][0],-drc*fpGpsi[i][1],fdt);
-			
-		}
 	
-		printf("l do\n");
 
-	*/	
 		for(s_cntr=1;s_cntr<imex_s;++s_cntr)
 		{
 
@@ -416,8 +431,8 @@ int main()
 					}
 					else
 					{
-					  c_psi[0] = fpGpsi[i+spd][0];
-		    			  c_psi[1] =  fpGpsi[i+spd][1];
+					  c_psi[0] = fpGpsi[i][0];
+		    			  c_psi[1] =  fpGpsi[i][1];
 		
 
 					}
@@ -427,17 +442,21 @@ int main()
 		    			ex_vel(vel_val,c_psi,Vval);
 
 		    			ex_K_psi[0][s_cntr-1][i] = vel_val[0];  ex_K_psi[1][s_cntr-1][i] = vel_val[1];
-					im_K_psi[0][s_cntr-1][i] = -K[i+spd][1]/(2.0*m);  im_K_psi[1][s_cntr-1][i] =  K[i+spd][0]/(2.0*m);
 
-					fpGpsi[i+spd][0] = psi[i][0] + dt*ex_a[s_cntr][j]*ex_K_psi[0][j][i]+ dt*im_a[s_cntr][j]*im_K_psi[0][j][i];
-					fpGpsi[i+spd][1] = psi[i][1] + dt*ex_a[s_cntr][j]*ex_K_psi[1][j][i]+ dt*im_a[s_cntr][j]*im_K_psi[1][j][i];
+
+					
+
+					im_K_psi[0][s_cntr-1][i] = -lap_psi[i*2+1]/(2.0*m);  im_K_psi[1][s_cntr-1][i] =  lap_psi[i*2]/(2.0*m);
+
+					fpGpsi[i][0] = psi[i][0] + dt*ex_a[s_cntr][j]*ex_K_psi[0][j][i]+ dt*im_a[s_cntr][j]*im_K_psi[0][j][i];
+					fpGpsi[i][1] = psi[i][1] + dt*ex_a[s_cntr][j]*ex_K_psi[1][j][i]+ dt*im_a[s_cntr][j]*im_K_psi[1][j][i];
 
 				}
 			
 				
 				else
-				{fpGpsi[i+spd][0]+=  dt*ex_a[s_cntr][j]*ex_K_psi[0][j][i]+ dt*im_a[s_cntr][j]*im_K_psi[0][j][i];
-				 fpGpsi[i+spd][1]+=  dt*ex_a[s_cntr][j]*ex_K_psi[1][j][i]+ dt*im_a[s_cntr][j]*im_K_psi[1][j][i];
+				{fpGpsi[i][0]+=  dt*ex_a[s_cntr][j]*ex_K_psi[0][j][i]+ dt*im_a[s_cntr][j]*im_K_psi[0][j][i];
+				 fpGpsi[i][1]+=  dt*ex_a[s_cntr][j]*ex_K_psi[1][j][i]+ dt*im_a[s_cntr][j]*im_K_psi[1][j][i];
 				}
 				
 	
@@ -446,29 +465,20 @@ int main()
 
 	
 			}
-
-			for(i=0;i<spd;++i)
-			{
-				fpGpsi[i][0] = fpGpsi[N-1+i][0];
-				fpGpsi[N+spd+i][0] = fpGpsi[i+1+spd][0];
-		
-				fpGpsi[i][1] = fpGpsi[N-1+i][1];
-				fpGpsi[N+spd+i][1] = fpGpsi[i+1+spd][1];
-			}
 	
 			   fftw_execute(plan_pois_f);
 
-			  for(i=0;i<N+2*spd;++i)
+			  for(i=0;i<N;++i)
 			  {	
 				lambda = k_grid[i]*k_grid[i]*im_a[s_cntr][s_cntr]*dt/(2.0*m);
-				
+
 				fpGpsi_ft[i][0] = (fpGpsi_ft[i][0] + lambda*fpGpsi_ft[i][1])/(1.0+lambda*lambda);
 				fpGpsi_ft[i][1] = (fpGpsi_ft[i][1] - lambda*fpGpsi_ft[i][0])/(1.0+lambda*lambda);
 
 				
 
-				fpGpsi_ft[i][0] = fpGpsi_ft[i][0]/((double)nN);
-				fpGpsi_ft[i][1] = fpGpsi_ft[i][1]/((double)nN);
+				fpGpsi_ft[i][0] = fpGpsi_ft[i][0]/((double)N);
+				fpGpsi_ft[i][1] = fpGpsi_ft[i][1]/((double)N);
 
 				K_ft[i][0] = -fpGpsi_ft[i][0]*(k_grid[i]*k_grid[i]);
 				K_ft[i][1] = -fpGpsi_ft[i][1]*(k_grid[i]*k_grid[i]);
@@ -484,8 +494,8 @@ int main()
 			   }
 
 			  fftw_execute(plan_pois_b);
-			  fftw_execute(plan_imp_b);
-
+			 /// fftw_execute(plan_imp_b);
+			simple_lap(lap_psi,fpGpsi, dx,N);
 
 			
 				
@@ -505,15 +515,15 @@ int main()
 		for(i=0;i<N;++i)
 		{	
 	
-			c_psi[0] = fpGpsi[i+spd][0];
-		    	c_psi[1] =  fpGpsi[i+spd][1]; 
+			c_psi[0] = fpGpsi[i][0];
+		    	c_psi[1] =  fpGpsi[i][1]; 
 					
 			c_psi_amp = sqrt(c_psi[0]*c_psi[0] + c_psi[1]*c_psi[1]);
 		    	Vval = V(c_psi_amp);
 		    	ex_vel(vel_val,c_psi,Vval);
 
 		    	ex_K_psi[0][imex_s-1][i] = vel_val[0];  ex_K_psi[1][imex_s-1][i] = vel_val[1];
-			im_K_psi[0][imex_s-1][i] = -K[i+spd][1]/(2.0*m);  im_K_psi[1][imex_s-1][i] =  K[i+spd][0]/(2.0*m);
+			im_K_psi[0][imex_s-1][i] = -lap_psi[i*2+1]/(2.0*m);  im_K_psi[1][imex_s-1][i] =  lap_psi[i*2]/(2.0*m);
 	
 							
 			   for(j=0;j<imex_s;++j)
@@ -526,8 +536,8 @@ int main()
 			    }
 
 
-			fpGpsi[i+spd][0] = psi[i][0];
-			fpGpsi[i+spd][1] = psi[i][1];
+			fpGpsi[i][0] = psi[i][0];
+			fpGpsi[i][1] = psi[i][1];
 
 
 			
@@ -547,16 +557,6 @@ int main()
 		   }
 
 
-		 for(i=0;i<spd;++i)
-		 {
-				fpGpsi[i][0] = fpGpsi[N-1+i][0];
-				fpGpsi[N+spd+i][0] = fpGpsi[i+1+spd][0];
-		
-				fpGpsi[i][1] = fpGpsi[N-1+i][1];
-				fpGpsi[N+spd+i][1] = fpGpsi[i+1+spd][1];
-		 }
-
-
 
 		if((tcntr%printcntr)==0)  
 		{ fprintf(fp,"\n\n\n");
@@ -567,20 +567,20 @@ int main()
 		
 
 
-		  
+		
 
 	}///// ENd f Time Evolution /////////////////////////
 	avg_amp = 0.0;
 	for(i=0;i<N;++i)
-	{	amp  = sqrt(fpGpsi[i+spd][0]*fpGpsi[i+spd][0] + fpGpsi[i+spd][1]*fpGpsi[i+spd][1]);
+	{	amp  = sqrt(fpGpsi[i][0]*fpGpsi[i][0] + fpGpsi[i][1]*fpGpsi[i][1]);
 		avg_amp+=amp;
 
 	}
 
 	fprintf(fpmass,"%lf\t%lf\n",t/t_end,avg_amp/((double)N));
 
-	
 	printf("Error in conserv. %lf\n", 100.0*fabs(avg_amp-amp_ini)/amp_ini);
+
 
 
 
