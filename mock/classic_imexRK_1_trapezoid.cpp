@@ -121,7 +121,7 @@ void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double di
 	double P[N][N]={0.0};
 	double P2[N][N]={0.0};
 	double res;
-	FILE *fptest = fopen("test_inv1.txt","w");
+	FILE *fptest = fopen("test_inv1_trp.txt","w");
 
 ///////////////create P^2  ///////////////////////////////////////////////////////
 
@@ -610,9 +610,12 @@ int main()
 	double dx = 4e-3;
 	double abs_err,en_loss;
 
-	double dx_l=4e-3,dx_u = 4e-2;
+	double dx_l=2e-3,dx_u = 4e-2;
 	double dt_l= 1e-5,dt_u = 1e-2;
 
+/*	double dx_l=4e-3,dx_u = 4e-2;
+	double dt_l= 1e-5,dt_u = 1e-2;
+*/
 	double ddx = (dx_u-dx_l)/(20.0);	
 	double ddt = (dt_u-dt_l)/(20.0);
 
