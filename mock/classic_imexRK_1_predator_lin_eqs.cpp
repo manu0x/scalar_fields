@@ -643,9 +643,9 @@ int main()
 			if(isnan(P[i])||(P[i]<0.0))
 			 {
 
-				if(isnan(P[i]))
+				if(isnan(P[i])&&(prt))
 				printf("!!!GONE NAN!!!!  %d\tt %lf\t%lf\n",tcntr,t,P[i]);
-				if(P[i]<0.0)
+				if(P[i]<0.0&&(prt))
 				printf("!!!+tivity broken!!!j  %d\ti %d\t%lf\t%lf\n",j,i,P[i],im_K_P[j][i]);
 					
 				fail = 1;
@@ -668,7 +668,18 @@ int main()
 
 			if((tcntr%printcntr)==0)  
 			fprintf(fp2,"%lf\t%lf\t%lf\n",x[i],P[i],Pb[i]);
+		
 
+			if(((100.0*fabs(avg_amp-amp_ini)/amp_ini)>=1e3)||(fail)||((*abs_err)>=1e3))
+			{
+
+			
+				*abs_err = 1e3;
+					
+				return(1e3);
+	
+		
+			}
 			
 
 		   }

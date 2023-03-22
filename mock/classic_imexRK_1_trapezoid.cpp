@@ -5,6 +5,7 @@ using namespace std;
 #include <math.h>
 #include <fftw3.h>
 #include <time.h>
+#include <omp.h>
 
 #include <gsl/gsl_linalg.h>
 
@@ -15,6 +16,7 @@ using namespace std;
 //////////GLobal constants/////////////
 
 double m,n,T;
+//double theta;	// How much implicit;
 
 ///////////////////////////////////////
 
@@ -105,11 +107,11 @@ void ex_vel(double v[2],double psi[2],double Vval)
 
 }
 
-void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double diff,double gamma)
+void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double diff,double Vval,double theta)
 {	///////////////////// This assumed Diagonal with same element gamma
 	int i,j,k;
 	double mu = dt/(dx*dx);
-	double omega = mu*gamma/(2.0*m);
+	//double omega = mu*gamma/(2.0*m);
 	size_t tn  = N;
 	gsl_matrix *gM = gsl_matrix_alloc(tn, tn);
 	gsl_matrix *gMinv = gsl_matrix_alloc(tn, tn);
@@ -130,7 +132,7 @@ void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double di
 	     M[i][j] = 0.0;
 	     P[i][j] = 0.0;
 	     if(i==j)
-		M[i][j] = -2.0;
+		M[i][j] = dt*theta*(m*Vval + 2.0/(2.0*m*dx*dx));
 		
 	   }
 	}
@@ -143,9 +145,9 @@ void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double di
 		//M[i][j] = 0.0;
 		if(i==j)
 		{
-		  M[i][j] = -2.0;	
-		  M[i][j-1] = 1.0;
-		  M[i][j+1] = 1.0;
+		  
+		  M[i][j-1] = -dt*theta/(2.0*m*dx*dx);
+		  M[i][j+1] = -dt*theta/(2.0*m*dx*dx);
 
 		
 		}
@@ -157,10 +159,10 @@ void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double di
 
 	}
 
-	M[0][N-1] = 1.0;
-	M[N-1][0] = 1.0;
-	M[0][1] = 1.0;
-	M[N-1][N-2] = 1.0;
+	M[0][N-1] = -theta*dt/(2.0*m*dx*dx);
+	M[N-1][0] = -theta*dt/(2.0*m*dx*dx);
+	M[0][1] = -theta*dt/(2.0*m*dx*dx);
+	M[N-1][N-2] = -theta*dt/(4.0*m*dx*dx);
 
 	for(i=0;i<N;++i)
 	{
@@ -193,9 +195,9 @@ void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double di
 	  {
 		//M[i][j] = 0.0;
 		if(i==j)
-		 M[i][j] = 1.0+omega*omega*P2[i][j];	
+		 M[i][j] = 1.0+P2[i][j];	
 		else
-		  M[i][j] = omega*omega*P2[i][j];
+		  M[i][j] = P2[i][j];
 
 		  gsl_matrix_set(gM, i, j,   M[i][j]);
 		  
@@ -259,7 +261,21 @@ void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double di
 	  for(j=0;j<N;++j)
 	  {	
 
-		fprintf(fptest,"%.10lf ",M[i][j]);
+		fprintf(fptest,"%.10lf ",Mp[i*N+j]);
+			 
+	  }
+
+		fprintf(fptest,"\n");
+
+	}
+
+	fprintf(fptest,"\n\n\n");
+	for(i=0;i<N;++i)
+	{
+	  for(j=0;j<N;++j)
+	  {	
+
+		fprintf(fptest,"%.10lf ",MpP[i*N+j]);
 			 
 	  }
 
@@ -307,27 +323,26 @@ void initialise(double *psi,double *x,double *k,double dx,int N)
 
 }
 
-double run(double dt,double dx,double *abs_err,int printfp,int prt)
+double run(double dt,double dx,double *abs_err,int printfp,int prt,double theta=1.0)
 {
-
 	int N,t_steps;
 	double box_len,t_end,t_start,diff;
 
-
 ///////////////////////////////File for data/////////////////////////////////////////////////////
 
-	FILE *fp = fopen("data_linq.txt","w");
-	FILE *fp2 = fopen("data2_linq.txt","w");
-	FILE *fptemp = fopen("temp_linq.txt","w");
+	FILE *fp = fopen("data_trp.txt","w");
+	FILE *fp2 = fopen("data2_trp.txt","w");
+	FILE *fptemp = fopen("temp_trp.txt","w");
 	
-	FILE *fpmass = fopen("mass_linq.txt","w");
+	FILE *fpmass = fopen("mass_trp.txt","w");
 
 /////////////////////////////// Parameter setting ////////////////////////////////////////////////
 	m  = 1.0;
 	n  = 1.0;
-	T = 2.0*pie/m;
-	diff = 0.0;
-	N = 100;
+	T = 2.0*pie*m;
+	
+
+	theta = 1.0;
 
 
 
@@ -336,7 +351,7 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt)
 /////////////////////////////// Box & res. setting ///////////////////////////////////////////////
 
 	box_len = 2.0;
-	//dx = box_len/(double(N));
+//	dx = box_len/(double(N));
 	N = ((int)(box_len/dx)) + 1;
 
 ////////////////////////////// Time & dt settings ////////////////////////////////////////////////
@@ -345,12 +360,13 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt)
 	t_end = 2.0*T;
 	t_steps = (int)((t_end-t_start)/dt);
 	//dt  = (t_end-t_start)/((double)t_steps);
-	printf("dt %lf N %d\n",dt,N);
-	
+	printf("dt %lf N %d\n",dt,N);	
+
 /////////////////////////////////////////RK things/////////////////////////////////////////
 
 
 	double im_K_P[ex_s][N][2],ex_K_P[im_s][N][2];
+
 
 ////////////////////////////// P variables  /////////////////////////////////////////////////////
 
@@ -377,7 +393,8 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt)
   double mat[N][N];
   double matP[N][N];
 
-  cr_invert_mat(Mp,MpP, N,  dt,  dx, diff,im_a[0][0]);
+  Vval = V(0.0);
+  cr_invert_mat(Mp,MpP, N,  dt,  dx, diff,Vval,theta);
 
   
 
@@ -420,227 +437,101 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt)
 
 	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&(1);t+=dt,++tcntr)
 	{	
+	
+		if((tcntr%printcntr)==0) 
 		avg_amp = 0.0;
-	
-	 	for(i=0;i<N;++i)
-		{	
-			
-			dbi = (double)(i);
-			
-			if((tcntr%printcntr)==0)  
-			{
-			  if(i<N)
-			  {amp  = sqrt(Psi[i][0]*Psi[i][0] + Psi[i][1]*Psi[i][1]);				
-			   avg_amp+=amp;
-			  }
-			  sol[0] = cos(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
-			  sol[1] = -sin(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
-			 if(printfp)
-			  fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",dx*dbi,Psi[i][0],Psi[i][1],sol[0],sol[1],amp);
-			  if((i==20)&&(printfp))
-			   fprintf(fptemp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",t,Psi[i][0],Psi[i][1],sol[0],sol[1],amp);
-			}
-			
-			
-			Psik[i][0] = 0.0;
-			Psik[i][1] = 0.0;
-
-			for(j=0;j<N;++j)	
-			{	
-				Psik[i][0]+=( mat[i][j]*Psib[j][0] - omega*matP[i][j]*Psib[j][1] );
-
-			        Psik[i][1]+=(  omega*matP[i][j]*Psib[j][0] + mat[i][j]*Psib[j][1]  );
 
 
-			}
-			
-
-			
-		}
-		
-		
-		if(t==t_start)
-		{amp_ini = avg_amp;
-		 //printf("av ini %lf g %lf\n",amp_ini,avg_amp);
-		 printf("mu %lf dt %lf\tt %lf\tamp_ini %lf\n\n",dt/(dx*dx),dt,t,amp_ini);
-		}
-		for(s_cntr=1;s_cntr<imex_s;++s_cntr)
-		{
-
-			for(j=0;j<s_cntr;++j)
-			{
-			   for(i=0;i<N;++i)
-			   {
-				
-				if(j==0)
-				{
-
-					if(s_cntr==1)
-					  {c_psi[0] = Psi[i][0];
-					   c_psi[1] = Psi[i][1];
-					  }
-					else
-					  {c_psi[0] = Psik[i][0];
-					   c_psi[1] = Psik[i][1];
-					  }
-		    			c_psi_amp = sqrt(c_psi[0]*c_psi[0] + c_psi[1]*c_psi[1]);
-		    			Vval = V(c_psi_amp);
-		    			ex_vel(vel_val,c_psi,Vval);
-					
-
-		    			ex_K_P[s_cntr-1][i][0] = vel_val[0];
-					ex_K_P[s_cntr-1][i][1] = vel_val[1]; 
-
-					l1 = i-1;
-					r1 = (i+1);
-					if(i==0)
-					 l1 = N-2;
-					if(i==(N-1))	
-			 		 r1 = 1;
-	
-					vl1 = Psik[l1][0];
-					vr1 = Psik[r1][0];	
-					vc = Psik[i][0];
-	
-					im_K_P[s_cntr-1][i][1]  = (vr1 +vl1 - 2.0*vc )/(2.0*m*dx*dx);
-
-					vl1 = Psik[l1][1];
-					vr1 = Psik[r1][1];	
-					vc = Psik[i][1];
-	
-					im_K_P[s_cntr-1][i][0]  =  -(vr1 +vl1 - 2.0*vc )/(2.0*m*dx*dx);
-					//printf("%d %d %lf\n",s_cntr,i,im_K_P[s_cntr-1][i] );
-
-					Psib[i][0] = Psi[i][0] + dt*ex_a[s_cntr][j]*ex_K_P[j][i][0]+ dt*im_a[s_cntr][j]*im_K_P[j][i][0];
-					Psib[i][1] = Psi[i][1] + dt*ex_a[s_cntr][j]*ex_K_P[j][i][1]+ dt*im_a[s_cntr][j]*im_K_P[j][i][1];
-					
-
-				}
-			
-				
-				else
-				{ Psib[i][0]+=  dt*ex_a[s_cntr][j]*ex_K_P[j][i][0]+ dt*im_a[s_cntr][j]*im_K_P[j][i][0];
-				  Psib[i][1]+=  dt*ex_a[s_cntr][j]*ex_K_P[j][i][1]+ dt*im_a[s_cntr][j]*im_K_P[j][i][1];
-				}
-				
-	
-	
-			   }
-
-	
-			}
-	
-
-			  for(i=0;i<N;++i)
-			  {	
-				Psik[i][0] = 0.0;
-			        Psik[i][1] = 0.0;
-
-			   for(j=0;j<N;++j)	
-			    {	
-				Psik[i][0]+=( mat[i][j]*Psib[j][0] - omega*matP[i][j]*Psib[j][1] );
-
-			        Psik[i][1]+=(  omega*matP[i][j]*Psib[j][0] + mat[i][j]*Psib[j][1]  );
-
-
-			     }
-							
-
-			  
-				
-			
-			 }
-				
-			
-
-
-		}//RK stages concluded
-	
-		avg_amp=0.0;
-
-	
-		*abs_err = 0.0;
-
+		#pragma omp parallel for private(l1,r1,vl1,vr1,vc)
 		for(i=0;i<N;++i)
 		{	
-	
-			c_psi[0] = Psik[i][0];
-			c_psi[1] = Psik[i][1];
-
-			c_psi_amp = sqrt(c_psi[0]*c_psi[0] + c_psi[1]*c_psi[1]);
-    			Vval = V(c_psi_amp);
-    			ex_vel(vel_val,c_psi,Vval);
-					
-
-    			ex_K_P[imex_s-1][i][0] = vel_val[0];
-			ex_K_P[imex_s-1][i][1] = vel_val[1]; 
-
+			
 			l1 = i-1;
 			r1 = (i+1);
 			if(i==0)
 			 l1 = N-2;
 			if(i==(N-1))	
-			 r1 = 1;
+			  r1 = 1;
 	
-			vl1 = Psik[l1][0];
-			vr1 = Psik[r1][0];	
-			vc = Psik[i][0];
-	
-			im_K_P[imex_s-1][i][1]  = (vr1 +vl1 - 2.0*vc )/(2.0*m*dx*dx);
+			vl1 = Psi[l1][1];
+			vr1 = Psi[r1][1];	
+			vc = Psi[i][1];
 
-			vl1 = Psik[l1][1];
-			vr1 = Psik[r1][1];	
-			vc =  Psik[i][1];
-	
-			im_K_P[imex_s-1][i][0]  =  -(vr1 +vl1 - 2.0*vc )/(2.0*m*dx*dx);
+			Psib[i][0] = Psi[i][0]+ (1.0-theta)*dt*m*Vval*Psi[i][1] - (1.0-theta)*dt*(vr1 +vl1 - 2.0*vc )/(2.0*m*dx*dx);
 
-				
-			   for(j=0;j<imex_s;++j)
-			   {	Psi[i][0]+=  dt*ex_b[j]*ex_K_P[j][i][0]+ dt*im_b[j]*im_K_P[j][i][0];
-				
-				Psi[i][1]+=  dt*ex_b[j]*ex_K_P[j][i][1]+ dt*im_b[j]*im_K_P[j][i][1];
 			
-				//if(i==51)
-				//printf("!!!+tivity broken!!!j  %d\ti %d\t%lf\t%lf\n",j,i,P[i],im_K_P[j][i]);
-			    }
+	
+			vl1 = Psi[l1][0];
+			vr1 = Psi[r1][0];	
+			vc = Psi[i][0];
+
+			Psib[i][1] = Psi[i][1] - (1.0-theta)*dt*m*Vval*Psi[i][0] + (1.0-theta)*dt*(vr1 +vl1 - 2.0*vc )/(2.0*m*dx*dx); 
+
+		}
+		(*abs_err) = 0.0;
+	 	for(i=0;i<N;++i)
+		{	
+			
+			dbi = (double)(i);
+			
+			
+			
+			
+			Psi[i][0] = 0.0;
+			Psi[i][1] = 0.0;
+
+			for(j=0;j<N;++j)	
+			{	
+				Psi[i][0]+=( mat[i][j]*Psib[j][0] + matP[i][j]*Psib[j][1] );
+
+			        Psi[i][1]+=(  -matP[i][j]*Psib[j][0] + mat[i][j]*Psib[j][1] );
 
 
-				//if(isnan(P[i]))				
-			if(isnan(Psi[i][0])||isnan(Psi[i][1]))
-			 {
-
-				if(isnan(Psi[i][0]))
-				printf("!!!GONE Real!!!!  %d\tt %lf\t%lf\n",tcntr,t,Psi[i][0]);
-				if(isnan(Psi[i][1]))
-				printf("!!!GONE Imag!!!!  %d\tt %lf\t%lf\n",tcntr,t,Psi[i][1]);
-					
-				fail = 1;
-
-				break;
 			}
-		
 
-
-			if(fail)
-			break;
-
-			Psib[i][0] = Psi[i][0];
-
-			Psib[i][1] = Psi[i][1];
+			if(isnan((Psi[i][0])+Psi[i][1]))
+			{
+				fail =1;
+				if(prt)
+				printf("FAILED %d tcntr %d %lf %lf\n",i,tcntr,Psi[i][0],Psi[i][0]);
 			
+				break;
 
+			}
 
-			amp  = sqrt(Psi[i][0]*Psi[i][0] + Psi[i][1]*Psi[i][1]);
+			amp  = sqrt(Psi[i][0]*Psi[i][0] + Psi[i][1]*Psi[i][1]);				
 			avg_amp+=amp;
-			//printf("avg_amp %lf\n",avg_amp);
-	
+			  
 			sol[0] = cos(2.0*pie*(t+dt)/T)*sin(2.0*pie*n*dx*dbi);
 			sol[1] = -sin(2.0*pie*(t+dt)/T)*sin(2.0*pie*n*dx*dbi);
-	
-			(*abs_err)+=(fabs(sol[0]-Psi[i][0])+fabs(sol[1]-Psi[i][1]));
+
 
 			if((tcntr%printcntr)==0)  
+			{
+			  
+			  fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",dx*dbi,Psi[i][0],Psi[i][1],sol[0],sol[1],amp);
+			  if(i==20)
+			   fprintf(fptemp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",t,Psi[i][0],Psi[i][1],sol[0],sol[1],amp);
+			}
+
+
+			
+			(*abs_err)+=(fabs(sol[0]-Psi[i][0])+fabs(sol[1]-Psi[i][1]));
+			
+		}
+	
+		*abs_err = (*abs_err)/((double)N);
+
+		
+		
+		
+		if(t==t_start)
+		{amp_ini = avg_amp;
+		 
+			if((tcntr%printcntr)==0)  
 			{ 
+			  sol[0] = cos(2.0*pie*(t+dt)/T)*sin(2.0*pie*n*dx*dbi);
+			  sol[1] = -sin(2.0*pie*(t+dt)/T)*sin(2.0*pie*n*dx*dbi);	
 			  if(printfp)
 			  fprintf(fp2,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",dx*dbi,Psi[i][0],Psi[i][1],sol[0],sol[1],amp);
 			}
@@ -648,9 +539,19 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt)
 
 			
 
-		   }
+		  }
 
-		*abs_err = (*abs_err)/((double)N);
+		if(((100.0*fabs(avg_amp-amp_ini)/amp_ini)>=1e3)||(fail)||((*abs_err)>=1e3))
+		{
+
+			
+				*abs_err = 1e3;
+					
+				return(1e3);
+	
+		
+		}
+	
 
 
 
@@ -659,8 +560,8 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt)
 		 if(printfp)
 		  {fprintf(fp,"\n\n\n");
 		   fprintf(fp2,"\n\n\n");
-		   fprintf(fpmass,"%lf\n",t/t_end);	
-		  }
+		   fprintf(fpmass,"%lf\n",t/t_end);
+		   }
 		if(prt)
 		  printf("mu %lf dt %lf\tt %lf\tamp %lf\n\n",dt/(dx*dx),dt,t,avg_amp);
 		}
@@ -671,6 +572,24 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt)
 
 	}///// ENd f Time Evolution /////////////////////////
 	
+
+	avg_amp = 0.0;
+	for(i=0;i<N;++i)
+		{	
+			
+			dbi = (double)(i);
+			
+			amp  = sqrt(Psi[i][0]*Psi[i][0] + Psi[i][1]*Psi[i][1]);				
+			avg_amp+=amp;
+			  
+			  sol[0] = cos(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
+			  sol[1] = -sin(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
+			 if(printfp)
+			  fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",dx*dbi,Psi[i][0],Psi[i][1],sol[0],sol[1],avg_amp);
+			 if((i==20)&&(printfp))
+			   fprintf(fptemp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",t,Psi[i][0],Psi[i][1],sol[0],sol[1],amp);
+			
+		}
 	
 	if(prt)
 	printf("Error in conserv. %lf\n mu is %lf", 100.0*fabs(avg_amp-amp_ini)/amp_ini,dt/(dx*dx));
@@ -684,19 +603,20 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt)
 
 
 
+
 int main()
 {
 	double dt = 3e-4;
 	double dx = 4e-3;
 	double abs_err,en_loss;
 
-	double dx_l=6e-3,dx_u = 4e-2;
+	double dx_l=4e-3,dx_u = 4e-2;
 	double dt_l= 1e-5,dt_u = 1e-2;
 
 	double ddx = (dx_u-dx_l)/(20.0);	
 	double ddt = (dt_u-dt_l)/(20.0);
 
-	FILE *fp = fopen("imex_linq.txt","w");
+	FILE *fp = fopen("trapezoid_fd.txt","w");
 
 	for(dt=dt_l;dt<=dt_u;dt+=ddt)
 	{
@@ -704,7 +624,6 @@ int main()
 		
 		for(dx = dx_l;dx<=dx_u;dx+=ddx)
 		{
-			
 			en_loss = run(dt,dx,&abs_err,0,0);
 
 			printf("%lf\t%lf\t%lf\t%lf\t%lf\n",dx,dt,dt/(dx*dx),en_loss,abs_err);
