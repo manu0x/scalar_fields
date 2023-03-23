@@ -588,7 +588,8 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt)
 		 }
 
 
-		if(((100.0*fabs(avg_amp-amp_ini)/amp_ini)>=1e3)||(fail)||((*abs_err)>=1e3))
+		///if(((100.0*fabs(avg_amp-amp_ini)/amp_ini)>=1e3)||(fail)||((*abs_err)>=1e3))
+		if(fail)
 		{
 
 			*abs_err = 1e3;

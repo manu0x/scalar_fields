@@ -121,7 +121,7 @@ void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double di
 	double P[N][N]={0.0};
 	double P2[N][N]={0.0};
 	double res;
-	FILE *fptest = fopen("test_inv1_trp.txt","w");
+	//FILE *fptest = fopen("test_inv1_trp.txt","w");
 
 ///////////////create P^2  ///////////////////////////////////////////////////////
 
@@ -188,7 +188,7 @@ void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double di
 
 
 ///////////////Create Matrix////////////////////////////////////////////////////////
-	
+	printf("mat inv gsl start %lf %lf %d %d\n",dt,dx,i,j);
 	for(i=0;i<N;++i)
 	{
 	  for(j=0;j<N;++j)
@@ -201,24 +201,25 @@ void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double di
 
 		  gsl_matrix_set(gM, i, j,   M[i][j]);
 		  
-		fprintf(fptest,"%lf ",M[i][j]);
+		//fprintf(fptest,"%lf ",M[i][j]);
 		
 
 	  }
 
-	 fprintf(fptest,"\n");
+	// fprintf(fptest,"\n");
 
 	}
 
-	fprintf(fptest,"\n\n");
+	//fprintf(fptest,"\n\n");
 
-
+	
 ////////////////////// LU decomp and inversion ////////////////////////////////////////////////////
 
 	gsl_permutation *p = gsl_permutation_alloc(tn);
 	out = gsl_linalg_LU_decomp(gM, p, &sig);
 	out = gsl_linalg_LU_invert(gM, p,gMinv);
 
+	printf("mat inv done %lf %lf\n",dt,dx);
 ////////////////////////////////////////////////////////////////////////////////////////////////////	
 	for(i=0;i<N;++i)
 	{
@@ -236,7 +237,10 @@ void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double di
 
 	}
 
+ 	gsl_matrix_free(gM);
+	gsl_matrix_free(gMinv);
 
+/*
 	for(i=0;i<N;++i)
 	{
 	  for(j=0;j<N;++j)
@@ -261,7 +265,7 @@ void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double di
 	  for(j=0;j<N;++j)
 	  {	
 
-		fprintf(fptest,"%.10lf ",Mp[i*N+j]);
+		//fprintf(fptest,"%.10lf ",Mp[i*N+j]);
 			 
 	  }
 
@@ -284,9 +288,9 @@ void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double di
 	}
 
 
+*/
 
-
-fclose(fptest);
+//fclose(fptest);
 
 
 }
@@ -393,7 +397,7 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt,double theta=
   double mat[N][N];
   double matP[N][N];
 
-  Vval = V(0.0);
+  Vval = V(0.0);printf("mat inv to begin %lf %lf\n",dt,dx);
   cr_invert_mat(Mp,MpP, N,  dt,  dx, diff,Vval,theta);
 
   
@@ -541,7 +545,8 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt,double theta=
 
 		  }
 
-		if(((100.0*fabs(avg_amp-amp_ini)/amp_ini)>=1e3)||(fail)||((*abs_err)>=1e3))
+		//if(((100.0*fabs(avg_amp-amp_ini)/amp_ini)>=1e3)||(fail)||((*abs_err)>=1e3))
+		if(fail)
 		{
 
 			
@@ -610,23 +615,26 @@ int main()
 	double dx = 4e-3;
 	double abs_err,en_loss;
 
-	double dx_l=2e-3,dx_u = 4e-2;
-	double dt_l= 1e-5,dt_u = 1e-2;
+	double dx_l=4e-3,dx_u = 4e-2;
+	double dt_l= 1e-5,dt_u = 1e-3;
 
 /*	double dx_l=4e-3,dx_u = 4e-2;
 	double dt_l= 1e-5,dt_u = 1e-2;
 */
 	double ddx = (dx_u-dx_l)/(20.0);	
-	double ddt = (dt_u-dt_l)/(20.0);
+	double ddt = (dt_u-dt_l)/(10.0);
 
 	FILE *fp = fopen("trapezoid_fd.txt","w");
 
 	for(dt=dt_l;dt<=dt_u;dt+=ddt)
 	{
-
+		//dt = 0.006004;
+		//dx = 0.005800;
 		
 		for(dx = dx_l;dx<=dx_u;dx+=ddx)
 		{
+			
+			printf("%.10lf\t%.10lf\n",dx,dt);
 			en_loss = run(dt,dx,&abs_err,0,0);
 
 			printf("%lf\t%lf\t%lf\t%lf\t%lf\n",dx,dt,dt/(dx*dx),en_loss,abs_err);
