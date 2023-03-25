@@ -3,6 +3,7 @@ using namespace std;
 #include <stdio.h>
 #include <math.h>
 #include <fftw3.h>
+#include <limits>
 
 #define pie M_PI 
 
@@ -210,11 +211,11 @@ void initialise(fftw_complex *psi,double *k,double dx,int N,int spd)
 
 
 
-double run(double dt,double dx,double *abs_err,int printfp,int prt)
+double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int printfp,int prt)
 {
 
 	int N,t_steps;
-	double box_len,t_end,t_start,xval,dbi,sol[2];
+	double box_len,t_end,t_start,xval,dbi,sol[2],stb_ini;
 	
 
 ///////////////////////////////File for data/////////////////////////////////////////////////////
@@ -246,9 +247,11 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt)
 	
 	t_start = 0.0;
 	t_end = 2.0*T;
+	if(stb_any)
+	t_end = 0.01*t_end;
 	t_steps = (int)((t_end-t_start)/dt);
 	//dt  = (t_end-t_start)/((double)t_steps);
-	//if(prt)
+	if(prt)
 	printf("dt %lf N %d\n",dt,N);
 	
 
@@ -330,11 +333,13 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt)
 ///////////////////////  Evolution ///////////////////////////////////////////////////////////////
 
 	int s_cntr,tcntr,printcntr,fail=0;
-	printcntr = (int)(((double) t_steps)/100.0);	//printf("%d\n",printcntr);
+	printcntr = (int)(((double) t_steps)/100.0);
+	if(t_steps<=100)
+		printcntr = 1.0;	//printf("%d\n",printcntr);
 	double t,vel_val[2],c_psi[2],c_psi_amp,Vval,amp,avg_amp;
 	double drc = 2.0*pie*n*2.0*pie*n;
 	double fdt,amp_ini;
-
+	*stb_avg=0.0;
 
 
 			
@@ -349,15 +354,17 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt)
 
 	 	for(i=0;i<(N+2*spd);++i)
 		{	dbi = (double)(i-spd);
+
 			
-			if((tcntr%printcntr)==0)  
+			
+			if((tcntr%printcntr)==0||(stb_any))  
 			{
 			  if(i<N)
 			  {amp  = sqrt(psi[i][0]*psi[i][0] + psi[i][1]*psi[i][1]);				
 			   avg_amp+=amp;
 			   sol[0] = cos(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
 			   sol[1] = -sin(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
-			if(printfp)
+			  if(printfp)
 			  fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",dx*((double)i),fpGpsi[i+spd][0],fpGpsi[i+spd][1],sol[0],sol[1],amp);
 			  }
 			  
@@ -384,7 +391,7 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt)
 			}
 
 		}
-		
+		stb_ini = avg_amp;
 		if(t==t_start)
 		amp_ini = avg_amp;
 
@@ -576,6 +583,7 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt)
 		   }
 
 			*abs_err = (*abs_err)/((double)N);
+			(*stb_avg)+=(avg_amp/stb_ini);
 
 
 		 for(i=0;i<spd;++i)
@@ -587,14 +595,23 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt)
 				fpGpsi[N+spd+i][1] = fpGpsi[i+1+spd][1];
 		 }
 
+		
 
-		///if(((100.0*fabs(avg_amp-amp_ini)/amp_ini)>=1e3)||(fail)||((*abs_err)>=1e3))
-		if(fail)
+		if((stb_any)&&(fail))
 		{
 
-			*abs_err = 1e3;
+			*abs_err = 1e5;
+			*stb_avg = std::numeric_limits<double>::infinity();		
+			return(1e5);
+			
+		}
+		else 
+		if(((100.0*fabs(avg_amp-amp_ini)/amp_ini)>=1e3)||(fail)||((*abs_err)>=1e3))
+		{
+
+			*abs_err = -1e3;
 					
-			return(1e3);
+			return(-1e3);
 			
 		}
 	
@@ -616,6 +633,7 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt)
 		  
 
 	}///// ENd f Time Evolution /////////////////////////
+	*stb_avg = (*stb_avg)/((double) tcntr);
 	avg_amp = 0.0;
 	for(i=0;i<N;++i)
 	{	amp  = sqrt(fpGpsi[i+spd][0]*fpGpsi[i+spd][0] + fpGpsi[i+spd][1]*fpGpsi[i+spd][1]);
@@ -653,7 +671,7 @@ int main()
 
 	double dt = 3e-4;
 	double dx = 4e-3;
-	double abs_err,en_loss;
+	double abs_err,en_loss,stb_avg;
 
 	double dx_l=2e-3,dx_u = 4e-2;
 	double dt_l= 1e-5,dt_u = 1e-2;
@@ -663,17 +681,18 @@ int main()
 
 	FILE *fp = fopen("imex_ft.txt","w");
 
-	for(dt=dt_l;dt<=dt_u;dt+=ddt)
+	//for(dt=dt_l;dt<=dt_u;dt+=ddt)
 	{
 
 		
-		for(dx = dx_l;dx<=dx_u;dx+=ddx)
+		//for(dx = dx_l;dx<=dx_u;dx+=ddx)
 		{
-			
-			en_loss = run(dt,dx,&abs_err,0,0);
+			dx = 4e-2;
+			dt = 1e-5;
+			en_loss = run(dt,dx,&abs_err,&stb_avg,0,1,1);
 
-			printf("%lf\t%lf\t%lf\t%lf\t%lf\n",dx,dt,dt/(dx*dx),en_loss,abs_err);
-			fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\n",dx,dt,dt/(dx*dx),en_loss,abs_err);
+			printf("%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,dt,dt/(dx*dx),en_loss,abs_err,stb_avg);
+			fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,dt,dt/(dx*dx),en_loss,abs_err,stb_avg);
 		}
 
 	}

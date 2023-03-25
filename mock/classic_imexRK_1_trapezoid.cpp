@@ -6,6 +6,7 @@ using namespace std;
 #include <fftw3.h>
 #include <time.h>
 #include <omp.h>
+#include <limits>
 
 #include <gsl/gsl_linalg.h>
 
@@ -188,7 +189,7 @@ void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double di
 
 
 ///////////////Create Matrix////////////////////////////////////////////////////////
-	printf("mat inv gsl start %lf %lf %d %d\n",dt,dx,i,j);
+	//printf("mat inv gsl start %lf %lf %d %d\n",dt,dx,i,j);
 	for(i=0;i<N;++i)
 	{
 	  for(j=0;j<N;++j)
@@ -219,7 +220,7 @@ void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double di
 	out = gsl_linalg_LU_decomp(gM, p, &sig);
 	out = gsl_linalg_LU_invert(gM, p,gMinv);
 
-	printf("mat inv done %lf %lf\n",dt,dx);
+	//printf("mat inv done %lf %lf\n",dt,dx);
 ////////////////////////////////////////////////////////////////////////////////////////////////////	
 	for(i=0;i<N;++i)
 	{
@@ -327,10 +328,10 @@ void initialise(double *psi,double *x,double *k,double dx,int N)
 
 }
 
-double run(double dt,double dx,double *abs_err,int printfp,int prt,double theta=1.0)
+double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int printfp,int prt,double theta=1.0)
 {
 	int N,t_steps;
-	double box_len,t_end,t_start,diff;
+	double box_len,t_end,t_start,diff,stb_ini;
 
 ///////////////////////////////File for data/////////////////////////////////////////////////////
 
@@ -362,9 +363,11 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt,double theta=
 	
 	t_start = 0.0;
 	t_end = 2.0*T;
+	if(stb_any)
+	t_end = 0.01*t_end;
 	t_steps = (int)((t_end-t_start)/dt);
 	//dt  = (t_end-t_start)/((double)t_steps);
-	printf("dt %lf N %d\n",dt,N);	
+	//printf("dt %lf N %d\n",dt,N);	
 
 /////////////////////////////////////////RK things/////////////////////////////////////////
 
@@ -397,7 +400,7 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt,double theta=
   double mat[N][N];
   double matP[N][N];
 
-  Vval = V(0.0);printf("mat inv to begin %lf %lf\n",dt,dx);
+  Vval = V(0.0);//printf("mat inv to begin %lf %lf\n",dt,dx);
   cr_invert_mat(Mp,MpP, N,  dt,  dx, diff,Vval,theta);
 
   
@@ -425,7 +428,7 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt,double theta=
 	int s_cntr,tcntr,printcntr,fail=0;
 	int l1,r1;
 
-	printcntr = (int)(((double) t_steps)/100.0);	printf("%d\n",printcntr);
+	printcntr = (int)(((double) t_steps)/100.0);//	printf("%d\n",printcntr);
 	if(t_steps<=100)
 		printcntr = 1.0;
 	double t,vl1,vr1,vc,amp,avg_amp,sol[2],dbi;
@@ -434,7 +437,7 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt,double theta=
 
 	double omega = dt*im_a[0][0]/(dx*dx*2.0*m);
 
-	
+	*stb_avg = 0.0;
 
 		
 	
@@ -450,6 +453,10 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt,double theta=
 		for(i=0;i<N;++i)
 		{	
 			
+			
+			amp  = sqrt(Psi[i][0]*Psi[i][0] + Psi[i][1]*Psi[i][1]);				
+			avg_amp+=amp;
+
 			l1 = i-1;
 			r1 = (i+1);
 			if(i==0)
@@ -472,6 +479,13 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt,double theta=
 			Psib[i][1] = Psi[i][1] - (1.0-theta)*dt*m*Vval*Psi[i][0] + (1.0-theta)*dt*(vr1 +vl1 - 2.0*vc )/(2.0*m*dx*dx); 
 
 		}
+		
+		stb_ini = avg_amp;
+		if(t==t_start)
+		amp_ini = avg_amp;
+		
+		avg_amp = 0.0;
+		
 		(*abs_err) = 0.0;
 	 	for(i=0;i<N;++i)
 		{	
@@ -512,7 +526,7 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt,double theta=
 
 			if((tcntr%printcntr)==0)  
 			{
-			  
+			  if(printfp)
 			  fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",dx*dbi,Psi[i][0],Psi[i][1],sol[0],sol[1],amp);
 			  if(i==20)
 			   fprintf(fptemp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",t,Psi[i][0],Psi[i][1],sol[0],sol[1],amp);
@@ -527,32 +541,35 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt,double theta=
 		*abs_err = (*abs_err)/((double)N);
 
 		
+		(*stb_avg)+=(avg_amp/stb_ini);
 		
-		
-		if(t==t_start)
-		{amp_ini = avg_amp;
-		 
-			if((tcntr%printcntr)==0)  
+	
+
+		if((tcntr%printcntr)==0)  
 			{ 
 			  sol[0] = cos(2.0*pie*(t+dt)/T)*sin(2.0*pie*n*dx*dbi);
 			  sol[1] = -sin(2.0*pie*(t+dt)/T)*sin(2.0*pie*n*dx*dbi);	
 			  if(printfp)
 			  fprintf(fp2,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",dx*dbi,Psi[i][0],Psi[i][1],sol[0],sol[1],amp);
 			}
-			
 
-			
-
-		  }
-
-		//if(((100.0*fabs(avg_amp-amp_ini)/amp_ini)>=1e3)||(fail)||((*abs_err)>=1e3))
-		if(fail)
+		if((stb_any)&&(fail))
 		{
 
+			*abs_err = 1e5;
+			*stb_avg = std::numeric_limits<double>::infinity();		
+			return(1e5);
 			
-				*abs_err = 1e3;
+		}		  
+
+		else//if(fail)
+		if(((100.0*fabs(avg_amp-amp_ini)/amp_ini)>=1e3)||(fail)||((*abs_err)>=1e3))
+		{
+				//printf("IFFF %lf %lf %d %d\n",(100.0*fabs(avg_amp-amp_ini)/amp_ini),*abs_err,tcntr,fail);
+			
+				*abs_err = -1e3;
 					
-				return(1e3);
+				return(-1e3);
 	
 		
 		}
@@ -577,7 +594,7 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt,double theta=
 
 	}///// ENd f Time Evolution /////////////////////////
 	
-
+	*stb_avg = (*stb_avg)/((double) tcntr);
 	avg_amp = 0.0;
 	for(i=0;i<N;++i)
 		{	
@@ -589,7 +606,7 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt,double theta=
 			  
 			  sol[0] = cos(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
 			  sol[1] = -sin(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
-			 if(printfp)
+			 //if(printfp)
 			  fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",dx*dbi,Psi[i][0],Psi[i][1],sol[0],sol[1],avg_amp);
 			 if((i==20)&&(printfp))
 			   fprintf(fptemp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",t,Psi[i][0],Psi[i][1],sol[0],sol[1],amp);
@@ -600,7 +617,10 @@ double run(double dt,double dx,double *abs_err,int printfp,int prt,double theta=
 	printf("Error in conserv. %lf\n mu is %lf", 100.0*fabs(avg_amp-amp_ini)/amp_ini,dt/(dx*dx));
 
 
-
+	fclose(fp);
+	fclose(fp2);
+	fclose(fptemp);
+	fclose(fpmass);
 	return(100.0*fabs(avg_amp-amp_ini)/amp_ini);
 
 
@@ -613,32 +633,32 @@ int main()
 {
 	double dt = 3e-4;
 	double dx = 4e-3;
-	double abs_err,en_loss;
+	double abs_err,en_loss,stb_avg;
+
+//	double dx_l=4e-3,dx_u = 4e-2;
+//	double dt_l= 1e-5,dt_u = 1e-3;
 
 	double dx_l=4e-3,dx_u = 4e-2;
-	double dt_l= 1e-5,dt_u = 1e-3;
-
-/*	double dx_l=4e-3,dx_u = 4e-2;
 	double dt_l= 1e-5,dt_u = 1e-2;
-*/
+
 	double ddx = (dx_u-dx_l)/(20.0);	
-	double ddt = (dt_u-dt_l)/(10.0);
+	double ddt = (dt_u-dt_l)/(20.0);
 
 	FILE *fp = fopen("trapezoid_fd.txt","w");
 
-	for(dt=dt_l;dt<=dt_u;dt+=ddt)
+	//for(dt=dt_l;dt<=dt_u;dt+=ddt)
 	{
-		//dt = 0.006004;
-		//dx = 0.005800;
+		dt = 1e-5;
+		dx = 5.8e-3;
 		
-		for(dx = dx_l;dx<=dx_u;dx+=ddx)
+		//for(dx = dx_l;dx<=dx_u;dx+=ddx)
 		{
 			
-			printf("%.10lf\t%.10lf\n",dx,dt);
-			en_loss = run(dt,dx,&abs_err,0,0);
+			//printf("%.10lf\t%.10lf\n",dx,dt);
+			en_loss = run(dt,dx,&abs_err,&stb_avg,0,1,1);
 
-			printf("%lf\t%lf\t%lf\t%lf\t%lf\n",dx,dt,dt/(dx*dx),en_loss,abs_err);
-			fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\n",dx,dt,dt/(dx*dx),en_loss,abs_err);
+			printf("%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,dt,dt/(dx*dx),en_loss,abs_err,stb_avg);
+			fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,dt,dt/(dx*dx),en_loss,abs_err,stb_avg);
 		}
 
 	}
