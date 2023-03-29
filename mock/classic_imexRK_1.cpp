@@ -353,7 +353,7 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 		  fftw_execute(plan_pois_f);
 
 	 	for(i=0;i<(N+2*spd);++i)
-		{	dbi = (double)(i-spd);
+		{	//dbi = (double)(i-spd);
 
 			
 			
@@ -362,6 +362,7 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 			  if(i<N)
 			  {amp  = sqrt(psi[i][0]*psi[i][0] + psi[i][1]*psi[i][1]);				
 			   avg_amp+=amp;
+			   dbi = (double)(i);
 			   sol[0] = cos(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
 			   sol[1] = -sin(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
 			  if(printfp)
@@ -688,7 +689,7 @@ int main()
 		//for(dx = dx_l;dx<=dx_u;dx+=ddx)
 		{
 			dx = 4e-2;
-			dt = 1e-5;
+			dt = 1e-6;
 			en_loss = run(dt,dx,&abs_err,&stb_avg,0,1,1);
 
 			printf("%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,dt,dt/(dx*dx),en_loss,abs_err,stb_avg);

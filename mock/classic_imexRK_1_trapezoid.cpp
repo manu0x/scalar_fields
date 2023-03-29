@@ -606,7 +606,7 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 			  
 			  sol[0] = cos(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
 			  sol[1] = -sin(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
-			 //if(printfp)
+			 if(printfp)
 			  fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",dx*dbi,Psi[i][0],Psi[i][1],sol[0],sol[1],avg_amp);
 			 if((i==20)&&(printfp))
 			   fprintf(fptemp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",t,Psi[i][0],Psi[i][1],sol[0],sol[1],amp);
@@ -648,7 +648,7 @@ int main()
 
 	//for(dt=dt_l;dt<=dt_u;dt+=ddt)
 	{
-		dt = 1e-5;
+		dt = 1e-6;
 		dx = 5.8e-3;
 		
 		//for(dx = dx_l;dx<=dx_u;dx+=ddx)

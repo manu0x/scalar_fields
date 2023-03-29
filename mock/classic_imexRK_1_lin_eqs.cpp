@@ -86,6 +86,7 @@ void d_xx(double *p,double *der,double dx,int N)
 
 }
 
+////////////////////  Function for calculating potential //////////////////////////////////////////////////////////////
 
 double V(double psi_amp)
 {
@@ -95,7 +96,7 @@ double V(double psi_amp)
 
 }
 
-
+///////////////////////////  Explicit term for veolcity //////////////////////////////////////////////////////////////////
 void ex_vel(double v[2],double psi[2],double Vval)
 {
 
@@ -105,6 +106,8 @@ void ex_vel(double v[2],double psi[2],double Vval)
 
 
 }
+
+/////////////////////////// Function to create and invert matrix (1+w^2P^2) stored in Mp and matrix Inv((1+w^2P^2))P ////////
 
 void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double diff,double gamma)
 {	///////////////////// This assumed Diagonal with same element gamma
@@ -186,7 +189,7 @@ void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double di
 
 
 
-///////////////Create Matrix////////////////////////////////////////////////////////
+///////////////Create Matrix    (I + w^2P2)////////////////////////////////////////////////////////
 	
 	for(i=0;i<N;++i)
 	{
@@ -236,7 +239,7 @@ void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double di
 	}
 
 
-	for(i=0;i<N;++i)
+/*	for(i=0;i<N;++i)
 	{
 	  for(j=0;j<N;++j)
 	  {	res=0.0;
@@ -255,7 +258,7 @@ void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double di
 	}
 
 	
-
+*/
 
 
 
@@ -269,7 +272,7 @@ void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double di
 
 
 
-
+//////////////////////////////// Function to set initial conditions /////////////////////////////////////////////////
 
 void initialise(double *psi,double *x,double *k,double dx,int N)
 {
@@ -296,6 +299,8 @@ void initialise(double *psi,double *x,double *k,double dx,int N)
 
 }
 
+////////////////////////////////////  Function to evolve the system given dt and dx. Returns energy errors //////////////////////////// 
+			///// stb_any = 1 does the evoln. only for short duration ///////
 double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int printfp,int prt)
 {
 
@@ -303,7 +308,7 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 	double box_len,t_end,t_start,diff,stb_ini;
 
 
-///////////////////////////////File for data/////////////////////////////////////////////////////
+///////////////////////////////Files for data/////////////////////////////////////////////////////
 
 	FILE *fp = fopen("data_linq.txt","w");
 	FILE *fp2 = fopen("data2_linq.txt","w");
@@ -336,14 +341,17 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 	t_end = 0.01*t_end;
 	t_steps = (int)((t_end-t_start)/dt);
 	//dt  = (t_end-t_start)/((double)t_steps);
-	//printf("dt %lf N %d\n",dt,N);
+	printf("dt %lf N %d\n",dt,N);
 	
 /////////////////////////////////////////RK things/////////////////////////////////////////
 
 
 	double im_K_P[ex_s][N][2],ex_K_P[im_s][N][2];
 
-////////////////////////////// P variables  /////////////////////////////////////////////////////
+////////////////////////////// Psi variables  /////////////////////////////////////////////////////
+
+	///////////// Psi stores calculated solution, Psik stores intermediate solutions at substage and Psib stores rhs of linear system /////
+	////i.e.////////////     Psik = M(I+iwP)Psib	/// where M defined as Inverse(I+w^2^P^2)
 
 	double Psi[N][2],lap_val[2*N],lambda;
 
@@ -353,9 +361,14 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 	double Psib[N][2],Psik[N][2],im_K[im_s][N][2],ex_K[ex_s][N][2],dP_xx[N];
 	double vel_val[2],c_psi[2],c_psi_amp,Vval;
 
+	int i,j;
+
+
+///////////////	 Initialise the system	///////////////////////////////////////////////////////////
+
 	initialise(&Psi[0][0],x,k_grid,dx,N);
 
-	int i,j;
+	
 	
 	 
 
@@ -370,7 +383,8 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 
   cr_invert_mat(Mp,MpP, N,  dt,  dx, diff,im_a[0][0]);
 
-  
+  //	If M is defined as Inverse(I+w^2^P^2)
+  ////	M is represented as mat and MP is matP	is this function//////////////////////////////////////////
 
   for(i=0;i<N;++i)
   { for(j=0;j<N;++j)
@@ -406,7 +420,8 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 	*stb_avg = 0.0;
 	
 
-		
+	///////////// Psi stores calculated solution, Psik stores intermediate solutions at substage and Psib stores rhs of linear system /////
+	////i.e.////////////     Psik = M(I+iwP)Psib	/// where M defined as Inverse(I+w^2^P^2)	
 	
 
 	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&(1);t+=dt,++tcntr)
@@ -417,7 +432,7 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 		{	
 			
 			dbi = (double)(i);
-			
+			//////////////////////////////	Printing data at some regular steps   ///////////////////////////
 			if((tcntr%printcntr)==0||(stb_any))  
 			{
 			  if(i<N)
@@ -435,6 +450,9 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 			
 			Psik[i][0] = 0.0;
 			Psik[i][1] = 0.0;
+
+			///////////////////////////	1st  implicit substage ////////////////////////////////////////
+			////	M is represented as mat and MP is matP	//////////////////////////////////////////
 
 			for(j=0;j<N;++j)	
 			{	
@@ -455,9 +473,10 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 		if(t==t_start)
 		{amp_ini = avg_amp;
 		 //printf("av ini %lf g %lf\n",amp_ini,avg_amp);
-		if(prt)
-		 printf("mu %lf dt %lf\tt %lf\tamp_ini %lf\n\n",dt/(dx*dx),dt,t,amp_ini);
+		 if(prt)
+		  printf("mu %lf dt %lf\tt %lf\tamp_ini %lf\n\n",dt/(dx*dx),dt,t,amp_ini);
 		}
+
 		for(s_cntr=1;s_cntr<imex_s;++s_cntr)
 		{
 
@@ -468,7 +487,7 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 				
 				if(j==0)
 				{
-
+					// Calc. explicit contribution from Psik of last substage //////////////////////
 					if(s_cntr==1)
 					  {c_psi[0] = Psi[i][0];
 					   c_psi[1] = Psi[i][1];
@@ -484,6 +503,9 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 
 		    			ex_K_P[s_cntr-1][i][0] = vel_val[0];
 					ex_K_P[s_cntr-1][i][1] = vel_val[1]; 
+
+					//////////////////////////////////////////////////////////////////////////////////
+					/////////	Calc spatial derivatives using last Psik	/////////////////
 
 					l1 = i-1;
 					r1 = (i+1);
@@ -504,6 +526,8 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 	
 					im_K_P[s_cntr-1][i][0]  =  -(vr1 +vl1 - 2.0*vc )/(2.0*m*dx*dx);
 					//printf("%d %d %lf\n",s_cntr,i,im_K_P[s_cntr-1][i] );
+					/////////////////////////////////////////////////////////////////////////////////////////
+					/////////////// Start addition to rhs from previous substeps ///////////////////////////
 
 					Psib[i][0] = Psi[i][0] + dt*ex_a[s_cntr][j]*ex_K_P[j][i][0]+ dt*im_a[s_cntr][j]*im_K_P[j][i][0];
 					Psib[i][1] = Psi[i][1] + dt*ex_a[s_cntr][j]*ex_K_P[j][i][1]+ dt*im_a[s_cntr][j]*im_K_P[j][i][1];
@@ -530,14 +554,14 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 				Psik[i][0] = 0.0;
 			        Psik[i][1] = 0.0;
 
-			   for(j=0;j<N;++j)	
-			    {	
+			      for(j=0;j<N;++j)	
+			      {	
 				Psik[i][0]+=( mat[i][j]*Psib[j][0] - omega*matP[i][j]*Psib[j][1] );
 
 			        Psik[i][1]+=(  omega*matP[i][j]*Psib[j][0] + mat[i][j]*Psib[j][1]  );
 
 
-			     }
+			     	}
 							
 
 			  
@@ -598,15 +622,15 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 				//printf("!!!+tivity broken!!!j  %d\ti %d\t%lf\t%lf\n",j,i,P[i],im_K_P[j][i]);
 			    }
 
-
+			////////////// Check to stop if something blows up ////////////
 				//if(isnan(P[i]))				
 			if(isnan(Psi[i][0])||isnan(Psi[i][1]))
 			 {
 
 				if(isnan(Psi[i][0]))
-				printf("!!!GONE Real!!!!  %d\tt %lf\t%lf\n",tcntr,t,Psi[i][0]);
+				printf("!!!GONE Nan: Real!!!!  %d\tt %lf\t%lf\n",tcntr,t,Psi[i][0]);
 				if(isnan(Psi[i][1]))
-				printf("!!!GONE Imag!!!!  %d\tt %lf\t%lf\n",tcntr,t,Psi[i][1]);
+				printf("!!!GONE Nan: Imag!!!!  %d\tt %lf\t%lf\n",tcntr,t,Psi[i][1]);
 					
 				fail = 1;
 
@@ -658,12 +682,13 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 
 		else//if(fail)
 		if(((100.0*fabs(avg_amp-amp_ini)/amp_ini)>=1e3)||(fail)||((*abs_err)>=1e3))
-		{
-
+		{		if(prt)
+				printf("Overload %lf %lf %lf\n",((100.0*fabs(avg_amp-amp_ini)/amp_ini)),avg_amp,*abs_err);
 			
 				*abs_err = -1e3;
 					
 				return(-1e3);
+			//// If energy or absolute errs are too huge, stop evolution.
 	
 		
 		}
@@ -724,8 +749,8 @@ int main()
 
 	//for(dt=dt_l;dt<=dt_u;dt+=ddt)
 	{
-		dt = 1e-5;
-		dx = 4e-2;
+		dt = 1e-3;
+		dx = 2e-2;
 		
 	//	for(dx = dx_l;dx<=dx_u;dx+=ddx)
 		{
