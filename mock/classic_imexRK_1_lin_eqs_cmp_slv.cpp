@@ -7,6 +7,8 @@ using namespace std;
 #include <time.h>
 #include <limits>
 
+#include <gsl/gsl_complex.h>
+#include <gsl/gsl_complex_math.h>
 #include <gsl/gsl_linalg.h>
 
 #define pie M_PI 
@@ -109,160 +111,11 @@ void ex_vel(double v[2],double psi[2],double Vval)
 
 /////////////////////////// Function to create and invert matrix (1+w^2P^2) stored in Mp and matrix Inv((1+w^2P^2))P ////////
 
-void cr_invert_mat(double *Mp,double *MpP,int N, double dt, double dx, double diff,double gamma)
+void cr_invert_mat(gsl_matrix_complex *Mp,gsl_permutation * p,int N, double dt, double dx, double diff,double gamma)
 {	///////////////////// This assumed Diagonal with same element gamma
-	int i,j,k;
-	double mu = dt/(dx*dx);
-	double omega = mu*gamma/(2.0*m);
-	size_t tn  = N;
-	gsl_matrix *gM = gsl_matrix_alloc(tn, tn);
-	gsl_matrix *gMinv = gsl_matrix_alloc(tn, tn);
-	gsl_matrix_set_zero(gM);
-	int sig, out;
-	double M[N][N]={0.0};
-	double P[N][N]={0.0};
-	double P2[N][N]={0.0};
-	double res;
-	//FILE *fptest = fopen("test_inv1.txt","w");
-
-///////////////create P^2  ///////////////////////////////////////////////////////
-
-	for(i=0;i<N;++i)
-	{
-	  for(j=0;j<N;++j)
-	  {
-	     M[i][j] = 0.0;
-	     P[i][j] = 0.0;
-	     if(i==j)
-		M[i][j] = -2.0;
-		
-	   }
-	}
-
-
-	for(i=1;i<N-1;++i)
-	{
-	  for(j=0;j<N;++j)
-	  {
-		//M[i][j] = 0.0;
-		if(i==j)
-		{
-		  M[i][j] = -2.0;	
-		  M[i][j-1] = 1.0;
-		  M[i][j+1] = 1.0;
-
-		
-		}
-		
-
-	  }
-
-
-
-	}
-
-	M[0][N-1] = 1.0;
-	M[N-1][0] = 1.0;
-	M[0][1] = 1.0;
-	M[N-1][N-2] = 1.0;
-
-	for(i=0;i<N;++i)
-	{
-	  for(j=0;j<N;++j)
-	  {
-
-		P2[i][j]=0.0;
-		P[i][j] = M[i][j];
-	  	for(k=0;k<N;++k)
-		{
-		  P2[i][j]+=M[i][k]*M[k][j];
-
-		}
-
-		
-	   }	
-	  
-
-	}
-
 	
 
 
-
-///////////////Create Matrix    (I + w^2P2)////////////////////////////////////////////////////////
-	
-	for(i=0;i<N;++i)
-	{
-	  for(j=0;j<N;++j)
-	  {
-		//M[i][j] = 0.0;
-		if(i==j)
-		 M[i][j] = 1.0+omega*omega*P2[i][j];	
-		else
-		  M[i][j] = omega*omega*P2[i][j];
-
-		  gsl_matrix_set(gM, i, j,   M[i][j]);
-		  
-		//fprintf(fptest,"%lf ",M[i][j]);
-		
-
-	  }
-
-	// fprintf(fptest,"\n");
-
-	}
-
-	//fprintf(fptest,"\n\n");
-
-
-////////////////////// LU decomp and inversion ////////////////////////////////////////////////////
-
-	gsl_permutation *p = gsl_permutation_alloc(tn);
-	out = gsl_linalg_LU_decomp(gM, p, &sig);
-	out = gsl_linalg_LU_invert(gM, p,gMinv);
-
-////////////////////////////////////////////////////////////////////////////////////////////////////	
-	for(i=0;i<N;++i)
-	{
-	  for(j=0;j<N;++j)
-	  {
-		Mp[i*N+j] = gsl_matrix_get(gMinv,i,j);
-		MpP[i*N+j] = 0.0;
-		for(k=0;k<N;++k)
-		{
-			MpP[i*N+j]+=(gsl_matrix_get(gMinv,i,k)*P[k][j]);
-	
-
-		}
-	  }
-
-	}
-
-
-/*	for(i=0;i<N;++i)
-	{
-	  for(j=0;j<N;++j)
-	  {	res=0.0;
-		for(k=0;k<N;++k)
-			res+= Mp[i*N+k]*M[k][j];
-
-		//if(i==j)
-			
-
-		//fprintf(fptest,"%lf ",res);
-			 
-	  }
-
-		//fprintf(fptest,"\n");
-
-	}
-
-	
-*/
-
-
-
-//fclose(fptest);
 
 
 }
@@ -358,7 +211,7 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 	
 	double x[N],k_grid[N];
 	
-	double Psib[N][2],Psik[N][2],im_K[im_s][N][2],ex_K[ex_s][N][2],dP_xx[N];
+	double Psib[2],im_K[im_s][N][2],ex_K[ex_s][N][2],dP_xx[N];
 	double vel_val[2],c_psi[2],c_psi_amp,Vval;
 
 	int i,j;
@@ -375,30 +228,108 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 ///// Get inverted matrix ///////////////////////////
 
 
+  size_t tn  = N;
 
-  double *Mp = new double [N*N];
-  double *MpP = new double [N*N];
-  double mat[N][N];
-  double matP[N][N];
+  gsl_matrix_complex * MLU = gsl_matrix_complex_alloc(tn,tn);
+  gsl_permutation * prm = gsl_permutation_alloc (tn);
 
-  cr_invert_mat(Mp,MpP, N,  dt,  dx, diff,im_a[0][0]);
+  gsl_matrix_complex_set_zero(MLU);
 
-  //	If M is defined as Inverse(I+w^2^P^2)
-  ////	M is represented as mat and MP is matP	is this function//////////////////////////////////////////
 
-  for(i=0;i<N;++i)
-  { for(j=0;j<N;++j)
-    {
-	mat[i][j] = Mp[i*N+j];
-	matP[i][j] = MpP[i*N+j];	
-    }
+	
+	double mu = dt/(dx*dx);
+	
+	double omega = dt*im_a[0][0]/(dx*dx*2.0*m);
+	
+	gsl_complex cmp;
+	
+	
+	
+	
+	int sig, out;
+	
+	double P[N][N];
+	
+	for(i=0;i<N;++i)
+	{
+	  for(j=0;j<N;++j)
+	  {
+	    
+	     P[i][j] = 0.0;
+		
+	   }
+	}
 
-	Psib[i][0] = Psi[i][0];
-	Psib[i][1] = Psi[i][1];
-  }
 
-  delete [] Mp;
-  delete [] MpP;
+	for(i=1;i<N-1;++i)
+	{
+	  for(j=0;j<N;++j)
+	  {
+		//M[i][j] = 0.0;
+		if(i==j)
+		{
+		  P[i][j] = -2.0;	
+		  P[i][j-1] = 1.0;
+		  P[i][j+1] = 1.0;
+
+		
+		}
+		
+
+	  }
+
+
+
+	}
+
+	P[0][N-1] = 1.0;
+	P[N-1][0] = 1.0;
+	P[0][1] = 1.0;
+	P[N-1][N-2] = 1.0;
+
+
+
+	for(i=0;i<N;++i)
+	{
+	  for(j=0;j<N;++j)
+	  {
+		//M[i][j] = 0.0;
+		if(i==j)
+		{ 
+		  GSL_REAL(cmp) = 1.0;
+		  
+		}
+		else
+		 GSL_REAL(cmp) = 0.0;
+
+	
+		GSL_IMAG(cmp) = -omega*P[i][j]; 
+
+		  gsl_matrix_complex_set(MLU, i, j,cmp);
+		  
+
+		
+
+	  }
+
+	
+
+	}
+
+
+
+
+////////////////////// LU decomp and inversion ////////////////////////////////////////////////////
+
+	out = gsl_linalg_complex_LU_decomp(MLU, prm, &sig);
+	
+
+
+
+
+
+
+
 
 
 
@@ -416,15 +347,25 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 	double drc = 2.0*pie*n*2.0*pie*n;
 	double fdt,amp_ini;
 
-	double omega = dt*im_a[0][0]/(dx*dx*2.0*m);
+	
 	*stb_avg = 0.0;
-	
 
-	///////////// Psi stores calculated solution, Psik stores intermediate solutions at substage and Psib stores rhs of linear system /////
-	////i.e.////////////     Psik = M(I+iwP)Psib	/// where M defined as Inverse(I+w^2^P^2)	
+	gsl_vector_complex * Psib_cmp = gsl_vector_complex_alloc(tn);
+	gsl_vector_complex * Psik = gsl_vector_complex_alloc(tn);
 	
+	for(i=0;i<N;++i)
+	{
+		GSL_REAL(cmp) = Psi[i][0];
+		GSL_IMAG(cmp) = Psi[i][1];
+	
+		gsl_vector_complex_set (Psib_cmp, i, cmp);
 
-	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&(1);t+=dt,++tcntr)
+	}
+	
+	gsl_linalg_complex_LU_solve(MLU,prm, Psib_cmp,Psik);
+
+
+	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&(tcntr<1);t+=dt,++tcntr)
 	{	
 		avg_amp = 0.0;
 	
@@ -447,21 +388,7 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 			   fprintf(fptemp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",t,Psi[i][0],Psi[i][1],sol[0],sol[1],amp);
 			}
 			
-			
-			Psik[i][0] = 0.0;
-			Psik[i][1] = 0.0;
-
-			///////////////////////////	1st  implicit substage ////////////////////////////////////////
-			////	M is represented as mat and MP is matP	//////////////////////////////////////////
-
-			for(j=0;j<N;++j)	
-			{	
-				Psik[i][0]+=( mat[i][j]*Psib[j][0] - omega*matP[i][j]*Psib[j][1] );
-
-			        Psik[i][1]+=(  omega*matP[i][j]*Psib[j][0] + mat[i][j]*Psib[j][1]  );
-
-
-			}
+		
 			
 
 			
@@ -480,23 +407,26 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 		for(s_cntr=1;s_cntr<imex_s;++s_cntr)
 		{
 
-			for(j=0;j<s_cntr;++j)
-			{
-			   for(i=0;i<N;++i)
-			   {
-				
+			 for(i=0;i<N;++i)
+			 {
+			    for(j=0;j<s_cntr;++j)
+			    {
+			  	
 				if(j==0)
 				{
 					// Calc. explicit contribution from Psik of last substage //////////////////////
 					if(s_cntr==1)
 					  {c_psi[0] = Psi[i][0];
 					   c_psi[1] = Psi[i][1];
+					   c_psi_amp = sqrt(c_psi[0]*c_psi[0] + c_psi[1]*c_psi[1]);
+
 					  }
 					else
-					  {c_psi[0] = Psik[i][0];
-					   c_psi[1] = Psik[i][1];
+					  {cmp = gsl_vector_complex_get(Psik,i);
+					   c_psi_amp=gsl_complex_abs(cmp);	
+		
 					  }
-		    			c_psi_amp = sqrt(c_psi[0]*c_psi[0] + c_psi[1]*c_psi[1]);
+		    			
 		    			Vval = V(c_psi_amp);
 		    			ex_vel(vel_val,c_psi,Vval);
 					
@@ -514,60 +444,45 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 					if(i==(N-1))	
 			 		 r1 = 1;
 	
-					vl1 = Psik[l1][0];
-					vr1 = Psik[r1][0];	
-					vc = Psik[i][0];
+					vl1 = GSL_REAL(gsl_vector_complex_get(Psik,l1));
+					vr1 = GSL_REAL(gsl_vector_complex_get(Psik,r1));	
+					vc = GSL_REAL(gsl_vector_complex_get(Psik,i));
 	
 					im_K_P[s_cntr-1][i][1]  = (vr1 +vl1 - 2.0*vc )/(2.0*m*dx*dx);
 
-					vl1 = Psik[l1][1];
-					vr1 = Psik[r1][1];	
-					vc = Psik[i][1];
+					vl1 = GSL_IMAG(gsl_vector_complex_get(Psik,l1));
+					vr1 = GSL_IMAG(gsl_vector_complex_get(Psik,r1));	
+					vc = GSL_IMAG(gsl_vector_complex_get(Psik,i));
 	
 					im_K_P[s_cntr-1][i][0]  =  -(vr1 +vl1 - 2.0*vc )/(2.0*m*dx*dx);
 					//printf("%d %d %lf\n",s_cntr,i,im_K_P[s_cntr-1][i] );
 					/////////////////////////////////////////////////////////////////////////////////////////
 					/////////////// Start addition to rhs from previous substeps ///////////////////////////
 
-					Psib[i][0] = Psi[i][0] + dt*ex_a[s_cntr][j]*ex_K_P[j][i][0]+ dt*im_a[s_cntr][j]*im_K_P[j][i][0];
-					Psib[i][1] = Psi[i][1] + dt*ex_a[s_cntr][j]*ex_K_P[j][i][1]+ dt*im_a[s_cntr][j]*im_K_P[j][i][1];
+					Psib[0] = Psi[i][0] + dt*ex_a[s_cntr][j]*ex_K_P[j][i][0]+ dt*im_a[s_cntr][j]*im_K_P[j][i][0];
+					Psib[1] = Psi[i][1] + dt*ex_a[s_cntr][j]*ex_K_P[j][i][1]+ dt*im_a[s_cntr][j]*im_K_P[j][i][1];
 					
 
 				}
 			
 				
 				else
-				{ Psib[i][0]+=  dt*ex_a[s_cntr][j]*ex_K_P[j][i][0]+ dt*im_a[s_cntr][j]*im_K_P[j][i][0];
-				  Psib[i][1]+=  dt*ex_a[s_cntr][j]*ex_K_P[j][i][1]+ dt*im_a[s_cntr][j]*im_K_P[j][i][1];
+				{ Psib[0]+=  dt*ex_a[s_cntr][j]*ex_K_P[j][i][0]+ dt*im_a[s_cntr][j]*im_K_P[j][i][0];
+				  Psib[1]+=  dt*ex_a[s_cntr][j]*ex_K_P[j][i][1]+ dt*im_a[s_cntr][j]*im_K_P[j][i][1];
 				}
 				
 	
 	
 			   }
 
+			   GSL_REAL(cmp) = Psib[0];
+			   GSL_IMAG(cmp) = Psib[1];
+			   gsl_vector_complex_set(Psib_cmp, i, cmp);
 	
 			}
-	
 
-			  for(i=0;i<N;++i)
-			  {	
-				Psik[i][0] = 0.0;
-			        Psik[i][1] = 0.0;
-
-			      for(j=0;j<N;++j)	
-			      {	
-				Psik[i][0]+=( mat[i][j]*Psib[j][0] - omega*matP[i][j]*Psib[j][1] );
-
-			        Psik[i][1]+=(  omega*matP[i][j]*Psib[j][0] + mat[i][j]*Psib[j][1]  );
-
-
-			     	}
-							
-
-			  
-				
 			
-			 }
+			gsl_linalg_complex_LU_solve(MLU,prm, Psib_cmp,Psik);
 				
 			
 
@@ -582,10 +497,9 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 		for(i=0;i<N;++i)
 		{	
 	
-			c_psi[0] = Psik[i][0];
-			c_psi[1] = Psik[i][1];
+			cmp = gsl_vector_complex_get(Psik,i);
+			c_psi_amp=gsl_complex_abs(cmp);	 
 
-			c_psi_amp = sqrt(c_psi[0]*c_psi[0] + c_psi[1]*c_psi[1]);
     			Vval = V(c_psi_amp);
     			ex_vel(vel_val,c_psi,Vval);
 					
@@ -600,15 +514,15 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 			if(i==(N-1))	
 			 r1 = 1;
 	
-			vl1 = Psik[l1][0];
-			vr1 = Psik[r1][0];	
-			vc = Psik[i][0];
+			vl1 = GSL_REAL(gsl_vector_complex_get(Psik,l1));
+			vr1 = GSL_REAL(gsl_vector_complex_get(Psik,r1));	
+			vc = GSL_REAL(gsl_vector_complex_get(Psik,i));
 	
 			im_K_P[imex_s-1][i][1]  = (vr1 +vl1 - 2.0*vc )/(2.0*m*dx*dx);
 
-			vl1 = Psik[l1][1];
-			vr1 = Psik[r1][1];	
-			vc =  Psik[i][1];
+			vl1 = GSL_IMAG(gsl_vector_complex_get(Psik,l1));
+			vr1 = GSL_IMAG(gsl_vector_complex_get(Psik,r1));	
+			vc  = GSL_IMAG(gsl_vector_complex_get(Psik,i));
 	
 			im_K_P[imex_s-1][i][0]  =  -(vr1 +vl1 - 2.0*vc )/(2.0*m*dx*dx);
 
@@ -642,9 +556,10 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 			if(fail)
 			break;
 
-			Psib[i][0] = Psi[i][0];
-
-			Psib[i][1] = Psi[i][1];
+			GSL_REAL(cmp) = Psi[i][0];
+			GSL_IMAG(cmp) = Psi[i][1];
+	
+			gsl_vector_complex_set (Psib_cmp, i, cmp);
 			
 
 
@@ -745,7 +660,7 @@ int main()
 	double ddx = (dx_u-dx_l)/(10.0);	
 	double ddt = (dt_u-dt_l)/(10.0);
 
-	FILE *fp = fopen("imex_linq.txt","w");
+	FILE *fp = fopen("imex_linq_cmplx.txt","w");
 
 	//for(dt=dt_l;dt<=dt_u;dt+=ddt)
 	{
