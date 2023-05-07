@@ -102,8 +102,8 @@ double V(double psi_amp)
 void ex_vel(double v[2],double psi[2],double Vval)
 {
 
-	v[0] = m*Vval*psi[1];
-	v[1] = -m*Vval*psi[0];;
+	v[0] = 0.0;// m*Vval*psi[1];
+	v[1] = 0.0;//-m*Vval*psi[0];;
 
 
 
@@ -135,8 +135,8 @@ void initialise(double *psi,double *x,double *k,double dx,int N)
 	for(i=0;i<N;++i)
 	{
 	   di = (double)i;	
-	   *(psi+i*2) = sin(2.0*pie*n*di*dx);
-	   *(psi+i*2+1) = 0.0;
+	   *(psi+i*2) = cos(di*dx);
+	   *(psi+i*2+1) = -sin(di*dx);
 
 	    if(i<=(N/2))
 		*(k+i) = di*dk;
@@ -170,9 +170,9 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 	FILE *fpmass = fopen("mass_linq.txt","w");
 
 /////////////////////////////// Parameter setting ////////////////////////////////////////////////
-	m  = 1.0;
+	m  = 20.1;
 	n  = 1.0;
-	T = 2.0*pie/m;
+	T = 2.0*m;
 	diff = 0.0;
 	N = 100;
 
@@ -182,14 +182,14 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 
 /////////////////////////////// Box & res. setting ///////////////////////////////////////////////
 
-	box_len = 2.0;
+	box_len = 2.0*pie;
 	//dx = box_len/(double(N));
 	N = ((int)(box_len/dx)) + 1;
 
 ////////////////////////////// Time & dt settings ////////////////////////////////////////////////
 	
 	t_start = 0.0;
-	t_end = 2.0*T;
+	t_end = T;
 	if(stb_any)
 	t_end = 0.01*t_end;
 	t_steps = (int)((t_end-t_start)/dt);
@@ -382,8 +382,8 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 			  {amp  = sqrt(Psi[i][0]*Psi[i][0] + Psi[i][1]*Psi[i][1]);				
 			   avg_amp+=amp;
 			  }
-			  sol[0] = cos(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
-			  sol[1] = -sin(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
+			  sol[0] = cos(t/(2.0*m) + dx*dbi);
+			  sol[1] = -sin(t/(2.0*m) + dx*dbi);
 			 if(printfp)
 			  fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",dx*dbi,Psi[i][0],Psi[i][1],sol[0],sol[1],amp);
 			  if((i==20)&&(printfp))
@@ -403,7 +403,7 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 		{amp_ini = avg_amp;
 		 //printf("av ini %lf g %lf\n",amp_ini,avg_amp);
 		 if(prt)
-		  printf("mu %lf dt %lf\tt %lf\tamp_ini %lf\n\n",dt/(dx*dx),dt,t,amp_ini);
+		  printf("mu %lf nu %lf\tt %lf\tamp_ini %lf\n\n",dt/(dx*dx*2.0*m),dt/(2.0*m),t,amp_ini);
 		}
 
 		for(s_cntr=1;s_cntr<imex_s;++s_cntr)
@@ -569,8 +569,8 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 			avg_amp+=amp;
 			//printf("avg_amp %lf\n",avg_amp);
 	
-			sol[0] = cos(2.0*pie*(t+dt)/T)*sin(2.0*pie*n*dx*dbi);
-			sol[1] = -sin(2.0*pie*(t+dt)/T)*sin(2.0*pie*n*dx*dbi);
+			sol[0] = cos((t+dt)/(2.0*m) + dx*dbi);
+			  sol[1] = -sin((t+dt)/(2.0*m) + dx*dbi);
 	
 			(*abs_err)+=(fabs(sol[0]-Psi[i][0])+fabs(sol[1]-Psi[i][1]));
 
@@ -624,7 +624,7 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 		   fprintf(fpmass,"%lf\n",t/t_end);	
 		  }
 		if(prt)
-		  printf("mu %lf dt %lf\tt %lf\tamp %lf\n\n",dt/(dx*dx),dt,t,avg_amp);
+		   printf("mu %lf nu %lf\tt %lf\tamp_ini %lf\n\n",dt/(dx*dx*2.0*m),dt/(2.0*m),t,avg_amp);
 		}
 		
 
@@ -668,8 +668,8 @@ int main()
 
 	//for(dt=dt_l;dt<=dt_u;dt+=ddt)
 	{
-		dt = 0.5e-5;
-		dx = 2e-2;
+		dt = 0.33*0.5*(1e-3)/64.0;
+		dx = 1e-2;
 		
 	//	for(dx = dx_l;dx<=dx_u;dx+=ddx)
 		{
