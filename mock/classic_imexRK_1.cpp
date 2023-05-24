@@ -227,7 +227,7 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 	FILE *fptime = fopen("tm_ft.txt","w");
 
 /////////////////////////////// Parameter setting ////////////////////////////////////////////////
-	m  = 1.0;
+	m  = 0.1;
 	n  = 1.0;
 	T = 2.0*pie/m;
 	
@@ -246,7 +246,7 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 ////////////////////////////// Time & dt settings ////////////////////////////////////////////////
 	
 	t_start = 0.0;
-	t_end = 2.0*T;
+	t_end = 2.0;
 	if(stb_any)
 	t_end = 0.01*t_end;
 	t_steps = (int)((t_end-t_start)/dt);
@@ -688,7 +688,7 @@ int main()
 		
 		//for(dx = dx_l;dx<=dx_u;dx+=ddx)
 		{
-			dx = 4e-2;
+			dx = 1e-3;
 			dt = 1e-6;
 			en_loss = run(dt,dx,&abs_err,&stb_avg,0,1,1);
 
