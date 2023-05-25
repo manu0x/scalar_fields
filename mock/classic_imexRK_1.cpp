@@ -228,7 +228,7 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 
 /////////////////////////////// Parameter setting ////////////////////////////////////////////////
 	m  = 0.1;
-	n  = 1.0;
+	
 	T = 2.0*pie/m;
 	
 
@@ -240,8 +240,9 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 /////////////////////////////// Box & res. setting ///////////////////////////////////////////////
 
 	box_len = 2.0;
+	n  = 2.0/box_len;
 	//dx = box_len/(double(N-1));
-	N = ((int)(box_len/dx)) + 1;
+	N = ((int)(box_len/dx));
 
 ////////////////////////////// Time & dt settings ////////////////////////////////////////////////
 	
@@ -269,7 +270,7 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 
 	double psi[N][2],lap_val[2*N],lambda;
 
-	int spd =N/4;
+	int spd =0;//N/4;
 	int nN = N+ 2*spd;
 
 	
@@ -345,7 +346,7 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 			
 	
 
-	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&(1);t+=dt,++tcntr)
+	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&(tcntr<1);t+=dt,++tcntr)
 	{	
 		
 		avg_amp = 0.0;
@@ -399,20 +400,24 @@ double run(double dt,double dx,double *abs_err,double *stb_avg,int stb_any,int p
 		fftw_execute(plan_pois_b);
 		fftw_execute(plan_imp_b);
 
-	/*	for(i=spd;i<(N+spd);++i)
+		for(i=spd;i<(N+spd);++i)
 		{	dbi = (double)i;
 			sol[0] = cos(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
 			sol[1] = -sin(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
 			
 
 			fdt = (fpGpsi[i-1][0]+fpGpsi[i+1][0]-2.0*fpGpsi[i][0])/(dx*dx);
-			//fprintf(fplap,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",dx*dbi,K[i][0],K[i][1],-drc*fpGpsi[i][0],-drc*fpGpsi[i][1],fdt);
+			if(i==0)
+			fdt = (fpGpsi[N-1][0]+fpGpsi[i+1][0]-2.0*fpGpsi[i][0])/(dx*dx);
+			if(i==(N-1))
+			fdt = (fpGpsi[i-1][0]+fpGpsi[0][0]-2.0*fpGpsi[i][0])/(dx*dx);
+			fprintf(fplap,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",dx*dbi,K[i][0],K[i][1],-drc*fpGpsi[i][0],-drc*fpGpsi[i][1],fdt);
 			
 		}
 	
 		printf("l do\n");
 
-	*/	
+		
 		for(s_cntr=1;s_cntr<imex_s;++s_cntr)
 		{
 
