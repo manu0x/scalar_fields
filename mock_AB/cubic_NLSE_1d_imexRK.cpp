@@ -6,6 +6,14 @@
 #include <mpi.h>
 #include <limits>
 
+
+#include <stdlib.h>
+#include <string.h>
+#include <string>
+#include <algorithm>
+
+#include "../imex/imex_classes.cpp"
+
 using namespace std;
 
 #define pie M_PI
@@ -624,6 +632,12 @@ int main()
 
 	FILE *fp = fopen("imex_ft.txt","w");
 
+imex_table ch(3);
+ char nn[10] = "test";
+ 
+  ch.read_from_file(nn);
+  ch.print_table();
+
 	for(dt=dt_l;dt<=dt_u;dt+=ddt)
 	{
 
@@ -632,10 +646,10 @@ int main()
 		{
 			//dx = 1e-3;
 			//dt = 1e-4;
-			m_loss = run(dt,dx,&ens,&stb_avg,0,0,0);
+			//m_loss = run(dt,dx,&ens,&stb_avg,0,0,0);
 
-			printf("%lf\t%lf\t%lf\t%.10lf\t%lf\t%.10lf\n",dx,dt,dt/(dx*dx),ens,m_loss,stb_avg);
-			fprintf(fp,"%lf\t%lf\t%lf\t%.10lf\t%.10lf\t%.10lf\n",dx,dt,dt/(dx*dx),ens,m_loss,stb_avg);
+			//printf("%lf\t%lf\t%lf\t%.10lf\t%lf\t%.10lf\n",dx,dt,dt/(dx*dx),ens,m_loss,stb_avg);
+			//fprintf(fp,"%lf\t%lf\t%lf\t%.10lf\t%.10lf\t%.10lf\n",dx,dt,dt/(dx*dx),ens,m_loss,stb_avg);
 		}
 
 	}
