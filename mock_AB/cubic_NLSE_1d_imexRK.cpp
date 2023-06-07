@@ -676,7 +676,7 @@ int main(int argc, char **argv)
 			m_loss = run(imx,dt,dx,&ens,&stb_avg,0,0,0);
 
 			printf("%lf\t%lf\t%lf\t%.10lf\t%lf\t%.10lf\n",dx,dt,dt/(dx*dx),ens,m_loss,stb_avg);
-			//fprintf(fp,"%lf\t%lf\t%lf\t%.10lf\t%.10lf\t%.10lf\n",dx,dt,dt/(dx*dx),ens,m_loss,stb_avg);
+			fprintf(fp,"%lf\t%lf\t%lf\t%.10lf\t%.10lf\t%.10lf\n",dx,dt,dt/(dx*dx),ens,m_loss,stb_avg);
 		}
 
 	}
