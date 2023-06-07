@@ -8,7 +8,7 @@
 #include <string.h>
 #include <string>
 #include <algorithm>
-#include "../imex/imex_classes.cpp"
+
 
 
 class GPE_field_2d
@@ -58,6 +58,9 @@ class GPE_field_2d
 
         fpGpsi = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (N2));
 	    fpGpsi_ft =(fftw_complex*) fftw_malloc(sizeof(fftw_complex) *(N2));
+
+        psi = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (N2));
+	    
 
 	    K = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (N2));
 	    K_ft =(fftw_complex*) fftw_malloc(sizeof(fftw_complex) *(N2));
@@ -238,8 +241,46 @@ class GPE_field_2d
         printf("kappa = %lf\n",kppa);
     }
 
-    void initialise()
-    {}
+    void initialise_from_file(char *f_real,char *f_img)
+    {
+        FILE *fp_real  = fopen(f_real,"r");
+        FILE *fp_img  = fopen(f_img,"r");
+
+       // FILE *fpcheck = fopen("ini_check.txt","w");
+
+        int ii,jj,ci;
+       
+        printf("Working...\n");
+       
+        for(ii=0;ii<N+1;++ii)
+        {   
+            for(jj=0;jj<N+1;++jj)
+            {
+                
+                ci = ii*N+jj;
+               
+
+
+                fscanf(fp_real,"%lf\t",&psi[ci][0]);
+                fscanf(fp_img,"%lf\t",&psi[ci][1]);
+               
+              //  printf("%d %d \n",ii,jj);
+             //   fprintf(fpcheck,"%lf ",psi[ci][0]);
+
+            }
+          //  fprintf(fpcheck,"\n");
+         
+
+
+        }
+
+      
+
+        fclose(fp_real);
+        fclose(fp_img);
+        //fclose(fpcheck);
+
+    }
 
     void set_field()
     {}

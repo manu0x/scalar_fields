@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
+
 #include <algorithm>
 #include "../imex/imex_classes.cpp"
 #include "../GPE/GPE_classes.cpp"
@@ -231,7 +232,7 @@ double run(double dt,double dx,double *abs_err,int argc,char **argv,double *stb_
 
 	box_len = 2.0;
 	n  = 2.0/box_len;
-	N = 128;
+	N = 512;
 	dx = box_len/(double(N));
 	x0[0]=-10.0; x0[1]=-10.0;
 	//N = ((int)(box_len/dx));
@@ -266,6 +267,9 @@ double run(double dt,double dx,double *abs_err,int argc,char **argv,double *stb_
 
 
 	char fp_name[30]("imex_ft_");
+
+	char fp_phi1_r[20]("phi1_r_ini.txt");
+	char fp_phi1_i[20]("phi1_i_ini.txt");
 	
     int stages;
 	char *imex_file; 
@@ -299,8 +303,8 @@ double run(double dt,double dx,double *abs_err,int argc,char **argv,double *stb_
     psi_1.print_params();
 	psi_2.print_params();
 
-	psi_1.initialise();
-	psi_2.initialise();
+	psi_1.initialise_from_file(fp_phi1_r,fp_phi1_i); return(0.0);
+	//psi_2.initialise_from_file();
 
 	double k_grid[N];
 
@@ -594,7 +598,6 @@ double run(double dt,double dx,double *abs_err,int argc,char **argv,double *stb_
 
 
 	return(100.0*fabs(avg_amp-amp_ini)/amp_ini);
-
 
 
 
