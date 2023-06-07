@@ -641,17 +641,21 @@ int main(int argc, char **argv)
 	double ens,m_loss,stb_avg;
 
 	double dx_l=1e-3,dx_u = 4e-2;
-	double dt_l= 1e-6 ,dt_u = 1e-1;
+	double dt_l= 1e-5 ,dt_u = 1e-1;
 
 	double ddx = (dx_u-dx_l)/(6.0);
 	double ddt = (dt_u-dt_l)/(6.0);
 
-	FILE *fp = fopen("imex_ft.txt","w");
+	char fp_name[30]("imex_ft_");
+	
 
 	char *imex_file; int stages;
 	imex_file = argv[2];
 	stages = atoi(argv[1]);
-	printf("ImEx table filename is %s and stages given by u is %d \n",imex_file,stages);
+	strcat(fp_name,imex_file);
+	printf("ImEx table filename is %s and stages given by u is %d and out file %s \n",imex_file,stages,fp_name);
+
+	FILE *fp = fopen(fp_name,"w");
 	
 
 	imex_table imx(stages);
@@ -668,6 +672,7 @@ int main(int argc, char **argv)
 		{
 			//dx = 1e-3;
 			//dt = 1e-4;
+			printf("\nRunning case %lf dt\n",dt);
 			m_loss = run(imx,dt,dx,&ens,&stb_avg,0,0,0);
 
 			printf("%lf\t%lf\t%lf\t%.10lf\t%lf\t%.10lf\n",dx,dt,dt/(dx*dx),ens,m_loss,stb_avg);
@@ -678,6 +683,6 @@ int main(int argc, char **argv)
 
 
 
-
+	fclose(fp);
 
 }
