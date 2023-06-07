@@ -88,10 +88,11 @@ class imex_table
         FILE *fp_param = fopen(param_file_name,"r");
         //printf("Opened file \n");
         int j,i=0;
+        size_t fnd_div;
         double num_val;
         int max_len = 80;
 	    char read_c_line[max_len];
-	    string read_str,cur_str, read_key, read_val;
+	    string read_str,cur_str, read_key, read_val,cur_num,cur_den;
 
         while(fgets(read_c_line,max_len,fp_param)!=NULL)
         {  read_str = read_c_line; //printf("re str  %s  %d\n",read_str.c_str(),read_str.length());
@@ -104,8 +105,19 @@ class imex_table
                 read_str = read_str.substr(read_str.find(",")+1,string::npos );
 
                 remove_if(cur_str.begin(),cur_str.end(),::isspace);
+                if(cur_str.find("/")!=string::npos)
+                {
+                    cur_num= cur_str.substr(0,cur_str.find("/"));
+                    cur_den= cur_str.substr(cur_str.find("/")+1,string::npos);
 
-                num_val = stod(cur_str);
+                    num_val = stod(cur_num);
+                    num_val = num_val/stod(cur_den);
+
+                    //printf("%lf %lf\n",stod(cur_num),stod(cur_den));
+
+                }
+                else
+                 num_val = stod(cur_str);
                 //printf("%d %d %lf\n ",i,j,num_val);
 
                 if(i<s)

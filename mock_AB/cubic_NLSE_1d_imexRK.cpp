@@ -27,31 +27,31 @@ double bta,a,c,x0,T;
 ///////////////////////////////////////
 
 
-//////////// ImEx RK Butcher Tableau /////
+/*//////////// ImEx RK Butcher Tableau /////
 const int imex_s = 3;
 const int im_s = imex_s;
 const int ex_s = imex_s;
 
 //	/	/	/	/ SCHEME 17	/	/	/	/	/	/
 
-double im_a[im_s][im_s] = {2.0/11.0,0.0,0.0,  205.0/462.0,2.0/11.0,0.0,  2033.0/4620.0,21.0/110.0,2.0/11.0};
-double im_c[im_s] = {2.0/11.0,289.0/462.0,751.0/924.0};
-double im_b[im_s] = {24.0/55.0,1.0/5.0,4.0/11.0};
+double imx.im_a[im_s][im_s] = {2.0/11.0,0.0,0.0,  205.0/462.0,2.0/11.0,0.0,  2033.0/4620.0,21.0/110.0,2.0/11.0};
+double imx.im_c[im_s] = {2.0/11.0,289.0/462.0,751.0/924.0};
+double imx.im_b[im_s] = {24.0/55.0,1.0/5.0,4.0/11.0};
 
-double ex_a[ex_s][ex_s] = {0.0,0.0,0.0,  5.0/6.0,0.0,0.0,  11.0/24.0,11.0/24.0,0.0};
-double ex_c[ex_s] = {0.0,5.0/6.0,11.0/12.0};
-double ex_b[ex_s] = {24.0/55.0,1.0/5.0,4.0/11.0};
+double imx.ex_a[ex_s][ex_s] = {0.0,0.0,0.0,  5.0/6.0,0.0,0.0,  11.0/24.0,11.0/24.0,0.0};
+double imx.ex_c[ex_s] = {0.0,5.0/6.0,11.0/12.0};
+double imx.ex_b[ex_s] = {24.0/55.0,1.0/5.0,4.0/11.0};
 
-/*
+
 //	/	/	/	/ SCHEME 20	/	/	/	/	/	/
 
-double im_a[im_s][im_s] = {2.0/11.0,0.0,0.0,  41.0/154.0,2.0/11.0,0.0,  289.0/847.0,42.0/121.0,2.0/11.0};
-double im_c[im_s] = {2.0/11.0,69.0/154.0,67.0/77.0};
-double im_b[im_s] = {1.0/3.0,1.0/3.0,1.0/3.0};
+double imx.im_a[im_s][im_s] = {2.0/11.0,0.0,0.0,  41.0/154.0,2.0/11.0,0.0,  289.0/847.0,42.0/121.0,2.0/11.0};
+double imx.im_c[im_s] = {2.0/11.0,69.0/154.0,67.0/77.0};
+double imx.im_b[im_s] = {1.0/3.0,1.0/3.0,1.0/3.0};
 
-double ex_a[ex_s][ex_s] = {0.0,0.0,0.0,  0.5,0.0,0.0,  0.5,0.5,0.0};
-double ex_c[ex_s] = {0.0,0.5,1.0};
-double ex_b[ex_s] = {1.0/3.0,1.0/3.0,1.0/3.0};
+double imx.ex_a[ex_s][ex_s] = {0.0,0.0,0.0,  0.5,0.0,0.0,  0.5,0.5,0.0};
+double imx.ex_c[ex_s] = {0.0,0.5,1.0};
+double imx.ex_b[ex_s] = {1.0/3.0,1.0/3.0,1.0/3.0};
 
 
 ////////////////////////////////////////////
@@ -59,26 +59,26 @@ double ex_b[ex_s] = {1.0/3.0,1.0/3.0,1.0/3.0};
 
 //	/	/	/	/ SCHEME 22	/	/	/	/	/	/
 
-double im_a[im_s][im_s] = {2.0/11.0,0.0,0.0,  2829.0/9317.0,2.0/11.0,0.0,  148529.0/428582.0,7.0/23.0,2.0/11.0};
-double im_c[im_s] = {2.0/11.0,4523.0/9317.0,15517.0/18634.0};
-double im_b[im_s] = {1.0/3.0,1.0/3.0,1.0/3.0};
+double imx.im_a[im_s][im_s] = {2.0/11.0,0.0,0.0,  2829.0/9317.0,2.0/11.0,0.0,  148529.0/428582.0,7.0/23.0,2.0/11.0};
+double imx.im_c[im_s] = {2.0/11.0,4523.0/9317.0,15517.0/18634.0};
+double imx.im_b[im_s] = {1.0/3.0,1.0/3.0,1.0/3.0};
 
-double ex_a[ex_s][ex_s] = {0.0,0.0,0.0,  0.5,0.0,0.0,  0.5,0.5,0.0};
-double ex_c[ex_s] = {0.0,0.5,1.0};
-double ex_b[ex_s] = {1.0/3.0,1.0/3.0,1.0/3.0};
+double imx.ex_a[ex_s][ex_s] = {0.0,0.0,0.0,  0.5,0.0,0.0,  0.5,0.5,0.0};
+double imx.ex_c[ex_s] = {0.0,0.5,1.0};
+double imx.ex_b[ex_s] = {1.0/3.0,1.0/3.0,1.0/3.0};
 
 
 ////////////////////////////////////////////
 
 //	/	/	/	/ SCHEME 23	/	/	/	/	/	/
 
-double im_a[im_s][im_s] = {2.0/11.0,0.0,0.0,  2583.0/13310.0,2.0/11.0,0.0,  39731.0/139755.0,10.0/21.0,2.0/11.0};
-double im_c[im_s] = {2.0/11.0,5003.0/13310.0,6271.0/6655.0};
-double im_b[im_s] = {1.0/3.0,1.0/3.0,1.0/3.0};
+double imx.im_a[im_s][im_s] = {2.0/11.0,0.0,0.0,  2583.0/13310.0,2.0/11.0,0.0,  39731.0/139755.0,10.0/21.0,2.0/11.0};
+double imx.im_c[im_s] = {2.0/11.0,5003.0/13310.0,6271.0/6655.0};
+double imx.im_b[im_s] = {1.0/3.0,1.0/3.0,1.0/3.0};
 
-double ex_a[ex_s][ex_s] = {0.0,0.0,0.0,  0.5,0.0,0.0,  0.5,0.5,0.0};
-double ex_c[ex_s] = {0.0,0.5,1.0};
-double ex_b[ex_s] = {1.0/3.0,1.0/3.0,1.0/3.0};
+double imx.ex_a[ex_s][ex_s] = {0.0,0.0,0.0,  0.5,0.0,0.0,  0.5,0.5,0.0};
+double imx.ex_c[ex_s] = {0.0,0.5,1.0};
+double imx.ex_b[ex_s] = {1.0/3.0,1.0/3.0,1.0/3.0};
 
 */
 ////////////////////////////////////////////
@@ -188,10 +188,11 @@ void initialise(fftw_complex *psi,double *k,double xini,double dx,int N,double t
 
 
 
-double run(double dt,double dx,double *ens,double *stb_avg,int stb_any,int printfp,int prt)
+double run(imex_table imx, double dt,double dx,double *ens,double *stb_avg,int stb_any,int printfp,int prt)
 {
 
 	int N,t_steps;
+	int i,j;
 	double box_len,t_end,t_start,xval,dbi,sol[2],stb_ini,xini,fs,x,theta;
 	double sol_n2,err_n2,loc_ens;
 	*ens = -1.0;;
@@ -238,9 +239,24 @@ double run(double dt,double dx,double *ens,double *stb_avg,int stb_any,int print
 
 
 /////////////////////////////////////////RK things/////////////////////////////////////////
+	int imex_s = imx.s;
+
+	//double im_K_psi[2][ex_s][N],ex_K_psi[2][im_s][N];
+
+	double ***im_K_psi = new double**[2];
+	double ***ex_K_psi = new double**[2];
+	for(i=0;i<2;++i)
+	{
+		im_K_psi[i] = new double*[imex_s];
+		ex_K_psi[i] = new double*[imex_s];
+
+		for(j=0;j<imex_s;++j)
+		{im_K_psi[i][j] =  new double[N];
+		 ex_K_psi[i][j] =  new double[N];
+		}
 
 
-	double im_K_psi[2][ex_s][N],ex_K_psi[2][im_s][N];
+	}
 
 
 ////////////////////////////// Psi variables  /////////////////////////////////////////////////////
@@ -281,7 +297,7 @@ double run(double dt,double dx,double *ens,double *stb_avg,int stb_any,int print
 	initialise(psi,k_grid,xini,dx,N);
 	
 
-	int i,j;
+	
 
 	 	for(i=0;i<N;++i)
 		{
@@ -344,7 +360,7 @@ double run(double dt,double dx,double *ens,double *stb_avg,int stb_any,int print
 			   fprintf(fptime,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",t,fpGpsi[i][0],fpGpsi[i][1],sol[0],sol[1],amp2);
 			}
 
-			lambda = k_grid[i]*k_grid[i]*im_a[0][0]*dt;
+			lambda = k_grid[i]*k_grid[i]*imx.im_a[0][0]*dt;
 
 
 			fpGpsi_ft[i][0] = (fpGpsi_ft[i][0] + lambda*fpGpsi_ft[i][1])/(1.0+lambda*lambda);
@@ -399,15 +415,15 @@ double run(double dt,double dx,double *ens,double *stb_avg,int stb_any,int print
 		    		ex_K_psi[0][s_cntr-1][i] = vel_val[0];  ex_K_psi[1][s_cntr-1][i] = vel_val[1];
 					im_K_psi[0][s_cntr-1][i] = -K[i][1];  im_K_psi[1][s_cntr-1][i] =  K[i][0];
 
-					fpGpsi[i][0] = psi[i][0] + dt*ex_a[s_cntr][j]*ex_K_psi[0][j][i]+ dt*im_a[s_cntr][j]*im_K_psi[0][j][i];
-					fpGpsi[i][1] = psi[i][1] + dt*ex_a[s_cntr][j]*ex_K_psi[1][j][i]+ dt*im_a[s_cntr][j]*im_K_psi[1][j][i];
+					fpGpsi[i][0] = psi[i][0] + dt*imx.ex_a[s_cntr][j]*ex_K_psi[0][j][i]+ dt*imx.im_a[s_cntr][j]*im_K_psi[0][j][i];
+					fpGpsi[i][1] = psi[i][1] + dt*imx.ex_a[s_cntr][j]*ex_K_psi[1][j][i]+ dt*imx.im_a[s_cntr][j]*im_K_psi[1][j][i];
 
 				}
 
 
 				else
-				{fpGpsi[i][0]+=  dt*ex_a[s_cntr][j]*ex_K_psi[0][j][i]+ dt*im_a[s_cntr][j]*im_K_psi[0][j][i];
-				 fpGpsi[i][1]+=  dt*ex_a[s_cntr][j]*ex_K_psi[1][j][i]+ dt*im_a[s_cntr][j]*im_K_psi[1][j][i];
+				{fpGpsi[i][0]+=  dt*imx.ex_a[s_cntr][j]*ex_K_psi[0][j][i]+ dt*imx.im_a[s_cntr][j]*im_K_psi[0][j][i];
+				 fpGpsi[i][1]+=  dt*imx.ex_a[s_cntr][j]*ex_K_psi[1][j][i]+ dt*imx.im_a[s_cntr][j]*im_K_psi[1][j][i];
 				}
 
 
@@ -423,7 +439,7 @@ double run(double dt,double dx,double *ens,double *stb_avg,int stb_any,int print
 
 			  for(i=0;i<N;++i)
 			  {
-				lambda = k_grid[i]*k_grid[i]*im_a[s_cntr][s_cntr]*dt;
+				lambda = k_grid[i]*k_grid[i]*imx.im_a[s_cntr][s_cntr]*dt;
 
 				fpGpsi_ft[i][0] = (fpGpsi_ft[i][0] + lambda*fpGpsi_ft[i][1])/(1.0+lambda*lambda);
 				fpGpsi_ft[i][1] = (fpGpsi_ft[i][1] - lambda*fpGpsi_ft[i][0])/(1.0+lambda*lambda);
@@ -483,8 +499,8 @@ double run(double dt,double dx,double *ens,double *stb_avg,int stb_any,int print
 
 
 			   for(j=0;j<imex_s;++j)
-			   {	psi[i][0]+=  dt*ex_b[j]*ex_K_psi[0][j][i]+ dt*im_b[j]*im_K_psi[0][j][i];
-				    psi[i][1]+=  dt*ex_b[j]*ex_K_psi[1][j][i]+ dt*im_b[j]*im_K_psi[1][j][i];
+			   {	psi[i][0]+=  dt*imx.ex_b[j]*ex_K_psi[0][j][i]+ dt*imx.im_b[j]*im_K_psi[0][j][i];
+				    psi[i][1]+=  dt*imx.ex_b[j]*ex_K_psi[1][j][i]+ dt*imx.im_b[j]*im_K_psi[1][j][i];
 
 			   }
 
@@ -617,7 +633,7 @@ double run(double dt,double dx,double *ens,double *stb_avg,int stb_any,int print
 
 
 
-int main()
+int main(int argc, char **argv)
 {
 
 	double dt = 3e-4;
@@ -625,18 +641,24 @@ int main()
 	double ens,m_loss,stb_avg;
 
 	double dx_l=1e-3,dx_u = 4e-2;
-	double dt_l= 1e-5 ,dt_u = 1e-1;
+	double dt_l= 1e-6 ,dt_u = 1e-1;
 
 	double ddx = (dx_u-dx_l)/(6.0);
 	double ddt = (dt_u-dt_l)/(6.0);
 
 	FILE *fp = fopen("imex_ft.txt","w");
 
-imex_table ch(3);
- char nn[10] = "test";
+	char *imex_file; int stages;
+	imex_file = argv[2];
+	stages = atoi(argv[1]);
+	printf("ImEx table filename is %s and stages given by u is %d \n",imex_file,stages);
+	
+
+	imex_table imx(stages);
+    
  
-  ch.read_from_file(nn);
-  ch.print_table();
+  	imx.read_from_file(imex_file);
+  	imx.print_table();
 
 	for(dt=dt_l;dt<=dt_u;dt+=ddt)
 	{
@@ -646,9 +668,9 @@ imex_table ch(3);
 		{
 			//dx = 1e-3;
 			//dt = 1e-4;
-			//m_loss = run(dt,dx,&ens,&stb_avg,0,0,0);
+			m_loss = run(imx,dt,dx,&ens,&stb_avg,0,0,0);
 
-			//printf("%lf\t%lf\t%lf\t%.10lf\t%lf\t%.10lf\n",dx,dt,dt/(dx*dx),ens,m_loss,stb_avg);
+			printf("%lf\t%lf\t%lf\t%.10lf\t%lf\t%.10lf\n",dx,dt,dt/(dx*dx),ens,m_loss,stb_avg);
 			//fprintf(fp,"%lf\t%lf\t%lf\t%.10lf\t%.10lf\t%.10lf\n",dx,dt,dt/(dx*dx),ens,m_loss,stb_avg);
 		}
 
