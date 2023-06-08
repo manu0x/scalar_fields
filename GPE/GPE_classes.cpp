@@ -50,7 +50,7 @@ class GPE_field_2d
 
 
 
-    GPE_field_2d(int jj,int NN,int imex_s,int nthreads=8)
+    GPE_field_2d(int jj,int NN,int imex_s,int nthreads=4)
     {
         j= jj;
         N= NN;
@@ -252,7 +252,7 @@ class GPE_field_2d
 
         int ii,jj,ci;
        
-        printf("Working...\n");
+        //printf("Working...\n");
        
         for(ii=0;ii<N+1;++ii)
         {   
@@ -285,8 +285,8 @@ class GPE_field_2d
     }
 
     void set_field()
-    {int ii,jj;
-        for(ii=0;ii<N2;++i)
+    {int ii;
+        for(ii=0;ii<N2;++ii)
         {
 
             fpGpsi[ii][0] = psi[ii][0];

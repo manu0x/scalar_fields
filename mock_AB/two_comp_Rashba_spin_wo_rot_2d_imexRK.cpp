@@ -86,51 +86,7 @@ double ex_b[ex_s] = {1.0/3.0,1.0/3.0,1.0/3.0};
 
 
 
-void lap(double *lpsi,fftw_complex *psi, double dx,int N)
-{
-	int l1,l2,r1,r2,i;
 
-	double vl1,vl2,vr1,vr2,vc;
-   for(i=0;i<(N-1);++i)
-   {	l1 = ((N-1)+ (i-1))%(N-1);
-	l2 = ((N-1)+ (i-2))%(N-1);
-
-	r1 = (i+1)%(N-1);
-	r2 = (i+2)%(N-1);
-
-
-	vl1 = psi[l1][0];
-	vl2 = psi[l2][0];
-
-	vr1 = psi[r1][0];
-	vr2 = psi[r2][0];
-
-	vc = psi[i][0];
-
-	*(lpsi+2*i) =  (-vr2 + 16.0*vr1 - 30.0*vc + 16.0*vl1 - vl2)/(12.0*dx*dx);
-
-	//if(i==0||i==1||i==2||i==(N-1))
-	//{printf("\n%d\t%d\t%d\t%d\t%d\n",l2,l1,i,r1,r2);
-	// printf("%lf\t%lf\t%lf\t%lf\t%lf\n",vl2,vl1,vc,vr1,vr2);
-	// printf("%lf\t%lf\n\n",(-vr2 + 16.0*vr1 - 30.0*vc + 16.0*vl1 - vl2),*(lpsi+2*i));
-	//}
-
-
-	vl1 = psi[l1][1];
-	vl2 = psi[l2][1];
-
-	vr1 = psi[r1][1];
-	vr2 = psi[r2][1];
-
-	vc = psi[i][1];
-	*(lpsi+2*i+1) = (-vr2 + 16.0*vr1 - 30.0*vc + 16.0*vl1 - vl2)/(12.0*dx*dx);
-
-    }
-
-	*(lpsi+2*i) = *(lpsi);
-	*(lpsi+2*i+1) = *(lpsi+1);
-
-}
 
 
 void initialise(double *k,double dx,int N)
@@ -161,13 +117,14 @@ void initialise(double *k,double dx,int N)
 
 
 
-double run(double dt,double dx,double *abs_err,int argc,char **argv,double *stb_avg,int stb_any,int printfp,int prt)
+double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int prnt)
 {
 
-	int N,t_steps;
-	double box_len,t_end,t_start,xval,dbi,dbj,dbk;
+	int t_steps;
+	double box_len,t_end,t_start,xval,dbi,dbj,dbk,dx;
 	double x0[2],xv[2];
 
+	fftw_init_threads();
 	
 ///////////////////////////////File for data/////////////////////////////////////////////////////
 /*
@@ -187,8 +144,8 @@ double run(double dt,double dx,double *abs_err,int argc,char **argv,double *stb_
 
 
 /////////////////////////////// Box & res. setting ///////////////////////////////////////////////
-	x0[0]=-10.0; x0[1]=10.0;
-	box_len = x0[1]-x0[0];
+	x0[0]=-10.0; x0[1]=-10.0;
+	box_len = 20.0;
 	//n  = 2.0/box_len;
 	N = 512;
 	dx = box_len/(double(N));
@@ -204,7 +161,7 @@ double run(double dt,double dx,double *abs_err,int argc,char **argv,double *stb_
 	
 	t_steps = (int)((t_end-t_start)/dt);
 	
-	if(prt)
+	if(prnt)
 	printf("dt %lf N %d\n",dt,N);
 
 
@@ -222,7 +179,7 @@ double run(double dt,double dx,double *abs_err,int argc,char **argv,double *stb_
 	double lambda;
 
 
-	char fp_name[30]("imex_ft_");
+	char fp_name[30]("data_");
 
 	char fp_phi1_r[20]("phi1_r_ini.txt");
 	char fp_phi1_i[20]("phi1_i_ini.txt");
@@ -253,8 +210,8 @@ double run(double dt,double dx,double *abs_err,int argc,char **argv,double *stb_
   	imx.print_table();
 
 
-    GPE_field_2d  psi_1(0,N,3,8);
-    GPE_field_2d  psi_2(1,N,3,8);
+    GPE_field_2d  psi_1(0,N,imx.s,8);
+    GPE_field_2d  psi_2(1,N,imx.s,8);
 
     psi_1.read_from_file(f1paramfile);
 	psi_2.read_from_file(f2paramfile);
@@ -264,12 +221,15 @@ double run(double dt,double dx,double *abs_err,int argc,char **argv,double *stb_
 
 	psi_1.initialise_from_file(fp_phi1_r,fp_phi1_i); 
 	psi_2.initialise_from_file(fp_phi2_r,fp_phi2_i); 
-	//psi_2.initialise_from_file();
-
+	
+	
+	
 	double k_grid[N];
 
 	initialise(k_grid,dx,N);
 
+	if(prnt)
+	printf("Initialization done\n");
 	
 	psi_1.set_field();
 	psi_2.set_field();
@@ -277,30 +237,37 @@ double run(double dt,double dx,double *abs_err,int argc,char **argv,double *stb_
 
 ///////////////////////  Evolution ///////////////////////////////////////////////////////////////
     int ii,jj,kk;
-	int s_cntr,tcntr,printcntr,fpcntr,fail=0;
+	int s_cntr,tcntr,printcntr,fpcntr,err_cntr=1,fail=0;
 
 	printcntr = (int)(((double) t_steps)/100.0);
 	fpcntr = (int)(((double) t_steps)/10.0);
 	if(t_steps<=100)
-		printcntr = 1.0;	//printf("%d\n",printcntr);
+	{	printcntr = 1.0;
+	
+	}	//printf("%d\n",printcntr);
 	double t,vel_val[2],c_psi[2],c_psi_amp2[2],Vval,amp,avg_amp;
 	
 	double fdt,amp_ini;
-	*stb_avg=0.0;
+	
 
 	double kv[2],Rv[2][2];
+	int ind[2];
 
 
 	ii=-1;
 	jj=-1;
 	kk=0;
 
+	psi_1.reset_consv_quant(1);
+	psi_2.reset_consv_quant(1);
+	printf("Starting Run..,\n");
 
 	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&( 1);t+=dt,++tcntr)
 	{
 
-		avg_amp = 0.0;
-
+		
+		if((tcntr%printcntr==0)&&prnt)
+		printf("time %lf  mass %lf\n",t/t_end,psi_1.mass+psi_2.mass);
 		psi_1.do_forward_fft();
 		psi_2.do_forward_fft();
 
@@ -312,7 +279,24 @@ double run(double dt,double dx,double *abs_err,int argc,char **argv,double *stb_
 				++ii;
 				
 			}
-		//	printf("i,j,k  %d %d %d\n",ii,jj,kk);
+			ind[0]=ii;
+			ind[1]=jj;
+
+			dbi = (double)(ii); dbj = (double)(jj);
+			xv[0] = x0[0] + dx*dbi; xv[1] = x0[1] + dx*dbj;
+			if(tcntr%err_cntr==0)
+			{
+				psi_1.cal_conserve_at_point(ind,0.0,Rv[0], xv,dx,!tcntr);
+				psi_2.cal_conserve_at_point(ind,0.0,Rv[1], xv,dx,!tcntr);
+
+			}
+
+			if((tcntr%fpcntr==0)&&(prntfp))
+			{
+				fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",xv[0],xv[1],psi_1.psi[i][0],psi_1.psi[i][1],psi_2.psi[i][0],psi_2.psi[i][1]);
+
+
+			}
 	
 			lambda = (k_grid[ii]*k_grid[ii]+k_grid[jj]*k_grid[jj])*imx.im_a[0][0]*dt/(2.0);
 			kv[0] = k_grid[ii];		kv[1] = k_grid[jj];
@@ -321,29 +305,14 @@ double run(double dt,double dx,double *abs_err,int argc,char **argv,double *stb_
 			psi_2.update_fft_fields(i,kv,lambda);
 
 		}
+
+		if((tcntr%fpcntr==0)&&(prntfp))
+		fprintf(fp,"\n\n\n");
 		
 
 		psi_1.do_back_fft();
 		psi_2.do_back_fft();
 
-		/*
-		for(i=0;i<(N);++i)
-		{	dbi = (double)i;
-			sol[0] = cos(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
-			sol[1] = -sin(2.0*pie*t/T)*sin(2.0*pie*n*dx*dbi);
-
-
-			fdt = (fpGpsi[i-1][0]+fpGpsi[i+1][0]-2.0*fpGpsi[i][0])/(dx*dx);
-			if(i==0)
-			fdt = (fpGpsi[N-1][0]+fpGpsi[i+1][0]-2.0*fpGpsi[i][0])/(dx*dx);
-			if(i==(N-1))
-			fdt = (fpGpsi[i-1][0]+fpGpsi[0][0]-2.0*fpGpsi[i][0])/(dx*dx);
-			fprintf(fplap,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",dx*dbi,K[i][0],K[i][1],-drc*fpGpsi[i][0],-drc*fpGpsi[i][1],fdt);
-
-		}
-
-		//printf("l do\n");
-		*/
 
 		for(s_cntr=1;s_cntr<imx.s;++s_cntr)
 		{
@@ -443,14 +412,9 @@ double run(double dt,double dx,double *abs_err,int argc,char **argv,double *stb_
 
 		}//RK stages concluded
 
-		if((tcntr%printcntr)==0)
-		{
-			  if(prt)
-			   printf("%lf\t%lf\n",t/t_end,avg_amp/((double)(N2)));
-		}
 
-		avg_amp=0.0;
-		*abs_err = 0.0;
+
+		
 
 
 		for(i=0,ii=-1,jj=0;i<N2;++i,++jj)
@@ -496,7 +460,7 @@ double run(double dt,double dx,double *abs_err,int argc,char **argv,double *stb_
 			if(isnan((psi_1.psi[i][0]+psi_1.psi[i][1])+(psi_2.psi[i][0]+psi_2.psi[i][1])))
 			{
 				fail =1;
-				if(prt)
+				//if(prt)
 				printf("FAILED %d tcntr %d %lf %lf\n",i,tcntr,psi_1.psi[i][0],psi_1.psi[i][0]);
 
 				break;
@@ -504,51 +468,29 @@ double run(double dt,double dx,double *abs_err,int argc,char **argv,double *stb_
 			}
 
 
-	
 
+		   
+		}
 
-
-
-
-
-			
-
-			if((tcntr%printcntr)==0)
-			{
-			 // if(printfp)
-			 // fprintf(fp2,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",dx*dbi,fpGpsi[i][0],fpGpsi[i][1],sol[0],sol[1],amp);
-			}
-
-
-		   }
-
-			
-
-
-
-
-
-
-
-
-
-
-
-
+		
 
 
 	}///// ENd f Time Evolution /////////////////////////
 
-	//if(printfp)
-	//fprintf(fpmass,"%lf\t%lf\n",t/t_end,avg_amp/((double)N2));
+	fclose(fp);
+	fftw_cleanup_threads();
+	*mass_err = psi_1.max_mass_err;
+	*(mass_err+1)= psi_2.max_mass_err;
 
 
-	if(prt)
-	printf("N %d\n Run en los %lf abs err %lf\n",N,100.0*fabs(avg_amp-amp_ini)/amp_ini,*abs_err);
+	if(prnt)
+	printf("N %d\n Run en los %lf abs err %lf\n",N,*(mass_err),*(mass_err+1));
 
 
-
-	return(0.0);
+	if(psi_1.max_mass_err>psi_2.max_mass_err)
+	return(psi_1.max_mass_err);
+	else
+	return(psi_2.max_mass_err);
 
 
 
@@ -569,7 +511,7 @@ int main(int argc, char ** argv)
 
 	double dt = 3e-4;
 	double dx = 4e-3;
-	double abs_err,en_loss,stb_avg;
+	double mass_err[2],mass_loss;
 
 	double dx_l=2e-3,dx_u = 4e-2;
 	double dt_l= 1e-5,dt_u = 1e-2;
@@ -578,6 +520,7 @@ int main(int argc, char ** argv)
 	double ddt = (dt_u-dt_l)/(20.0);
 
 	FILE *fp = fopen("imex_ft.txt","w");
+	
 
 	//for(dt=dt_l;dt<=dt_u;dt+=ddt)
 	{
@@ -586,15 +529,16 @@ int main(int argc, char ** argv)
 		//for(dx = dx_l;dx<=dx_u;dx+=ddx)
 		{
 			dx = 2e-2;
-			dt = 1e-4;
-			en_loss = run(dt,dx,&abs_err,argc,argv,&stb_avg,0,1,1);
+			dt = 1e-3;
+			mass_loss = run(dt,512,mass_err,argc,argv,1,1);
 
-			printf("%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,dt,dt/(dx*dx),en_loss,abs_err,stb_avg);
-			fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,dt,dt/(dx*dx),en_loss,abs_err,stb_avg);
+			printf("%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,dt,dt/(dx*dx),mass_loss,*mass_err,*(mass_err+1));
+			fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,dt,dt/(dx*dx),mass_loss,*mass_err,*(mass_err+1));
 		}
 
 	}
 
+	fclose(fp);
 
 
 

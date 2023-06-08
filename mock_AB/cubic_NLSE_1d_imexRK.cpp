@@ -641,7 +641,7 @@ int main(int argc, char **argv)
 	double ens,m_loss,stb_avg;
 
 	double dx_l=1e-3,dx_u = 4e-2;
-	double dt_l= 1e-5 ,dt_u = 1e-1;
+	double dt_l= 1e-6 ,dt_u = 1e-1;
 
 	double ddx = (dx_u-dx_l)/(6.0);
 	double ddt = (dt_u-dt_l)/(6.0);
@@ -664,7 +664,7 @@ int main(int argc, char **argv)
   	imx.read_from_file(imex_file);
   	imx.print_table();
 
-	for(dt=dt_l;dt<=dt_u;dt+=ddt)
+	for(dt=dt_l;dt<=dt_u;dt*=10.0)
 	{
 
 
