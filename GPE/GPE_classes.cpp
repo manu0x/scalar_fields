@@ -45,6 +45,8 @@ class GPE_field_2d
     int i,k;
 
     double dj;
+    double energy,ini_energy,max_eng_err;
+    double mass,ini_mass,max_mass_err;
 
 
 
@@ -283,7 +285,115 @@ class GPE_field_2d
     }
 
     void set_field()
-    {}
+    {int ii,jj;
+        for(ii=0;ii<N2;++i)
+        {
+
+            fpGpsi[ii][0] = psi[ii][0];
+            fpGpsi[ii][1] = psi[ii][1];
+
+        }
+
+    }
+
+    void reset_consv_quant(int is_ini=0)
+    {
+        energy = 0.0;
+        mass = 0.0;
+        if(is_ini)
+        {
+            ini_energy=0.0;
+            ini_mass = 0,0;
+
+            max_eng_err=-1.0;
+            max_mass_err=-1.0;
+
+        }
+
+    }
+    void cal_conserve_at_point(int ind[2],double psi2_other,double R[2],double x[2],double dx,int is_ini=0)
+    {
+            
+            int left[2],right[2],left_y,right_y,ci,cr,cl;
+            double der_x[2],der_y[2],der_amp2,psi2,fcntr,Rcntr,loc_energy,loc_mass;
+            
+            ci = ind[0]*N+ind[1];
+            /////////////////////  x-derivative //////////////////////
+            left[0] = ind[0]-1;
+            left[1] = ind[1];
+            if(ind[0]==0)
+            left[0] = N-2;
+
+            right[0] = ind[0]+1;
+            right[1] = ind[1];
+            if(ind[0]==(N-1))
+            right[0] = 1;
+
+            cr = right[0]*N+right[1];
+            cl = left[0]*N+left[1];
+
+            der_x[0] = (psi[cr][0]+psi[cl][0]-2.0*psi[ci][0])/dx;
+            der_x[1] = (psi[cr][1]+psi[cl][1]-2.0*psi[ci][1])/dx;
+
+            ///////////////////////////////////
+
+            /////////////////////  y-derivative //////////////////////
+            left[0] = ind[0];
+            left[1] = ind[1]-1;
+            if(ind[1]==0)
+            left[1] = N-2;
+
+            right[0] = ind[0];
+            right[1] = ind[1]+1;
+            if(ind[1]==(N-1))
+            right[1] = 1;
+
+            cr = right[0]*N+right[1];
+            cl = left[0]*N+left[1];
+
+            der_y[0] = (psi[cr][0]+psi[cl][0]-2.0*psi[ci][0])/dx;
+            der_y[1] = (psi[cr][1]+psi[cl][1]-2.0*psi[ci][1])/dx;
+
+            ///////////////////////////////////  (der_x)^2+(der_y)^2    /////////////////
+            der_amp2 =    der_x[0]*der_x[0] + der_x[1]*der_x[1] + der_y[0]*der_y[0] + der_y[1]*der_y[1];
+            ///////////////////////////////////////////////////
+            psi2 = psi[ci][0]*psi[ci][0] + psi[ci][1]*psi[ci][1];
+
+            fcntr = 0.5*bta[0]*psi2*psi2 + 0.5*bta[1]*psi2*psi2_other;
+           // Rcntr = -(psi[ci][0]*     )
+      
+
+            loc_energy = 0.5*der_amp2 +  V(x)*psi2 + fcntr + Rcntr;
+            loc_mass = psi2;
+
+            energy+=loc_energy;
+            mass+=loc_mass;
+
+            if(is_ini)
+            {
+                ini_energy+=loc_energy;
+                ini_mass+=loc_mass;
+
+            }
+
+            
+    }
+
+    void conserve_err()
+    {
+        double eng_err,mass_err;
+        eng_err = fabs(energy-ini_energy)/fabs(ini_energy);
+        mass_err = fabs(mass-ini_mass)/mass;
+
+        if(eng_err>max_eng_err)
+            max_eng_err=eng_err;
+        
+        if(mass_err>max_mass_err)
+            max_mass_err=mass_err;
+
+
+    }
+   
 
 };
 
