@@ -13,7 +13,7 @@
 
 #include <algorithm>
 #include "../imex/imex_classes.cpp"
-#include "../GPE/GPE_classes.cpp"
+#include "../GPE/GPE_classes_1d.cpp"
 
 using namespace std;
 
@@ -69,7 +69,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 	double box_len,t_end,t_start,xval,dbi,dbj,dbk,dx;
 	double xv,xini;
 
-	fftw_init_threads();
+//	fftw_init_threads();
 	
 ///////////////////////////////File for data/////////////////////////////////////////////////////
 /*
@@ -206,7 +206,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 	
 	printf("Starting Run..,\n");
 
-	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&(10);t+=dt,++tcntr)
+	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&(tcntr<1);t+=dt,++tcntr)
 	{
 
 		
@@ -239,6 +239,8 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 			   xv = xini+dbi*dx;
 			   theta = 0.5*psi_1.c*(xv-psi_1.x0)-(0.25*psi_1.c*psi_1.c -psi_1.a)*t;
 	   		   fs = (2.0*psi_1.a/psi_1.bta)/cosh(sqrt(psi_1.a)*(xv-psi_1.x0-psi_1.c*t));
+
+			   
 			   sol[0] = cos(theta)*fs;
 			   sol[1] = sin(theta)*fs;
 				
@@ -251,7 +253,9 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 			//printf("lmda  %lf\n",lambda);
 			kv = k_grid[i];		
 
+			
 			psi_1.update_fft_fields(i,kv,lambda);
+			
 			
 
 		}
@@ -264,10 +268,10 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 		
 		if((tcntr%fpcntr==0)&&(prntfp))
 		fprintf(fp,"\n\n\n");
-		
+		printf("chk %lf %lf \n",psi_1.fpGpsi[130][0],k_grid[130]);
 		//printf("chk %lf %lf %lf %lf\n",psi_1.psi[100][1],psi_1.fpGpsi[100][1],psi_1.psi[1100][1],psi_1.fpGpsi[1100][1]);
 		psi_1.do_back_fft();
-		
+		printf("chk %lf %lf \n",psi_1.fpGpsi[130][0],k_grid[130]);
 		//printf("chk %lf %lf %lf %lf\n",psi_1.psi[100][1],psi_1.fpGpsi[100][1],psi_1.psi[1100][1],psi_1.fpGpsi[1100][1]);
 	
 		for(s_cntr=1;s_cntr<imx.s;++s_cntr)
@@ -404,7 +408,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 	}///// ENd f Time Evolution /////////////////////////
 
 	fclose(fp);
-	fftw_cleanup_threads();
+	//fftw_cleanup_threads();
 	*mass_err = psi_1.max_mass_err;
 	
 

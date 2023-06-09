@@ -210,8 +210,8 @@ double run(imex_table imx, double dt,double dx,double *ens,double *stb_avg,int s
 	a = bta*bta/16.0;
 
 	T = 5.0;
-
-
+	x0 = -2.5;
+	c = 0.5;
 
 
 
@@ -221,7 +221,7 @@ double run(imex_table imx, double dt,double dx,double *ens,double *stb_avg,int s
 
 	box_len = 40.0;
 	xini = -20.0;
-	N=512;
+	N=256;
 	dx = box_len/(double(N));
 	//N = ((int)(box_len/dx));
 
@@ -234,7 +234,7 @@ double run(imex_table imx, double dt,double dx,double *ens,double *stb_avg,int s
 	t_steps = (int)((t_end-t_start)/dt);
 	//dt  = (t_end-t_start)/((double)t_steps);
 	if(prt)
-	printf("dt %lf N %d\n",dt,N);
+	printf("dx %lf dt %lf N %d\n",dx,dt,N);
 
 
 
@@ -329,7 +329,7 @@ double run(imex_table imx, double dt,double dx,double *ens,double *stb_avg,int s
 
 
 
-	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&(1);t+=dt,++tcntr)
+	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&(tcntr<1);t+=dt,++tcntr)
 	{
 
 		avg_amp2 = 0.0;
@@ -349,7 +349,8 @@ double run(imex_table imx, double dt,double dx,double *ens,double *stb_avg,int s
 			   dbi = (double)(i);
 			   x = xini+dbi*dx;
 			   theta = 0.5*c*(x-x0)-(0.25*c*c -a)*t;
-	   		   fs = (2.0*a/bta)/cosh(sqrt(a)*(x-x0-c*t));
+	   		   fs = (2.0*a/bta)/cosh(sqrt(a)*(x-x0-c*t)); 
+			   
 			   sol[0] = cos(theta)*fs;
 			   sol[1] = sin(theta)*fs;
 			  if(printfp)
@@ -361,13 +362,21 @@ double run(imex_table imx, double dt,double dx,double *ens,double *stb_avg,int s
 			}
 
 			lambda = k_grid[i]*k_grid[i]*imx.im_a[0][0]*dt;
-
-
+			
+			//if(i==130)
+		//	printf("Lambda %.10lf %.10lf %.10lf %.10lf %.10lf\n",lambda,fpGpsi_ft[130][0],fpGpsi[130][0],fpGpsi_ft[130][1],fpGpsi[130][1]);
 			fpGpsi_ft[i][0] = (fpGpsi_ft[i][0] + lambda*fpGpsi_ft[i][1])/(1.0+lambda*lambda);
+		//	if(i==130)
+		//	printf("Lambda %.10lf %.10lf %.10lf %.10lf %.10lf\n",lambda,fpGpsi_ft[130][0],fpGpsi[130][0],fpGpsi_ft[130][1],fpGpsi[130][1]);
+
 			fpGpsi_ft[i][1] = (fpGpsi_ft[i][1] - lambda*fpGpsi_ft[i][0])/(1.0+lambda*lambda);
+
+			
 
 			fpGpsi_ft[i][0] = fpGpsi_ft[i][0]/((double)N);
 			fpGpsi_ft[i][1] = fpGpsi_ft[i][1]/((double)N);
+
+			
 
 			K_ft[i][0] = -fpGpsi_ft[i][0]*(k_grid[i]*k_grid[i]);
 			K_ft[i][1] = -fpGpsi_ft[i][1]*(k_grid[i]*k_grid[i]);
@@ -382,11 +391,11 @@ double run(imex_table imx, double dt,double dx,double *ens,double *stb_avg,int s
 		stb_ini = avg_amp2;
 		if(t==t_start)
 		amp2_ini = avg_amp2;
-
+		printf("chk %lf %lf \n",fpGpsi[130][0],k_grid[130]);
 		fftw_execute(plan_pois_b);
 		fftw_execute(plan_imp_b);
 
-
+		printf("chk %lf %lf \n",fpGpsi[130][0],k_grid[130]);
 
 		for(s_cntr=1;s_cntr<imex_s;++s_cntr)
 		{
@@ -664,16 +673,16 @@ int main(int argc, char **argv)
   	imx.read_from_file(imex_file);
   	imx.print_table();
 
-	for(dt=dt_l;dt<=dt_u;dt*=10.0)
+	//for(dt=dt_l;dt<=dt_u;dt*=10.0)
 	{
 
 
 		//for(dx = dx_l;dx<=dx_u;dx+=ddx)
 		{
 			//dx = 1e-3;
-			//dt = 1e-4;
+			dt = 1e-3;
 			printf("\nRunning case %lf dt\n",dt);
-			m_loss = run(imx,dt,dx,&ens,&stb_avg,0,0,0);
+			m_loss = run(imx,dt,dx,&ens,&stb_avg,0,1,0);
 
 			printf("%lf\t%lf\t%lf\t%.10lf\t%lf\t%.10lf\n",dx,dt,dt/(dx*dx),ens,m_loss,stb_avg);
 			fprintf(fp,"%lf\t%lf\t%lf\t%.10lf\t%.10lf\t%.10lf\n",dx,dt,dt/(dx*dx),ens,m_loss,stb_avg);

@@ -75,10 +75,10 @@ class GPE_field_1d
       //  R = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (N));
 	  //  R_ft =(fftw_complex*) fftw_malloc(sizeof(fftw_complex) *(N));
 
-        fftw_plan_with_nthreads(nthreads);
+      //  fftw_plan_with_nthreads(nthreads);
 
 
-	    plan_pois_f = fftw_plan_dft_1d(N,fpGpsi, fpGpsi_ft, FFTW_BACKWARD, FFTW_ESTIMATE);
+	    plan_pois_f = fftw_plan_dft_1d(N,fpGpsi, fpGpsi_ft, FFTW_FORWARD, FFTW_ESTIMATE);
         plan_pois_b = fftw_plan_dft_1d(N,fpGpsi_ft, fpGpsi, FFTW_BACKWARD, FFTW_ESTIMATE);
 
 
@@ -125,9 +125,13 @@ class GPE_field_1d
     void update_fft_fields(int ind,double k,double lamda)
     {
        
-       
-       	fpGpsi_ft[ind][0] = ((fpGpsi_ft[ind][0]) + lamda*fpGpsi_ft[ind][1])/(1.0+lamda*lamda);
+     //  if(ind==130)
+		//	printf("Lambda %.10lf  %.10lf  %.10lf  %.10lf  %.10lf\n",lamda,fpGpsi_ft[130][0],fpGpsi[130][0],fpGpsi_ft[130][1],fpGpsi[130][1]);
+       	fpGpsi_ft[ind][0] = ((fpGpsi_ft[ind][0]) + lamda*fpGpsi_ft[ind][1])/(1.0+lamda*lamda); 
+     //   if(ind==130)
+		//	printf("Lambda %.10lf  %.10lf  %.10lf  %.10lf  %.10lf\n",lamda,fpGpsi_ft[130][0],fpGpsi[130][0],fpGpsi_ft[130][1],fpGpsi[130][1]);
 		fpGpsi_ft[ind][1] = ((fpGpsi_ft[ind][1]) - lamda*fpGpsi_ft[ind][0])/(1.0+lamda*lamda);
+        
         
 
 
