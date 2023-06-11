@@ -329,7 +329,7 @@ double run(imex_table imx, double dt,double dx,double *ens,double *stb_avg,int s
 
 
 
-	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&(tcntr<1);t+=dt,++tcntr)
+	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&(1);t+=dt,++tcntr)
 	{
 
 		avg_amp2 = 0.0;
@@ -391,11 +391,11 @@ double run(imex_table imx, double dt,double dx,double *ens,double *stb_avg,int s
 		stb_ini = avg_amp2;
 		if(t==t_start)
 		amp2_ini = avg_amp2;
-		printf("chk %lf %lf \n",fpGpsi[130][0],k_grid[130]);
+		//printf("chk %lf %lf \n",fpGpsi[130][0],k_grid[130]);
 		fftw_execute(plan_pois_b);
 		fftw_execute(plan_imp_b);
 
-		printf("chk %lf %lf \n",fpGpsi[130][0],k_grid[130]);
+		//printf("chk %lf %lf \n",fpGpsi[130][0],k_grid[130]);
 
 		for(s_cntr=1;s_cntr<imex_s;++s_cntr)
 		{
@@ -682,7 +682,7 @@ int main(int argc, char **argv)
 			//dx = 1e-3;
 			dt = 1e-3;
 			printf("\nRunning case %lf dt\n",dt);
-			m_loss = run(imx,dt,dx,&ens,&stb_avg,0,1,0);
+			m_loss = run(imx,dt,dx,&ens,&stb_avg,0,1,1);
 
 			printf("%lf\t%lf\t%lf\t%.10lf\t%lf\t%.10lf\n",dx,dt,dt/(dx*dx),ens,m_loss,stb_avg);
 			fprintf(fp,"%lf\t%lf\t%lf\t%.10lf\t%.10lf\t%.10lf\n",dx,dt,dt/(dx*dx),ens,m_loss,stb_avg);

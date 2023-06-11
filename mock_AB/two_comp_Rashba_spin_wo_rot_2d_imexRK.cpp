@@ -13,7 +13,7 @@
 
 #include <algorithm>
 #include "../imex/imex_classes.cpp"
-#include "../GPE/GPE_classes.cpp"
+#include "../GPE/GPE_classes_2d.cpp"
 
 using namespace std;
 
@@ -126,11 +126,11 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 
 	char fp_name[30]("data_");
 
-	char fp_phi1_r[20]("phi1_r_ini.txt");
-	char fp_phi1_i[20]("phi1_i_ini.txt");
+	char fp_phi2_r[20]("phi1_r_ini.txt");
+	char fp_phi2_i[20]("phi1_i_ini.txt");
 
-	char fp_phi2_r[20]("phi2_r_ini.txt");
-	char fp_phi2_i[20]("phi2_i_ini.txt");
+	char fp_phi1_r[20]("phi2_r_ini.txt");
+	char fp_phi1_i[20]("phi2_i_ini.txt");
 	
     int stages;
 	char *imex_file; 
@@ -207,12 +207,12 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 	psi_2.reset_consv_quant(1);
 	printf("Starting Run..,\n");
 
-	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&(tcntr< 100);t+=dt,++tcntr)
+	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&( 100);t+=dt,++tcntr)
 	{
 
 		
-		//if((tcntr%printcntr==0)&&prnt)
-		printf("time %lf  mass %lf\n",t/t_end,psi_1.mass+psi_2.mass);
+		if((tcntr%printcntr==0)&&prnt)
+		printf("time %lf %lf %lf  net mass %lf\n",t/t_end,psi_1.mass,psi_2.mass,psi_1.mass+psi_2.mass);
 		psi_1.do_forward_fft();
 		psi_2.do_forward_fft();
 
@@ -264,10 +264,10 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 		if((tcntr%fpcntr==0)&&(prntfp))
 		fprintf(fp,"\n\n\n");
 		
-		//printf("chk %lf %lf %lf %lf\n",psi_1.psi[100][1],psi_1.fpGpsi[100][1],psi_1.psi[1100][1],psi_1.fpGpsi[1100][1]);
+		
 		psi_1.do_back_fft();
 		psi_2.do_back_fft();
-		//printf("chk %lf %lf %lf %lf\n",psi_1.psi[100][1],psi_1.fpGpsi[100][1],psi_1.psi[1100][1],psi_1.fpGpsi[1100][1]);
+		
 
 		for(s_cntr=1;s_cntr<imx.s;++s_cntr)
 		{
@@ -303,8 +303,8 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 					psi_1.fpGpsi[i][0] = psi_1.psi[i][0] + dt*imx.ex_a[s_cntr][j]*psi_1.ex_K_psi[0][j][i]+ dt*imx.im_a[s_cntr][j]*psi_1.im_K_psi[0][j][i];
 					psi_1.fpGpsi[i][1] = psi_1.psi[i][1] + dt*imx.ex_a[s_cntr][j]*psi_1.ex_K_psi[1][j][i]+ dt*imx.im_a[s_cntr][j]*psi_1.im_K_psi[1][j][i];
 
-					psi_2.fpGpsi[i][0] = psi_1.psi[i][0] + dt*imx.ex_a[s_cntr][j]*psi_2.ex_K_psi[0][j][i]+ dt*imx.im_a[s_cntr][j]*psi_2.im_K_psi[0][j][i];
-					psi_2.fpGpsi[i][1] = psi_1.psi[i][1] + dt*imx.ex_a[s_cntr][j]*psi_2.ex_K_psi[1][j][i]+ dt*imx.im_a[s_cntr][j]*psi_2.im_K_psi[1][j][i];
+					psi_2.fpGpsi[i][0] = psi_2.psi[i][0] + dt*imx.ex_a[s_cntr][j]*psi_2.ex_K_psi[0][j][i]+ dt*imx.im_a[s_cntr][j]*psi_2.im_K_psi[0][j][i];
+					psi_2.fpGpsi[i][1] = psi_2.psi[i][1] + dt*imx.ex_a[s_cntr][j]*psi_2.ex_K_psi[1][j][i]+ dt*imx.im_a[s_cntr][j]*psi_2.im_K_psi[1][j][i];
 
 				}
 

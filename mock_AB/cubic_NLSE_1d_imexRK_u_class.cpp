@@ -206,7 +206,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 	
 	printf("Starting Run..,\n");
 
-	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&(tcntr<1);t+=dt,++tcntr)
+	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&(1);t+=dt,++tcntr)
 	{
 
 		
@@ -268,10 +268,10 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 		
 		if((tcntr%fpcntr==0)&&(prntfp))
 		fprintf(fp,"\n\n\n");
-		printf("chk %lf %lf \n",psi_1.fpGpsi[130][0],k_grid[130]);
+		//printf("chk %lf %lf \n",psi_1.fpGpsi[130][0],k_grid[130]);
 		//printf("chk %lf %lf %lf %lf\n",psi_1.psi[100][1],psi_1.fpGpsi[100][1],psi_1.psi[1100][1],psi_1.fpGpsi[1100][1]);
 		psi_1.do_back_fft();
-		printf("chk %lf %lf \n",psi_1.fpGpsi[130][0],k_grid[130]);
+		//printf("chk %lf %lf \n",psi_1.fpGpsi[130][0],k_grid[130]);
 		//printf("chk %lf %lf %lf %lf\n",psi_1.psi[100][1],psi_1.fpGpsi[100][1],psi_1.psi[1100][1],psi_1.fpGpsi[1100][1]);
 	
 		for(s_cntr=1;s_cntr<imx.s;++s_cntr)
