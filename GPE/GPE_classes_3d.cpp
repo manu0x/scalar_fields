@@ -15,9 +15,10 @@ class GPE_field_3d
 {
     private:
 
-    double gmma[2];
-    double bta[2];
+    double hbar_unit,c_unit,h,pc_unit,omega_m0;
+    double vfac;
     double kppa;
+    double m_alpha;
 
     public:
     fftw_complex *psi;
@@ -25,11 +26,13 @@ class GPE_field_3d
     fftw_complex *fpGpsi;
 	fftw_complex *fpGpsi_ft;
 
+    fftw_complex *V_phi;
+	fftw_complex *V_phi_ft;
+
 	fftw_complex *K;
 	fftw_complex *K_ft;
 
-    fftw_complex *R;
-	fftw_complex *R_ft;
+   
 
     double ***im_K_psi = new double**[2];
 	double ***ex_K_psi = new double**[2];
@@ -37,7 +40,9 @@ class GPE_field_3d
 	fftw_plan plan_pois_f;
 	fftw_plan plan_pois_b;
 	fftw_plan plan_imp_b;
-    fftw_plan plan_imp_R;
+
+    fftw_plan plan_V_f;
+    fftw_plan plan_V_b;
 
 
 
@@ -68,8 +73,8 @@ class GPE_field_3d
 	    K = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (N3));
 	    K_ft =(fftw_complex*) fftw_malloc(sizeof(fftw_complex) *(N3));
 
-        R = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (N3));
-	    R_ft =(fftw_complex*) fftw_malloc(sizeof(fftw_complex) *(N3));
+        V_phi = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (N3));
+	    V_phi_ft =(fftw_complex*) fftw_malloc(sizeof(fftw_complex) *(N3));
 
         fftw_plan_with_nthreads(nthreads);
 
@@ -77,9 +82,12 @@ class GPE_field_3d
 	    plan_pois_f = fftw_plan_dft_3d(N,N,N, fpGpsi, fpGpsi_ft, FFTW_FORWARD, FFTW_ESTIMATE);
 	    plan_pois_b = fftw_plan_dft_3d(N,N,N, fpGpsi_ft, fpGpsi, FFTW_BACKWARD, FFTW_ESTIMATE);
 
+        plan_V_f = fftw_plan_dft_3d(N,N,N, V_phi, V_phi_ft, FFTW_FORWARD, FFTW_ESTIMATE);
+	    plan_V_b = fftw_plan_dft_3d(N,N,N, V_phi_ft, V_phi, FFTW_BACKWARD, FFTW_ESTIMATE);
+
 
 	    plan_imp_b = fftw_plan_dft_3d(N,N,N, K_ft, K, FFTW_BACKWARD, FFTW_ESTIMATE);
-        plan_imp_R = fftw_plan_dft_3d(N,N,N, R_ft, R, FFTW_BACKWARD, FFTW_ESTIMATE);
+        
 
         for(i=0;i<2;++i)
 	    {
@@ -102,22 +110,17 @@ class GPE_field_3d
 
 
 
-    double V(double x[2])
+
+    void update_V_rhs(int ind)
     {
-
-        return(0.5*(gmma[0]*x[0]*gmma[0]*x[0]+gmma[1]*x[1]*gmma[1]*x[1]));
-
+        double psisqr;
+        psisqr = fpGpsi[ind][0]*fpGpsi[ind][0] + fpGpsi[ind][1]*fpGpsi[ind][1];
+        V_phi[ind][0] = (0.5/kppa)*(psisqr-3.0*omega_m0);
+        V_phi[ind][1] = 0.0;
 
 
     }
-
-
-    double f(double psi2_me,double psi2_other)
-    {
-        return(bta[0]*psi2_me+bta[1]*psi2_other);
-
-    }
-
+   
     void update_fft_fields(int ind,double ksqr,double lamda)
     {
        
@@ -127,26 +130,35 @@ class GPE_field_3d
         
 
 
-		fpGpsi_ft[ind][0] = fpGpsi_ft[ind][0]/((double)N2);
-		fpGpsi_ft[ind][1] = fpGpsi_ft[ind][1]/((double)N2);
+		fpGpsi_ft[ind][0] = fpGpsi_ft[ind][0]/((double)N3);
+		fpGpsi_ft[ind][1] = fpGpsi_ft[ind][1]/((double)N3);
 
        
 		K_ft[ind][0] = -fpGpsi_ft[ind][0]*ksqr;
 		K_ft[ind][1] = -fpGpsi_ft[ind][1]*ksqr;
        
        if(ksqr>0.0)
-        R_ft[ind][0] = -fpGpsi_ft[ind][0]/ksqr;
-        R_ft[ind][1] = -fpGpsi_ft[ind][1]/ksqr;
+       { V_phi_ft[ind][0] = -V_phi_ft[ind][0]/ksqr;
+         V_phi_ft[ind][1] = -V_phi_ft[ind][1]/ksqr;
+       }
+       else
+       {
+         V_phi_ft[ind][0] = 0.0;
+         V_phi_ft[ind][1] = 0.0;
+
+       }
+
+
 
 
     }
 
-    void ex_rhs(int ind,int stg_i,double psi2_me,double psi2_other,double R[2],double x[2])
+    void ex_rhs(int ind,int stg_i)
     {
             
 
-            ex_K_psi[0][stg_i][ind] = R[0] + (f(psi2_me,psi2_other) + V(x))*fpGpsi[ind][1];
-            ex_K_psi[1][stg_i][ind] = R[1]   -(f(psi2_me,psi2_other) + V(x))*fpGpsi[ind][0];
+            ex_K_psi[0][stg_i][ind] =  V_phi[ind][0]*fpGpsi[ind][1];
+            ex_K_psi[1][stg_i][ind] =  -V_phi[ind][0]*fpGpsi[ind][0];
             //if((stg_i==0)&&ind<100)
            // printf("fcheck %d  %d %lf %lf \n",j,stg_i,fpGpsi[ind][1],psi[ind][1]);
 
@@ -158,7 +170,7 @@ class GPE_field_3d
 
     void im_rhs(int ind,int stg_i)
     {
-        im_K_psi[0][stg_i][ind]  = -K[ind][1]*0.5;  im_K_psi[1][stg_i][ind]=  K[ind][0]*0.5;
+        im_K_psi[0][stg_i][ind]  = -K[ind][1]*0.5*kppa;  im_K_psi[1][stg_i][ind]=  K[ind][0]*0.5*kppa;
 
 
     }
@@ -166,6 +178,7 @@ class GPE_field_3d
     void do_forward_fft()
     {
         fftw_execute(plan_pois_f);
+        fftw_execute(plan_V_f);
 
 
     }
@@ -174,7 +187,7 @@ class GPE_field_3d
     {
         fftw_execute(plan_pois_b);
 		fftw_execute(plan_imp_b);
-        fftw_execute(plan_imp_R);
+        fftw_execute(plan_V_b);
 
     }
 
@@ -202,33 +215,38 @@ class GPE_field_3d
 
 		   
 		
-		   if(read_key=="gamma_x")
+		   if(read_key=="c_unit")
 			{
                 num_val = stod(read_val);
-                gmma[0] = num_val;
+                c_unit = num_val;
 
             }
-		   else if (read_key=="gamma_y")
+		   else if (read_key=="hbar_unit")
            {
                num_val = stod(read_val);
-               gmma[1] = num_val;
+               hbar_unit = num_val;
            }
-           else if (read_key=="beta_my")
+           else if (read_key=="pc_unit")
            {
                num_val = stod(read_val);
-               bta[0] = num_val;
+               pc_unit = num_val;
            }
-           else if (read_key=="beta_other")
+           else if (read_key=="h")
            {
                num_val = stod(read_val);
-               bta[1] = num_val;
+               h = num_val;
            }
-           else if (read_key=="kappa")
+           else if (read_key=="m_alpha")
            {
                num_val = stod(read_val);
-               kppa = num_val;
+               m_alpha = num_val;
            }
            
+           else if (read_key=="omega_m0")
+           {
+               num_val = stod(read_val);
+               omega_m0= num_val;
+           }
 		   
 
 
@@ -241,15 +259,89 @@ class GPE_field_3d
         }
     }
 
-    void print_params()
+    void print_params_set_kappa()
     {
 
         printf("\nPrinting params for field %d\n",j+1);
-        printf("gamma = [%lf,%lf]\n",gmma[0],gmma[1]);
-        printf("beta = [%lf,%lf]\n",bta[0],bta[1]);
+        printf("[c_unit,hbar_unit,pc_unit] = [%lf,%lf,%lf]\n",c_unit,hbar_unit,pc_unit);
+        printf("[h,omega_m0,m_alpha] = [%lf,%lf,%lf]\n",h,omega_m0,m_alpha);
+        kppa = c_unit*c_unit*hbar_unit*h*(1e-5)/(m_alpha*pc_unit);
+
         printf("kappa = %lf\n",kppa);
     }
 
+    void initialise_random(double *kgrid,double amp=1e-6)
+    {
+        int ii,loc_i,loc_j,loc_k;
+        double uni_rand,theta_rnd;
+        double psiamp,ksqr,loc_delta;
+        double vmax;
+
+        double rmx = (double)RAND_MAX;
+        for(ii=0;ii<N3;++ii)
+        {
+
+            uni_rand = amp*(((double)rand())/rmx);
+
+            
+
+            fpGpsi[ii][0] = uni_rand;
+            fpGpsi[ii][1] = 0.0;
+
+
+        }
+
+        fftw_execute(plan_pois_f);
+        fpGpsi_ft[0][0] = 0.0;   fpGpsi_ft[0][1] = 0.0;
+        fftw_execute(plan_pois_b);
+        double dn3 = (double)N3;
+        for ( ii = 0; ii < N3; ++ii,++loc_k)
+        {   
+            if(ii%N ==0)
+            {
+                loc_k=0;
+                ++loc_j;
+                if(ii%N2==0)
+                {
+                    loc_j=0;
+                    ++loc_i;
+
+
+                }
+
+
+            }
+            ksqr = kgrid[loc_i]*kgrid[loc_i] + kgrid[loc_j]*kgrid[loc_j] + kgrid[loc_k]*kgrid[loc_k];
+           loc_delta = fpGpsi[ii][0]/dn3;
+
+           psiamp = sqrt(3.0*omega_m0*(1.0+loc_delta));
+           theta_rnd = (((double)rand())/rmx)*2.0*M_PI;
+           psi[ii][0] = psiamp*cos(theta_rnd);
+           psi[ii][1] = psiamp*sin(theta_rnd);
+
+           V_phi_ft[ii][0] = 1.5*omega_m0*fpGpsi_ft[ii][0]/(dn3*kppa*ksqr);
+           V_phi_ft[ii][1] = 1.5*omega_m0*fpGpsi_ft[ii][1]/(dn3*kppa*ksqr);
+           
+        }
+        V_phi_ft[0][0] = 0.0; V_phi_ft[0][1] = 0.0;
+
+        fftw_execute(plan_V_b);
+
+        vmax = -10000000000.0;
+        for ( ii = 0; ii < N3; ++ii,++loc_k)
+        { 
+
+            if(fabs(V_phi[ii][0])>vmax)
+                vmax = V_phi[ii][0];
+
+        }
+
+
+        printf("Initial random done with vmax %.10lf\n",vmax);
+
+
+
+    }
     void initialise_from_file(char *f_real,char *f_img)
     {
         FILE *fp_real  = fopen(f_real,"r");
