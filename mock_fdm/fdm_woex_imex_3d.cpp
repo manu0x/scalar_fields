@@ -2,8 +2,12 @@
 
 #include <stdio.h>
 #include <math.h>
+
+
+
 #include <fftw3.h>
-#include <mpi.h>
+
+
 #include <limits>
 
 
@@ -44,7 +48,7 @@ void initialise_kgrid(double *k,double dx,int N)
 	{
 	   di = (double)i;
 
-	   if(i<=(N/2))
+	   if(i<(N/2))
 		*(k+i) = di*dk;
 	    else
 		*(k+i) = (di-((double) N))*dk;
@@ -103,7 +107,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 ////////////////////////////// Time & dt settings ////////////////////////////////////////////////
 
 	t_start = 0.0;
-	t_end = 10.0;
+	t_end = 1.0;
 	
 	t_steps = (int)((t_end-t_start)/dt);
 	
@@ -158,7 +162,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
   	imx.print_table();
 
 
-    GPE_field_3d  psi_1(0,N,imx.s,8);
+    GPE_field_3d  psi_1(0,N,imx.s,16);
    
 
     psi_1.read_from_file(f1paramfile);
@@ -173,8 +177,9 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 	
 	
 	
-	
-
+	//printf("no of threads %d\n",omp_get_num_threads());
+	//omp_set_num_threads(4);
+	//printf("no of threads %d\n",omp_get_num_threads());
 	
 
 	if(prnt)
@@ -211,7 +216,8 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 	
 	printf("Starting Run..,\n");
 
-	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&(3);t+=dt,++tcntr)
+	
+	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&(30);t+=dt,++tcntr)
 	{
 
 		
@@ -222,7 +228,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 
 		psi_1.reset_consv_quant();
 		
-
+		
 	 	for(i=0,ii=-1,jj=-1,kk=0;i<(N3);++i,++kk)
 		{	
 
@@ -246,20 +252,20 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 			xv[0] = x0[0] + dx*dbi; xv[1] = x0[1] + dx*dbj; xv[2] = x0[2] + dx*dbk;
 			if(tcntr%err_cntr==0)
 			{
-				psi_1.cal_conserve_at_point(ind, xv,dx,!tcntr);
+				psi_1.cal_conserve_at_point(i, dx,!tcntr);
 				
 
 			}
 
 			if((tcntr%fpcntr==0)&&(prntfp))
 			{
-				fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",xv[0],xv[1],psi_1.psi[i][0],psi_1.psi[i][1],psi_1.fpGpsi[i][0],psi_1.fpGpsi[i][1]);
+				fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",xv[0],xv[1],xv[2],psi_1.psi[i][0],psi_1.psi[i][1],psi_1.fpGpsi[i][0],psi_1.fpGpsi[i][1]);
 
 
 			}
 			ksqr = k_grid[ii]*k_grid[ii] + k_grid[jj]*k_grid[jj] + k_grid[kk]*k_grid[kk];
 			lambda = ksqr*imx.im_a[0][0]*psi_1.kppa*dt/(2.0);
-			;//printf("lmda  %lf\n",lambda);
+			//printf("lmda  %lf\n",lambda);
 			
 			
 
@@ -296,7 +302,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 
 
 					
-					c_psi_amp2[0] = psi_1.fpGpsi[i][0]*psi_1.fpGpsi[i][0] + psi_1.fpGpsi[i][1]*psi_1.fpGpsi[i][1]; 
+			
 					
 					psi_1.ex_rhs(i,s_cntr-1);
 					

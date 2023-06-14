@@ -1,6 +1,6 @@
 
 
-
+#include <omp.h>
 #include <fftw3.h>
 #include <math.h>
 
@@ -217,7 +217,7 @@ class GPE_field_3d
     void do_forward_fft()
     {
         fftw_execute(plan_pois_f);
-        fftw_execute(plan_V_f);
+       // fftw_execute(plan_V_f);
 
 
     }
@@ -226,7 +226,7 @@ class GPE_field_3d
     {
         fftw_execute(plan_pois_b);
 		fftw_execute(plan_imp_b);
-        fftw_execute(plan_V_b);
+       // fftw_execute(plan_V_b);
 
     }
 
@@ -472,15 +472,15 @@ class GPE_field_3d
         }
 
     }
-    void cal_conserve_at_point(int ind[2],double x[2],double dx,int is_ini=0)
+    void cal_conserve_at_point(int ci,double dx,int is_ini=0)
     {
             
-            int left[2],right[2],left_y,right_y,ci,cr,cl;
-            double der_x[2],der_y[2],der_amp2,psi2,fcntr,Rcntr,loc_energy,loc_mass;
-            
-            ci = ind[0]*N+ind[1];
+        
+            double loc_energy,loc_mass,psi2;//der_x[2],der_y[2],der_amp2,fcntr,Rcntr;
+         /*     int left[2],right[2],left_y,right_y,ci,cr,cl;   
+           
             /////////////////////  x-derivative //////////////////////
-       /*    left[0] = ind[0]-1;
+          left[0] = ind[0]-1;
             left[1] = ind[1];
             if(ind[0]==0)
             left[0] = N-2;
@@ -524,7 +524,7 @@ class GPE_field_3d
            // Rcntr = -(psi[ci][0]*     )
       
 
-          //  loc_energy = 0.5*der_amp2 +  V(x)*psi2 + fcntr + Rcntr;
+           loc_energy = 0.0;// 0.5*der_amp2 +  V(x)*psi2 + fcntr + Rcntr;
             loc_mass = psi2;
 
             energy+=loc_energy;
