@@ -15,13 +15,13 @@ class GPE_field_3d
 {
     private:
 
-    double hbar_unit,c_unit,h,pc_unit,omega_m0;
+    double hbar_unit,c_unit,h,pc_unit;
     double vfac;
     
     double m_alpha;
 
     public:
-    double kppa;
+    double kppa,omega_m0;
 
     fftw_complex *psi;
 
@@ -309,7 +309,7 @@ class GPE_field_3d
         printf("kappa = %lf\n",kppa);
     }
 
-    void initialise_random(double *kgrid,double amp=1e-6)
+    void initialise_random(double *kgrid,double amp=1e-2)
     {
         int ii,loc_i,loc_j,loc_k;
         double uni_rand,theta_rnd;
@@ -320,7 +320,7 @@ class GPE_field_3d
         for(ii=0;ii<N3;++ii)
         {
 
-            uni_rand = amp*(((double)rand())/rmx);
+            uni_rand = amp*( -1.0 + 2.0*((double)rand())/rmx);
 
             
 
@@ -334,7 +334,7 @@ class GPE_field_3d
         fpGpsi_ft[0][0] = 0.0;   fpGpsi_ft[0][1] = 0.0;
         fftw_execute(plan_pois_b);
         double dn3 = (double)N3;
-        
+        double dsum = 0.0;
         for ( ii = 0,loc_i=-1,loc_j=-1; ii < N3; ++ii,++loc_k)
         {   
             if(ii%N ==0)
@@ -354,6 +354,7 @@ class GPE_field_3d
             ksqr = kgrid[loc_i]*kgrid[loc_i] + kgrid[loc_j]*kgrid[loc_j] + kgrid[loc_k]*kgrid[loc_k];
 
            loc_delta = fpGpsi[ii][0]/dn3;
+           dsum+=loc_delta;
 
            psiamp = sqrt(3.0*omega_m0*(1.0+loc_delta));
            theta_rnd = (((double)rand())/rmx)*2.0*M_PI;
@@ -376,60 +377,27 @@ class GPE_field_3d
         fftw_execute(plan_V_b);
 
         vmax = -10000000000.0;
+        printf("dsum delta is %.10lf\n",dsum);
+        dsum = 0.0;
         for ( ii = 0; ii < N3; ++ii,++loc_k)
         { 
 
             if(fabs(V_phi[ii][0])>vmax)
                 vmax = V_phi[ii][0];
 
+                dsum+= (psi[ii][0]*psi[ii][0]+psi[ii][1]*psi[ii][1])/3.0 -1.0;
+
+              
+
         }
 
 
-        printf("Initial random done with vmax %.10lf\n",vmax);
+        printf("Initial random done with vmax %.10lf and dsum is %.7lf\n",vmax,dsum);
 
 
 
     }
-    void initialise_from_file(char *f_real,char *f_img)
-    {
-        FILE *fp_real  = fopen(f_real,"r");
-        FILE *fp_img  = fopen(f_img,"r");
-
-       // FILE *fpcheck = fopen("ini_check.txt","w");
-
-        int ii,jj,ci;
-       
-        //printf("Working...\n");
-       
-        for(ii=0;ii<N+1;++ii)
-        {   
-            for(jj=0;jj<N+1;++jj)
-            {
-                
-                ci = ii*N+jj;
-               
-
-
-                fscanf(fp_real,"%lf\t",&psi[ci][0]);
-                fscanf(fp_img,"%lf\t",&psi[ci][1]);
-               
-              //  printf("%d %d \n",ii,jj);
-             //   fprintf(fpcheck,"%lf ",psi[ci][0]);
-
-            }
-          //  fprintf(fpcheck,"\n");
-         
-
-
-        }
-
-      
-
-        fclose(fp_real);
-        fclose(fp_img);
-        //fclose(fpcheck);
-
-    }
+    
 
     void set_field()
     {int ii;

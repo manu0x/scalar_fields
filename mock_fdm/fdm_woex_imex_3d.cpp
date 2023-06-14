@@ -93,7 +93,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 
 
 /////////////////////////////// Box & res. setting ///////////////////////////////////////////////
-	box_len = 10.0;
+	box_len = 1.0;
 	x0[0]=-0.5*box_len; x0[1]=-0.5*box_len; x0[2]=-0.5*box_len;
 	
 	//n  = 2.0/box_len;
@@ -199,9 +199,9 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 	{	printcntr = 1.0;
 	
 	}	//printf("%d\n",printcntr);
-	double t,vel_val[2],c_psi[2],c_psi_amp2[2],Vval,amp,avg_amp;
+	double t,vel_val[2],c_psi[2],c_psi_amp2,delta,amp,avg_amp;
 	
-	double fdt,amp_ini;
+	double fdt,amp_ini,dsum,vmax=-0.00000000000001;
 	
 
 	double kv[3];
@@ -222,11 +222,12 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 
 		
 		if((tcntr%printcntr==0)&&prnt)
-		printf("time %lf %lf %lf  net mass %lf\n",t/t_end,psi_1.mass,psi_1.mass,psi_1.energy);
+		printf("time %lf %lf %lf  net mass %lf\n",t/t_end,psi_1.mass,psi_1.mass,vmax);
 		psi_1.do_forward_fft();
 		
 
 		psi_1.reset_consv_quant();
+		dsum = 0.0;
 		
 		
 	 	for(i=0,ii=-1,jj=-1,kk=0;i<(N3);++i,++kk)
@@ -259,7 +260,11 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 
 			if((tcntr%fpcntr==0)&&(prntfp))
 			{
-				fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",xv[0],xv[1],xv[2],psi_1.psi[i][0],psi_1.psi[i][1],psi_1.fpGpsi[i][0],psi_1.fpGpsi[i][1]);
+				
+				c_psi_amp2 = (psi_1.psi[i][0]*psi_1.psi[i][0]+psi_1.psi[i][1]*psi_1.psi[i][1]);
+				delta = (c_psi_amp2);///(3.0*psi_1.omega_m0) -1.0);
+				dsum+=delta; 
+				fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",xv[0],xv[1],xv[2],psi_1.psi[i][0],psi_1.psi[i][1],psi_1.fpGpsi[i][0],delta);
 
 
 			}
@@ -273,7 +278,8 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 			
 
 		}
-
+		if((tcntr%fpcntr==0)&&(prntfp))
+			printf("t/t_end %lf dsum = %lf\n",t/t_end,dsum/3.0-psi_1.dN3);
 		if(tcntr%err_cntr==0)
 		{	psi_1.conserve_err();
 			
@@ -300,7 +306,8 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 				{
 				
 
-
+					if(vmax<fabs(psi_1.V_phi[i][0]))
+					vmax = fabs(psi_1.V_phi[i][0]);
 					
 			
 					
@@ -330,7 +337,8 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 
 			}
 
-		
+			if(vmax>(imx.ex_stb_r/dt))
+			printf("vmax dt %lf stb r %lf\n",vmax*dt,imx.ex_stb_r);
 
 			psi_1.do_forward_fft();
 			
@@ -389,6 +397,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 			
 
 			psi_1.ex_rhs(i,imx.s-1);
+
 			
 
 			psi_1.im_rhs(i,imx.s-1);

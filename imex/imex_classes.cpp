@@ -1,5 +1,4 @@
 
-
 using namespace std;
 #include <stdio.h>
 
@@ -14,6 +13,7 @@ class imex_table
     double **im_a,**ex_a;
     double *im_b,*ex_b;
     double *im_c,*ex_c;
+    double ex_stb_r;
     int s;
 
     imex_table(int stages)
@@ -80,6 +80,8 @@ class imex_table
 
         }
 
+        printf("Stability range for explicit is %lf\n",ex_stb_r);
+
 
     }
 
@@ -135,8 +137,10 @@ class imex_table
                 {
                     im_b[j] = num_val; 
                 }
-                else
+                else if (i<(2*s+2))
                     ex_b[j] = num_val; 
+                else
+                    ex_stb_r = num_val;
                 
 
                
