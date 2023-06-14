@@ -334,7 +334,8 @@ class GPE_field_3d
         fpGpsi_ft[0][0] = 0.0;   fpGpsi_ft[0][1] = 0.0;
         fftw_execute(plan_pois_b);
         double dn3 = (double)N3;
-        for ( ii = 0; ii < N3; ++ii,++loc_k)
+        
+        for ( ii = 0,loc_i=-1,loc_j=-1; ii < N3; ++ii,++loc_k)
         {   
             if(ii%N ==0)
             {
@@ -351,6 +352,7 @@ class GPE_field_3d
 
             }
             ksqr = kgrid[loc_i]*kgrid[loc_i] + kgrid[loc_j]*kgrid[loc_j] + kgrid[loc_k]*kgrid[loc_k];
+
            loc_delta = fpGpsi[ii][0]/dn3;
 
            psiamp = sqrt(3.0*omega_m0*(1.0+loc_delta));
@@ -360,6 +362,13 @@ class GPE_field_3d
 
            V_phi_ft[ii][0] = 1.5*omega_m0*fpGpsi_ft[ii][0]/(dn3*kppa*ksqr);
            V_phi_ft[ii][1] = 1.5*omega_m0*fpGpsi_ft[ii][1]/(dn3*kppa*ksqr);
+
+           if(isnan(psi[ii][0]+psi[ii][1]))
+           {
+            printf("ini break %d %lf %lf\n",ii,psi[ii][0],psi[ii][1]);
+            break;
+
+           }
            
         }
         V_phi_ft[0][0] = 0.0; V_phi_ft[0][1] = 0.0;
@@ -424,7 +433,7 @@ class GPE_field_3d
 
     void set_field()
     {int ii;
-        for(ii=0;ii<N2;++ii)
+        for(ii=0;ii<N3;++ii)
         {
 
             fpGpsi[ii][0] = psi[ii][0];
@@ -434,11 +443,11 @@ class GPE_field_3d
 
         fftw_execute(plan_pois_f);
 
-        for(ii=0;ii<N2;++ii)
+        for(ii=0;ii<N3;++ii)
         {
 
-            fpGpsi_ft[ii][0] = fpGpsi_ft[ii][0]/((double)N2);
-            fpGpsi_ft[ii][1] = fpGpsi_ft[ii][1]/((double)N2);
+            fpGpsi_ft[ii][0] = fpGpsi_ft[ii][0]/(dN3);
+            fpGpsi_ft[ii][1] = fpGpsi_ft[ii][1]/(dN3);
 
         }
 

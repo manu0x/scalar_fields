@@ -89,11 +89,11 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 
 
 /////////////////////////////// Box & res. setting ///////////////////////////////////////////////
-	box_len = 20.0;
+	box_len = 10.0;
 	x0[0]=-0.5*box_len; x0[1]=-0.5*box_len; x0[2]=-0.5*box_len;
 	
 	//n  = 2.0/box_len;
-	N = 64;
+	N = 128;
 	dx = box_len/(double(N));
 	
 	//N = ((int)(box_len/dx));
@@ -211,7 +211,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 	
 	printf("Starting Run..,\n");
 
-	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&( 100);t+=dt,++tcntr)
+	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&(3);t+=dt,++tcntr)
 	{
 
 		
@@ -223,7 +223,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 		psi_1.reset_consv_quant();
 		
 
-	 	for(i=0,ii=-1,jj=-1,kk=0,jj=0;i<(N2);++i,++kk)
+	 	for(i=0,ii=-1,jj=-1,kk=0;i<(N3);++i,++kk)
 		{	
 
 			
@@ -349,7 +349,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 				
 				
 				ksqr = (k_grid[ii]*k_grid[ii]+k_grid[jj]*k_grid[jj]+k_grid[kk]*k_grid[kk]);
-			 	lambda = ksqr*imx.im_a[s_cntr][s_cntr]*dt/(2.0);
+			 	lambda = ksqr*imx.im_a[s_cntr][s_cntr]*psi_1.kppa*dt/(2.0);
 			 	
 
 			 	psi_1.update_fft_fields(i,ksqr,lambda);
