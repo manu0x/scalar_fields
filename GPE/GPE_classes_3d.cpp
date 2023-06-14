@@ -17,10 +17,12 @@ class GPE_field_3d
 
     double hbar_unit,c_unit,h,pc_unit,omega_m0;
     double vfac;
-    double kppa;
+    
     double m_alpha;
 
     public:
+    double kppa;
+
     fftw_complex *psi;
 
     fftw_complex *fpGpsi;
@@ -49,7 +51,7 @@ class GPE_field_3d
     int j,N,N2,N3,s;
     int i,k;
 
-    double dj;
+    double dj,dN3;
     double energy,ini_energy,max_eng_err;
     double mass,ini_mass,max_mass_err;
 
@@ -63,6 +65,7 @@ class GPE_field_3d
         N3 = N*N*N;
         s = imex_s;
         dj = (double)j;
+        dN3 = (double)N3;
 
         fpGpsi = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (N3));
 	    fpGpsi_ft =(fftw_complex*) fftw_malloc(sizeof(fftw_complex) *(N3));
@@ -111,12 +114,58 @@ class GPE_field_3d
 
 
 
-    void update_V_rhs(int ind)
+    void solve_V(double *kgrid)
     {
-        double psisqr;
-        psisqr = fpGpsi[ind][0]*fpGpsi[ind][0] + fpGpsi[ind][1]*fpGpsi[ind][1];
-        V_phi[ind][0] = (0.5/kppa)*(psisqr-3.0*omega_m0);
-        V_phi[ind][1] = 0.0;
+        double psisqr,ksqr;  int loc_i,loc_j,loc_k,ii;
+
+        #pragma omp parallel for private(psisqr)
+        for(loc_i=0;loc_i<N3;++loc_i)
+        {
+            psisqr = fpGpsi[loc_i][0]*fpGpsi[loc_i][0] + fpGpsi[loc_i][1]*fpGpsi[loc_i][1];
+            V_phi[loc_i][0] = (0.5/kppa)*(psisqr-3.0*omega_m0);
+            V_phi[loc_i][1] = 0.0;
+
+
+        }
+        fftw_execute(plan_V_f);
+
+        for(ii=0,loc_i=-1,loc_j=-1,loc_k=0;ii<N3;++ii,++loc_k)
+        {
+            if(ii%N ==0)
+            {
+                loc_k=0;
+                ++loc_j;
+                if(ii%N2==0)
+                {
+                    loc_j=0;
+                    ++loc_i;
+
+
+                }
+
+
+            }
+            ksqr = kgrid[loc_i]*kgrid[loc_i] + kgrid[loc_j]*kgrid[loc_j] + kgrid[loc_k]*kgrid[loc_k];
+
+          if(ksqr>0.0)
+           { V_phi_ft[ii][0] = -V_phi_ft[ii][0]/(ksqr*dN3);
+                
+             V_phi_ft[ii][1] = -V_phi_ft[ii][1]/(ksqr*dN3);
+           }
+            else
+          {
+            V_phi_ft[ii][0] = 0.0;
+            V_phi_ft[ii][1] = 0.0;
+
+          }
+
+
+        }
+
+        fftw_execute(plan_V_b);
+
+
+        
 
 
     }
@@ -137,16 +186,7 @@ class GPE_field_3d
 		K_ft[ind][0] = -fpGpsi_ft[ind][0]*ksqr;
 		K_ft[ind][1] = -fpGpsi_ft[ind][1]*ksqr;
        
-       if(ksqr>0.0)
-       { V_phi_ft[ind][0] = -V_phi_ft[ind][0]/ksqr;
-         V_phi_ft[ind][1] = -V_phi_ft[ind][1]/ksqr;
-       }
-       else
-       {
-         V_phi_ft[ind][0] = 0.0;
-         V_phi_ft[ind][1] = 0.0;
-
-       }
+       
 
 
 
@@ -159,8 +199,7 @@ class GPE_field_3d
 
             ex_K_psi[0][stg_i][ind] =  V_phi[ind][0]*fpGpsi[ind][1];
             ex_K_psi[1][stg_i][ind] =  -V_phi[ind][0]*fpGpsi[ind][0];
-            //if((stg_i==0)&&ind<100)
-           // printf("fcheck %d  %d %lf %lf \n",j,stg_i,fpGpsi[ind][1],psi[ind][1]);
+            
 
             
 
@@ -424,7 +463,7 @@ class GPE_field_3d
         }
 
     }
-    void cal_conserve_at_point(int ind[2],double psi2_other,double R[2],double x[2],double dx,int is_ini=0)
+    void cal_conserve_at_point(int ind[2],double x[2],double dx,int is_ini=0)
     {
             
             int left[2],right[2],left_y,right_y,ci,cr,cl;
@@ -432,7 +471,7 @@ class GPE_field_3d
             
             ci = ind[0]*N+ind[1];
             /////////////////////  x-derivative //////////////////////
-            left[0] = ind[0]-1;
+       /*    left[0] = ind[0]-1;
             left[1] = ind[1];
             if(ind[0]==0)
             left[0] = N-2;
@@ -469,14 +508,14 @@ class GPE_field_3d
 
             ///////////////////////////////////  (der_x)^2+(der_y)^2    /////////////////
             der_amp2 =    der_x[0]*der_x[0] + der_x[1]*der_x[1] + der_y[0]*der_y[0] + der_y[1]*der_y[1];
-            ///////////////////////////////////////////////////
+         */   ///////////////////////////////////////////////////
             psi2 = psi[ci][0]*psi[ci][0] + psi[ci][1]*psi[ci][1];
 
-            fcntr = 0.5*bta[0]*psi2*psi2 + 0.5*bta[1]*psi2*psi2_other;
+         //   fcntr = 0.5*bta[0]*psi2*psi2 + 0.5*bta[1]*psi2*psi2_other;
            // Rcntr = -(psi[ci][0]*     )
       
 
-            loc_energy = 0.5*der_amp2 +  V(x)*psi2 + fcntr + Rcntr;
+          //  loc_energy = 0.5*der_amp2 +  V(x)*psi2 + fcntr + Rcntr;
             loc_mass = psi2;
 
             energy+=loc_energy;

@@ -13,7 +13,7 @@
 
 #include <algorithm>
 #include "../imex/imex_classes.cpp"
-#include "../GPE/GPE_classes_2d.cpp"
+#include "../GPE/GPE_classes_3d.cpp"
 
 using namespace std;
 
@@ -34,7 +34,7 @@ using namespace std;
 
 
 
-void initialise(double *k,double dx,int N)
+void initialise_kgrid(double *k,double dx,int N)
 {
 
 	int i,j,l,ci; double di,dj,dl,dci,dk;
@@ -67,7 +67,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 
 	int t_steps;
 	double box_len,t_end,t_start,xval,dbi,dbj,dbk,dx;
-	double x0[2],xv[2];
+	double x0[3],xv[3];
 
 	fftw_init_threads();
 	
@@ -89,14 +89,15 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 
 
 /////////////////////////////// Box & res. setting ///////////////////////////////////////////////
-	x0[0]=-10.0; x0[1]=-10.0;
 	box_len = 20.0;
+	x0[0]=-0.5*box_len; x0[1]=-0.5*box_len; x0[2]=-0.5*box_len;
+	
 	//n  = 2.0/box_len;
-	N = 512;
+	N = 64;
 	dx = box_len/(double(N));
 	
 	//N = ((int)(box_len/dx));
-	//int N3 = N*N*N;
+	int N3 = N*N*N;
 	int N2 = N*N;
 	printf("N2 %d\n",N2);
 ////////////////////////////// Time & dt settings ////////////////////////////////////////////////
@@ -114,7 +115,9 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 /////////////////////////////////////////RK things/////////////////////////////////////////
 	int i,j;
 
+////////////////////////////// k things /////////////
 
+	double k_grid[N],ksqr;
 
 
 ////////////////////////////// Psi variables  /////////////////////////////////////////////////////
@@ -126,21 +129,21 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 
 	char fp_name[30]("data_");
 
-	char fp_phi2_r[20]("phi1_r_ini.txt");
+/*	char fp_phi2_r[20]("phi1_r_ini.txt");
 	char fp_phi2_i[20]("phi1_i_ini.txt");
 
 	char fp_phi1_r[20]("phi2_r_ini.txt");
 	char fp_phi1_i[20]("phi2_i_ini.txt");
-	
+*/	
     int stages;
 	char *imex_file; 
     char *f1paramfile;
-	char *f2paramfile;
+//	char *f2paramfile;
 
     stages = atoi(argv[1]);
 	imex_file = argv[2];
     f1paramfile = argv[3];
-	f2paramfile = argv[4];
+	//f2paramfile = argv[4];
 	
 	strcat(fp_name,imex_file);
 	printf("ImEx table filename is %s and stages given by u is %d and out file %s \n",imex_file,stages,fp_name);
@@ -155,29 +158,30 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
   	imx.print_table();
 
 
-    GPE_field_2d  psi_1(0,N,imx.s,8);
-    GPE_field_2d  psi_2(1,N,imx.s,8);
+    GPE_field_3d  psi_1(0,N,imx.s,8);
+   
 
     psi_1.read_from_file(f1paramfile);
-	psi_2.read_from_file(f2paramfile);
+	
 
-    psi_1.print_params();
-	psi_2.print_params();
+    psi_1.print_params_set_kappa();
+	
 
-	psi_1.initialise_from_file(fp_phi1_r,fp_phi1_i); 
-	psi_2.initialise_from_file(fp_phi2_r,fp_phi2_i); 
+	initialise_kgrid(k_grid,dx,N);
+
+	psi_1.initialise_random(k_grid) ; 
 	
 	
 	
-	double k_grid[N];
+	
 
-	initialise(k_grid,dx,N);
+	
 
 	if(prnt)
 	printf("Initialization done\n");
 	
 	psi_1.set_field();
-	psi_2.set_field();
+	
 
 
 ///////////////////////  Evolution ///////////////////////////////////////////////////////////////
@@ -195,8 +199,8 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 	double fdt,amp_ini;
 	
 
-	double kv[2],Rv[2][2];
-	int ind[2];
+	double kv[3];
+	int ind[3];
 
 
 	ii=-1;
@@ -204,7 +208,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 	kk=0;
 
 	psi_1.reset_consv_quant(1);
-	psi_2.reset_consv_quant(1);
+	
 	printf("Starting Run..,\n");
 
 	for(t=t_start,tcntr=0;(t<=t_end)&&(!fail)&&( 100);t+=dt,++tcntr)
@@ -212,52 +216,61 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 
 		
 		if((tcntr%printcntr==0)&&prnt)
-		printf("time %lf %lf %lf  net mass %lf\n",t/t_end,psi_1.mass,psi_2.mass,psi_1.mass+psi_2.mass);
+		printf("time %lf %lf %lf  net mass %lf\n",t/t_end,psi_1.mass,psi_1.mass,psi_1.energy);
 		psi_1.do_forward_fft();
-		psi_2.do_forward_fft();
+		
 
 		psi_1.reset_consv_quant();
-		psi_2.reset_consv_quant();
+		
 
-	 	for(i=0,ii=-1,jj=0;i<(N2);++i,++jj)
+	 	for(i=0,ii=-1,jj=-1,kk=0,jj=0;i<(N2);++i,++kk)
 		{	
 
-			if((i%N)==0)
-			{   jj=0;
-				++ii;
-				
-			}
-			ind[0]=ii;
-			ind[1]=jj;
+			
 
-			dbi = (double)(ii); dbj = (double)(jj);
-			xv[0] = x0[0] + dx*dbi; xv[1] = x0[1] + dx*dbj;
+			if(i%N ==0)
+            {
+                kk=0;
+                ++jj;
+                if(i%N2==0)
+                {
+                    jj=0;
+                    ++ii;
+
+
+                }
+			}
+			
+
+			dbi = (double)(ii); dbj = (double)(jj); dbk = (double)(kk);
+			xv[0] = x0[0] + dx*dbi; xv[1] = x0[1] + dx*dbj; xv[2] = x0[2] + dx*dbk;
 			if(tcntr%err_cntr==0)
 			{
-				psi_1.cal_conserve_at_point(ind,0.0,Rv[0], xv,dx,!tcntr);
-				psi_2.cal_conserve_at_point(ind,0.0,Rv[1], xv,dx,!tcntr);
+				psi_1.cal_conserve_at_point(ind, xv,dx,!tcntr);
+				
 
 			}
 
 			if((tcntr%fpcntr==0)&&(prntfp))
 			{
-				fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",xv[0],xv[1],psi_1.psi[i][0],psi_1.psi[i][1],psi_2.psi[i][0],psi_2.psi[i][1]);
+				fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",xv[0],xv[1],psi_1.psi[i][0],psi_1.psi[i][1],psi_1.fpGpsi[i][0],psi_1.fpGpsi[i][1]);
 
 
 			}
-	
-			lambda =(k_grid[ii]*k_grid[ii]+k_grid[jj]*k_grid[jj])*imx.im_a[0][0]*dt/(2.0);
+			ksqr = k_grid[ii]*k_grid[ii] + k_grid[jj]*k_grid[jj] + k_grid[kk]*k_grid[kk];
+			lambda = ksqr*imx.im_a[0][0]*psi_1.kppa*dt/(2.0);
 			;//printf("lmda  %lf\n",lambda);
-			kv[0] = k_grid[ii];		kv[1] = k_grid[jj];
+			
+			
 
-			psi_1.update_fft_fields(i,kv,lambda);
-			psi_2.update_fft_fields(i,kv,lambda);
+			psi_1.update_fft_fields(i,ksqr,lambda);
+			
 
 		}
 
 		if(tcntr%err_cntr==0)
 		{	psi_1.conserve_err();
-			psi_2.conserve_err();
+			
 
 		}
 
@@ -266,7 +279,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 		
 		
 		psi_1.do_back_fft();
-		psi_2.do_back_fft();
+		psi_1.solve_V(k_grid);
 		
 
 		for(s_cntr=1;s_cntr<imx.s;++s_cntr)
@@ -274,37 +287,27 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 
 			for(j=0;j<s_cntr;++j)
 			{
-			   for(i=0,ii=-1,jj=0;i<N2;++i,++jj)
+			   for(i=0;i<N3;++i)
 			   {
-				if((i%N)==0)
-			    {   jj=0;
-					++ii;
-			
-				}
-
-				 dbi = (double)(ii); dbj = (double)(jj);
-				xv[0] = x0[0] + dx*dbi; xv[1] = x0[1] + dx*dbj;
+				
  				if(j==0)
 				{
 				
 
 
-					Rv[0][0] = psi_2.R[i][0];  Rv[0][1] = psi_2.R[i][1];
-					Rv[1][0] = psi_1.R[i][0];  Rv[1][1] = psi_1.R[i][1];
+					
 					c_psi_amp2[0] = psi_1.fpGpsi[i][0]*psi_1.fpGpsi[i][0] + psi_1.fpGpsi[i][1]*psi_1.fpGpsi[i][1]; 
-					c_psi_amp2[1] = psi_2.fpGpsi[i][0]*psi_2.fpGpsi[i][0] + psi_2.fpGpsi[i][1]*psi_2.fpGpsi[i][1]; 
-
-					psi_1.ex_rhs(i,s_cntr-1,c_psi_amp2[0],c_psi_amp2[1],Rv[0],xv);
-					psi_2.ex_rhs(i,s_cntr-1,c_psi_amp2[1],c_psi_amp2[0],Rv[1],xv);
+					
+					psi_1.ex_rhs(i,s_cntr-1);
+					
 
 					psi_1.im_rhs(i,s_cntr-1);
-					psi_2.im_rhs(i,s_cntr-1);
+					
 
 					psi_1.fpGpsi[i][0] = psi_1.psi[i][0] + dt*imx.ex_a[s_cntr][j]*psi_1.ex_K_psi[0][j][i]+ dt*imx.im_a[s_cntr][j]*psi_1.im_K_psi[0][j][i];
-					psi_1.fpGpsi[i][1] = psi_1.psi[i][1] + dt*imx.ex_a[s_cntr][j]*psi_1.ex_K_psi[1][j][i]+ dt*imx.im_a[s_cntr][j]*psi_1.im_K_psi[1][j][i];
+					
 
-					psi_2.fpGpsi[i][0] = psi_2.psi[i][0] + dt*imx.ex_a[s_cntr][j]*psi_2.ex_K_psi[0][j][i]+ dt*imx.im_a[s_cntr][j]*psi_2.im_K_psi[0][j][i];
-					psi_2.fpGpsi[i][1] = psi_2.psi[i][1] + dt*imx.ex_a[s_cntr][j]*psi_2.ex_K_psi[1][j][i]+ dt*imx.im_a[s_cntr][j]*psi_2.im_K_psi[1][j][i];
+					
 
 				}
 
@@ -312,9 +315,6 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 				else
 				{psi_1.fpGpsi[i][0]+=  dt*imx.ex_a[s_cntr][j]*psi_1.ex_K_psi[0][j][i]+ dt*imx.im_a[s_cntr][j]*psi_1.im_K_psi[0][j][i];
 				 psi_1.fpGpsi[i][1]+=  dt*imx.ex_a[s_cntr][j]*psi_1.ex_K_psi[1][j][i]+ dt*imx.im_a[s_cntr][j]*psi_1.im_K_psi[1][j][i];
-
-				 psi_2.fpGpsi[i][0]+=  dt*imx.ex_a[s_cntr][j]*psi_2.ex_K_psi[0][j][i]+ dt*imx.im_a[s_cntr][j]*psi_2.im_K_psi[0][j][i];
-				 psi_2.fpGpsi[i][1]+=  dt*imx.ex_a[s_cntr][j]*psi_2.ex_K_psi[1][j][i]+ dt*imx.im_a[s_cntr][j]*psi_2.im_K_psi[1][j][i];
 				}
 
 
@@ -327,22 +327,33 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 		
 
 			psi_1.do_forward_fft();
-			psi_2.do_forward_fft();
+			
+		
 
 
-			for(i=0,ii=-1,jj=0;i<N2;++i,++jj)
+			for(i=0,ii=-1,jj=-1,kk=0;i<N3;++i,++kk)
 			{
 			
-				if((i%N)==0)
-			    {   jj=0;
-					++ii;
-			
-				}
-			 lambda = (k_grid[ii]*k_grid[ii]+k_grid[jj]*k_grid[jj])*imx.im_a[s_cntr][s_cntr]*dt/(2.0);
-			 kv[0] = k_grid[ii];		kv[1] = k_grid[jj];
+				if(i%N ==0)
+            	{
+                	kk=0;
+                	++jj;
+                	if(i%N2==0)
+                	{
+                    	jj=0;
+                    	++ii;
 
-			 psi_1.update_fft_fields(i,kv,lambda);
-			 psi_2.update_fft_fields(i,kv,lambda);
+
+                	}
+				}
+				
+				
+				ksqr = (k_grid[ii]*k_grid[ii]+k_grid[jj]*k_grid[jj]+k_grid[kk]*k_grid[kk]);
+			 	lambda = ksqr*imx.im_a[s_cntr][s_cntr]*dt/(2.0);
+			 	
+
+			 	psi_1.update_fft_fields(i,ksqr,lambda);
+			 
 
 
 
@@ -352,8 +363,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 
 
 			psi_1.do_back_fft();
-			psi_2.do_back_fft();
-
+			psi_1.solve_V(k_grid);
 
 
 
@@ -364,33 +374,26 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 		
 
 
-		for(i=0,ii=-1,jj=0;i<N2;++i,++jj)
+		for(i=0,ii=-1,jj=-1,kk=0;i<N3;++i,++kk)
 		{
-
-			if((i%N)==0)
-			{   jj=0;
-				++ii;
 			
-			}
+				
 
-			Rv[0][0] = psi_2.R[i][0];  Rv[0][1] = psi_2.R[i][1];
-			Rv[1][0] = psi_1.R[i][0];  Rv[1][1] = psi_1.R[i][1];
-			c_psi_amp2[0] = psi_1.fpGpsi[i][0]*psi_1.fpGpsi[i][0] + psi_1.fpGpsi[i][1]*psi_1.fpGpsi[i][1]; 
-			c_psi_amp2[1] = psi_2.fpGpsi[i][0]*psi_2.fpGpsi[i][0] + psi_2.fpGpsi[i][1]*psi_2.fpGpsi[i][1]; 
+			
+			
 
-			psi_1.ex_rhs(i,imx.s-1,c_psi_amp2[0],c_psi_amp2[1],Rv[0],xv);
-			psi_2.ex_rhs(i,imx.s-1,c_psi_amp2[1],c_psi_amp2[0],Rv[1],xv);
+			psi_1.ex_rhs(i,imx.s-1);
+			
 
 			psi_1.im_rhs(i,imx.s-1);
-			psi_2.im_rhs(i,imx.s-1);
+		
 
 
 			for(j=0;j<imx.s;++j)
 			{	psi_1.psi[i][0]+=  dt*imx.ex_b[j]*psi_1.ex_K_psi[0][j][i]+ dt*imx.im_b[j]*psi_1.im_K_psi[0][j][i];
 				psi_1.psi[i][1]+=  dt*imx.ex_b[j]*psi_1.ex_K_psi[1][j][i]+ dt*imx.im_b[j]*psi_1.im_K_psi[1][j][i];
 
-				psi_2.psi[i][0]+=  dt*imx.ex_b[j]*psi_2.ex_K_psi[0][j][i]+ dt*imx.im_b[j]*psi_2.im_K_psi[0][j][i];
-				psi_2.psi[i][1]+=  dt*imx.ex_b[j]*psi_2.ex_K_psi[1][j][i]+ dt*imx.im_b[j]*psi_2.im_K_psi[1][j][i];
+				
 
 
 
@@ -400,15 +403,14 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 			psi_1.fpGpsi[i][0] = psi_1.psi[i][0];
 			psi_1.fpGpsi[i][1] = psi_1.psi[i][1];
 
-			psi_2.fpGpsi[i][0] = psi_2.psi[i][0];
-			psi_2.fpGpsi[i][1] = psi_2.psi[i][1];
+			
 
 
-			if(isnan((psi_1.psi[i][0]+psi_1.psi[i][1])+(psi_2.psi[i][0]+psi_2.psi[i][1])))
+			if(isnan((psi_1.psi[i][0]+psi_1.psi[i][1])+(psi_1.V_phi[i][0])))
 			{
 				fail =1;
 				//if(prt)
-				printf("FAILED %d tcntr %d %lf %lf %lf %lf\n",i,tcntr,psi_1.psi[i][0],psi_1.psi[i][1],psi_2.psi[i][0],psi_2.psi[i][1]);
+				printf("FAILED %d tcntr %d %lf %lf %lf %lf\n",i,tcntr,psi_1.psi[i][0],psi_1.psi[i][1],psi_1.V_phi[i][0],psi_1.V_phi[i][1]);
 
 				break;
 
@@ -427,17 +429,15 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 	fclose(fp);
 	fftw_cleanup_threads();
 	*mass_err = psi_1.max_mass_err;
-	*(mass_err+1)= psi_2.max_mass_err;
+	*(mass_err+1)= psi_1.max_mass_err;
 
 
 	if(prnt)
 	printf("N %d\n Run en los %lf abs err %lf\n",N,*(mass_err),*(mass_err+1));
 
 
-	if(psi_1.max_mass_err>psi_2.max_mass_err)
+	
 	return(psi_1.max_mass_err);
-	else
-	return(psi_2.max_mass_err);
 
 
 
