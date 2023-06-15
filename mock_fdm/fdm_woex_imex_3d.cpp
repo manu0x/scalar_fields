@@ -64,8 +64,6 @@ void initialise_kgrid(double *k,double dx,int N)
 }
 
 
-
-
 double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int prnt)
 {
 
@@ -173,7 +171,8 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 
 	initialise_kgrid(k_grid,dx,N);
 
-	psi_1.initialise_random(k_grid) ; 
+	//psi_1.initialise_random(k_grid) ; 
+	psi_1.read_from_initial();
 	
 	
 	
@@ -213,6 +212,16 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 	kk=0;
 
 	psi_1.reset_consv_quant(1);
+	psi_1.solve_V(k_grid);
+	for ( i = 0; i < N3; i++)
+	{
+		if(vmax<fabs(psi_1.V_phi[i][0]))
+					vmax = fabs(psi_1.V_phi[i][0]);
+	}
+	
+
+	if(vmax>(imx.ex_stb_r/dt))
+			printf("start vmax dt %lf stb r %lf\n",vmax*dt,imx.ex_stb_r);
 	
 	printf("Starting Run..,\n");
 
@@ -262,7 +271,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 			{
 				
 				c_psi_amp2 = (psi_1.psi[i][0]*psi_1.psi[i][0]+psi_1.psi[i][1]*psi_1.psi[i][1]);
-				delta = (c_psi_amp2);///(3.0*psi_1.omega_m0) -1.0);
+				delta = (c_psi_amp2/(3.0*0.3) -1.0);
 				dsum+=delta; 
 				fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",xv[0],xv[1],xv[2],psi_1.psi[i][0],psi_1.psi[i][1],psi_1.fpGpsi[i][0],delta);
 
@@ -279,7 +288,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 
 		}
 		if((tcntr%fpcntr==0)&&(prntfp))
-			printf("t/t_end %lf dsum = %lf\n",t/t_end,dsum/3.0-psi_1.dN3);
+			printf("t/t_end %lf dsum = %lf\n",t/t_end,dsum);
 		if(tcntr%err_cntr==0)
 		{	psi_1.conserve_err();
 			
@@ -338,7 +347,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 			}
 
 			if(vmax>(imx.ex_stb_r/dt))
-			printf("vmax dt %lf stb r %lf\n",vmax*dt,imx.ex_stb_r);
+			printf("tcntr %d  vmax dt %lf stb r %lf\n",tcntr,vmax*dt,imx.ex_stb_r);
 
 			psi_1.do_forward_fft();
 			
