@@ -1,6 +1,6 @@
 
 
-#include <omp.h>
+///#include <omp.h>
 #include <fftw3.h>
 #include <math.h>
 
@@ -8,13 +8,14 @@
 #include <string.h>
 #include <string>
 #include <algorithm>
+#include <hdf5.h>
 
 
 
 class GPE_field_3d
 {
     private:
-
+    
     double hbar_unit,c_unit,h,pc_unit;
     double vfac;
     
@@ -198,7 +199,7 @@ class GPE_field_3d
             
 
             ex_K_psi[0][stg_i][ind] =  V_phi[ind][0]*fpGpsi[ind][1];
-            ex_K_psi[1][stg_i][ind] =  -V_phi[ind][0]*fpGpsi[ind][0];
+            ex_K_psi[1][stg_i][ind] = -V_phi[ind][0]*fpGpsi[ind][0];
             
 
             
@@ -209,7 +210,8 @@ class GPE_field_3d
 
     void im_rhs(int ind,int stg_i)
     {
-        im_K_psi[0][stg_i][ind]  = -K[ind][1]*0.5*kppa;  im_K_psi[1][stg_i][ind]=  K[ind][0]*0.5*kppa;
+        im_K_psi[0][stg_i][ind]  = -K[ind][1]*0.5*kppa; 
+        im_K_psi[1][stg_i][ind]=  K[ind][0]*0.5*kppa;
 
 
     }
@@ -309,7 +311,7 @@ class GPE_field_3d
         printf("kappa = %lf\n",kppa);
     }
 
-    void initialise_random(double *kgrid,double amp=1e-2)
+    void initialise_random(double *kgrid,double amp=1e-1)
     {
         int ii,loc_i,loc_j,loc_k;
         double uni_rand,theta_rnd;
@@ -357,7 +359,7 @@ class GPE_field_3d
            dsum+=loc_delta;
 
            psiamp = sqrt(3.0*omega_m0*(1.0+loc_delta));
-           theta_rnd = (((double)rand())/rmx)*2.0*M_PI;
+           theta_rnd = 0.000*(((double)rand())/rmx)*2.0*M_PI;
            psi[ii][0] = psiamp*cos(theta_rnd);
            psi[ii][1] = psiamp*sin(theta_rnd);
 
@@ -442,7 +444,7 @@ class GPE_field_3d
     }
     void cal_conserve_at_point(int ci,double dx,int is_ini=0)
     {
-            
+           
         
             double loc_energy,loc_mass,psi2;//der_x[2],der_y[2],der_amp2,fcntr,Rcntr;
          /*     int left[2],right[2],left_y,right_y,ci,cr,cl;   
@@ -522,6 +524,117 @@ class GPE_field_3d
 
 
     }
+
+
+
+
+void read_from_initial()
+{
+    double a[10],fr,fi;
+
+    FILE *fp = fopen("initial1.txt","r");
+    for(i=0;i<N3;++i)
+    {
+
+        fscanf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",&a[0],&a[1],&a[2],&a[3],&fr,&fi,&a[4],&a[5],&a[6],&a[7],&a[8],&a[9]);
+        psi[i][0] = fr/100.0;//H0=100 in given units and it is a unit conversion
+        psi[i][1] = fi/100.0;
+
+    }
+
+
+
+}
+
+void read_dc_from_hdf5(string fname,double *dc,double *theta)
+{
+
+	herr_t status;	
+	hid_t file,dtype,dspace_glbl,dspace,dset_glbl,plist_id,g_id;
+	
+
+	hsize_t dim[3],odim[2];
+
+	dim[0] = N;
+	dim[1] = N;
+	dim[2] = N;
+	odim[0] = N3;
+	odim[1] = 1;
+
+	plist_id = H5Pcreate(H5P_FILE_ACCESS);
+       
+
+	
+	char fchar_name[fname.length()];
+	fname.copy(fchar_name,fname.length()-1,0);
+	printf("FINI_dc %s %d\n",fchar_name,fname.length());
+	
+	file = H5Fopen(fchar_name, H5F_ACC_RDONLY, plist_id);
+	H5Pclose(plist_id);
+
+	
+	dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
+    	status = H5Tset_order(dtype, H5T_ORDER_LE);
+
+
+	//dspace_glbl = H5Screate_simple(2, odim, NULL);
+
+	//g_id = H5G.open(file, "/");
+
+	dset_glbl = H5Dopen(file, "/dc",H5P_DEFAULT);
+
+	dspace_glbl = H5Dget_space(dset_glbl);
+
+	hsize_t count[2],offset[2];
+	count[0] = N3; count[1] = odim[1]; offset[0] = 0; offset[1] = 0;
+
+	
+
+	dspace = H5Screate_simple(2, count, NULL);
+
+	
+
+	
+
+	status = H5Dread(dset_glbl, dtype, dspace, dspace_glbl, plist_id, dc);
+
+	H5Dclose(dset_glbl);
+	H5Pclose(plist_id);
+	H5Sclose(dspace);
+
+
+	dset_glbl = H5Dopen(file, "/theta",H5P_DEFAULT);
+
+	dspace_glbl = H5Dget_space(dset_glbl);
+
+
+	count[0] = N3; count[1] = 1; 
+
+	
+
+	dspace = H5Screate_simple(2, count, NULL);
+
+	
+
+	
+
+	
+
+	status = H5Dread(dset_glbl, dtype, dspace, dspace_glbl, plist_id, theta);
+
+	H5Dclose(dset_glbl);
+	H5Pclose(plist_id);
+	H5Sclose(dspace);
+
+
+
+
+
+
+
+}
+
+
    
 
 };
