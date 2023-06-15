@@ -48,6 +48,8 @@ class GPE_field_2d
     double energy,ini_energy,max_eng_err;
     double mass,ini_mass,max_mass_err;
 
+    FILE *fp;
+
 
 
     GPE_field_2d(int jj,int NN,int imex_s,int nthreads=4)
@@ -95,6 +97,8 @@ class GPE_field_2d
 
 
 	    }
+
+        fp = fopen("my_err.txt","w");
 
 
     }
@@ -398,7 +402,7 @@ class GPE_field_2d
             
     }
 
-    void conserve_err()
+    void conserve_err(double t)
     {
         double eng_err,mass_err;
         eng_err = fabs(energy-ini_energy)/fabs(ini_energy);
@@ -409,6 +413,9 @@ class GPE_field_2d
         
         if(mass_err>max_mass_err)
             max_mass_err=mass_err;
+
+
+        fprintf(fp,"%lf\t%lf\t%lf\n",t,max_mass_err,max_eng_err);
 
 
     }

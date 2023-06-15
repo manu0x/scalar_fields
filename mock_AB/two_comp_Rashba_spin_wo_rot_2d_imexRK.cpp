@@ -247,7 +247,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 			}
 	
 			lambda =(k_grid[ii]*k_grid[ii]+k_grid[jj]*k_grid[jj])*imx.im_a[0][0]*dt/(2.0);
-			;//printf("lmda  %lf\n",lambda);
+			
 			kv[0] = k_grid[ii];		kv[1] = k_grid[jj];
 
 			psi_1.update_fft_fields(i,kv,lambda);
@@ -256,8 +256,8 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 		}
 
 		if(tcntr%err_cntr==0)
-		{	psi_1.conserve_err();
-			psi_2.conserve_err();
+		{	psi_1.conserve_err(t);
+			psi_2.conserve_err(t);
 
 		}
 
