@@ -105,7 +105,7 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 ////////////////////////////// Time & dt settings ////////////////////////////////////////////////
 
 	t_start = 0.0;
-	t_end = 1.0;
+	t_end = 10.0;
 	
 	t_steps = (int)((t_end-t_start)/dt);
 	
