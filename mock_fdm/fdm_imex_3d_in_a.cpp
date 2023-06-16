@@ -240,7 +240,7 @@ psi_1.print_params_set_kappa();
 	printf("Starting Run..,\n");
 
 	
-	for(a=a_start,acntr=0;(a>=a_end)&&(!fail)&&(30);a+=da,++acntr)
+	for(a=a_start,acntr=0;(a<=a_end)&&(!fail)&&(30);a+=da,++acntr)
 	{
 
 		
