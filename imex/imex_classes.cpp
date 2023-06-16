@@ -33,6 +33,9 @@ class imex_table
         im_b = new double[s];
         ex_b = new double[s];
 
+        im_c = new double[s];
+        ex_c = new double[s];
+
 
     }
 
@@ -80,7 +83,27 @@ class imex_table
 
         }
 
-        printf("Stability range for explicit is %lf\n",ex_stb_r);
+        printf("\nPrinting Implict C\n");
+        for(i=0;i<s;++i)
+        {
+            
+            printf("%lf ",im_c[i]);
+        
+            printf("\n");
+
+        }
+
+        printf("\nPrinting Explict C\n");
+        for(i=0;i<s;++i)
+        {
+            
+            printf("%lf ",ex_c[i]);
+        
+            printf("\n");
+
+        }
+
+        printf("\nStability range for explicit is %lf\n",ex_stb_r);
 
 
     }
@@ -139,6 +162,12 @@ class imex_table
                 }
                 else if (i<(2*s+2))
                     ex_b[j] = num_val; 
+                else if (i<(2*s+3))
+                {
+                    im_c[j] = num_val; 
+                }
+                else if (i<(2*s+4))
+                    ex_c[j] = num_val; 
                 else
                     ex_stb_r = num_val;
                 
