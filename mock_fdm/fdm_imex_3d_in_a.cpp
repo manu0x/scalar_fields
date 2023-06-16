@@ -83,7 +83,20 @@ double run(double da,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 	FILE *fptime = fopen("tm_ft.txt","w");
 */
 /////////////////////////////// Parameter setting ////////////////////////////////////////////////
+
+
+/////////////////////////////// Box & res. setting ///////////////////////////////////////////////
+	box_len = 1.0;
+	x0[0]=-0.5*box_len; x0[1]=-0.5*box_len; x0[2]=-0.5*box_len;
 	
+	//n  = 2.0/box_len;
+	N = 128;
+	dx = box_len/(double(N));
+	
+	//N = ((int)(box_len/dx));
+	int N3 = N*N*N;
+	int N2 = N*N;
+	printf("N2 %d\n",N2);
 
 ////////////	Imex declare and data write file declare ////////////////////////
 
@@ -133,18 +146,7 @@ psi_1.print_params_set_kappa();
 
 
 
-/////////////////////////////// Box & res. setting ///////////////////////////////////////////////
-	box_len = 1.0;
-	x0[0]=-0.5*box_len; x0[1]=-0.5*box_len; x0[2]=-0.5*box_len;
-	
-	//n  = 2.0/box_len;
-	N = 128;
-	dx = box_len/(double(N));
-	
-	//N = ((int)(box_len/dx));
-	int N3 = N*N*N;
-	int N2 = N*N;
-	printf("N2 %d\n",N2);
+
 ////////////////////////////// Time & da settings ////////////////////////////////////////////////
 
 	a_start = psi_1.ai;
@@ -220,22 +222,25 @@ psi_1.print_params_set_kappa();
 
 	psi_1.reset_consv_quant(1);
 	psi_1.solve_V(k_grid);
+
 	HbyH0 = psi_1.HbyH0(a_start);
 	fac = a_start*a_start*HbyH0;
 	for ( i = 0; i < N3; i++)
 	{
 		if(vmax<fabs(psi_1.V_phi[i][0]/fac))
-					vmax = fabs(psi_1.V_phi[i][0]/fac);
+		{			vmax = fabs(psi_1.V_phi[i][0]/fac);
+				
+		}
 	}
 	
 
 	if(vmax>(imx.ex_stb_r/da))
-			printf("start vmax da %lf stb r %lf\n",vmax*da,imx.ex_stb_r);
+			printf("start vmax da %lf stb r %lf  %lf\n",vmax*da,imx.ex_stb_r,fac);
 	
 	printf("Starting Run..,\n");
 
 	
-	for(a=a_start,acntr=0;(a<=a_end)&&(!fail)&&(30);a+=da,++acntr)
+	for(a=a_start,acntr=0;(a>=a_end)&&(!fail)&&(30);a+=da,++acntr)
 	{
 
 		
