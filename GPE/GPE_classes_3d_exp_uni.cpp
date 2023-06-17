@@ -22,7 +22,7 @@ class GPE_field_3d
     double m_alpha;
 
     public:
-    double kppa,omega_m0,ai;
+    double kppa,omega_m0,ai,ti,t0;
 
     fftw_complex *psi;
 
@@ -112,6 +112,24 @@ class GPE_field_3d
 
     }
 
+
+    double aoft(double t)
+    {   double sinhval2;
+
+        sinhval2 = sinh(1.5*sqrt(1.0-omega_m0)*t)*sinh(1.5*sqrt(1.0-omega_m0)*t);
+        return(pow(omega_m0*sinhval2/(1.0-omega_m0),1.0/3.0));
+        
+    }
+
+    double tofa(double a)
+    {
+        double sinarg;
+        sinarg =  sqrt(a*a*a*(1.0-omega_m0)/omega_m0);
+
+        return(2.0*asinh(sinarg/(3.0*sqrt(1.0-omega_m0))));
+
+
+    }
     double HbyH0(double a,double a0=1.0)
     {
 
@@ -318,7 +336,11 @@ class GPE_field_3d
         printf("[h,omega_m0,m_alpha] = [%lf,%lf,%lf] and ai = %lf \n",h,omega_m0,m_alpha,ai);
         kppa = c_unit*c_unit*hbar_unit*h*(1e-5)/(m_alpha*pc_unit);
 
-        printf("kappa = %lf\n\n",kppa);
+        ti = tofa(ai);
+        t0 = tofa(1.0);
+
+        printf("kappa = %lf\n",kppa);
+        printf("t_ini = %lf  t_end = %lf\n\n",ti,t0);
     }
 
     void initialise_random(double *kgrid,double amp=1e-1)
