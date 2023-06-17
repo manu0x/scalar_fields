@@ -68,9 +68,11 @@ double run(double da,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 {
 
 	int a_steps;
-	double box_len,a,a_end,a_start,ak,xval,dbi,dbj,dbk,dx;
+	double box_len,a,a_end,a_start,ak,da_up,xval,dbi,dbj,dbk,dx;
 	double HbyH0;
 	double x0[3],xv[3];
+
+	da_up=da;
 
 	fftw_init_threads();
 	
@@ -221,31 +223,43 @@ psi_1.print_params_set_kappa();
 	kk=0;
 
 	psi_1.reset_consv_quant(1);
-	psi_1.solve_V(k_grid);
-
-	HbyH0 = psi_1.HbyH0(a_start);
-	fac = a_start*a_start*HbyH0;
-	for ( i = 0; i < N3; i++)
-	{
-		if(vmax<fabs(psi_1.V_phi[i][0]/fac))
-		{			vmax = fabs(psi_1.V_phi[i][0]/fac);
-				
-		}
-	}
 	
 
-	if(vmax>(imx.ex_stb_r/da))
-			printf("start vmax da %lf stb r %lf  %lf\n",vmax*da,imx.ex_stb_r,fac);
+	
 	
 	printf("Starting Run..,\n");
 
 	
 	for(a=a_start,acntr=0;(a<=a_end)&&(!fail)&&(30);a+=da,++acntr)
 	{
-
 		
+		////////////////////////////	Adaptive step checks	/////////////////////////////
+		
+		psi_1.solve_V(k_grid);
+
+		HbyH0 = psi_1.HbyH0(a);
+		fac = a*a*HbyH0;
+		for ( i = 0; i < N3; i++)
+		{
+			if(vmax<fabs(psi_1.V_phi[i][0]/fac))
+			{			vmax = fabs(psi_1.V_phi[i][0]/fac);
+				
+			}
+		}
+	
+
+		if(vmax>(imx.ex_stb_r/da))
+		{		printf(" vmax da %lf stb r %lf  %lf\n",vmax*da,imx.ex_stb_r,fac);
+
+			da_up = 0.9*imx.ex_stb_r/vmax;
+		}
+
+
+
+		da = da_up;
+		//////////////////////////////////////////////////////////////////////////////////////////
 		if((acntr%printcntr==0)&&prnt)
-		printf("time %lf %lf %lf  net mass %lf\n",a/a_end,psi_1.mass,psi_1.mass,vmax);
+		printf("time %lf %lf %lf  da %lf\n",a/a_end,psi_1.mass,psi_1.mass,da);
 		psi_1.do_forward_fft();
 		
 
@@ -342,7 +356,7 @@ psi_1.print_params_set_kappa();
 					
 					
 			
-					ak = a+imx.ex_c[s_cntr-1]*da;
+					ak = a+imx.im_c[s_cntr-1]*da;
 					HbyH0 = psi_1.HbyH0(ak);
 					psi_1.im_rhs(i,s_cntr-1,ak*ak*ak*HbyH0);
 
@@ -372,8 +386,10 @@ psi_1.print_params_set_kappa();
 
 			}
 
-			if(vmax>(imx.ex_stb_r/da))
-			printf("acntr %d  vmax da %lf stb r %lf\n",acntr,vmax*da,imx.ex_stb_r);
+		//	if(vmax>(imx.ex_stb_r/da))
+		//	{printf("acntr %d  vmax da %lf stb r %lf\n",acntr,vmax*da,imx.ex_stb_r);
+		//		da_up = 0.7*imx.ex_stb_r/vmax;
+		//	}
 
 			psi_1.do_forward_fft();
 			
@@ -532,7 +548,7 @@ int main(int argc, char ** argv)
 		//for(dx = dx_l;dx<=dx_u;dx+=ddx)
 		{
 			dx = 2e-2;
-			da = 1e-4;
+			da = 1e-3;
 			mass_loss = run(da,512,mass_err,argc,argv,1,1);
 
 			printf("%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,da,da/(dx*dx),mass_loss,*mass_err,*(mass_err+1));
