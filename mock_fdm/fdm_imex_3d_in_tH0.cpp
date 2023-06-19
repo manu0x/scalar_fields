@@ -153,6 +153,8 @@ psi_1.print_params_set_kappa();
 
 	t_start = psi_1.ti;
 	t_end = psi_1.t0;
+
+	dt = dt_up*psi_1.aoft(t_start);
 	
 	t_steps = (int)((t_end-t_start)/dt);
 	
@@ -256,8 +258,8 @@ psi_1.print_params_set_kappa();
 		}
 
 */
-
-		dt = dt_up*psi_1.aoft(t);
+		//if(!tcntr)
+		//dt = dt_up*psi_1.aoft(t);
 		//////////////////////////////////////////////////////////////////////////////////////////
 		if((tcntr%printcntr==0)&&prnt)
 		printf("time %lf %lf a %lf  dt %lf\n",t/t_end,psi_1.mass,a,dt);
@@ -387,10 +389,10 @@ psi_1.print_params_set_kappa();
 
 			}
 
-		//	if(vmax>(imx.ex_stb_r/da))
-		//	{printf("acntr %d  vmax da %lf stb r %lf\n",acntr,vmax*da,imx.ex_stb_r);
+			if(vmax>(imx.ex_stb_r/dt))
+			{printf("acntr %d  vmax da %lf stb r %lf\n",tcntr,vmax*dt,imx.ex_stb_r);
 		//		da_up = 0.7*imx.ex_stb_r/vmax;
-		//	}
+			}
 
 			psi_1.do_forward_fft();
 			
