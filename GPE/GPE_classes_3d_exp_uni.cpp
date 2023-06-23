@@ -23,6 +23,7 @@ class GPE_field_3d
 
     public:
     double kppa,omega_m0,ai,ti,t0;
+    double psi2_avg;
 
     fftw_complex *psi;
 
@@ -138,16 +139,39 @@ class GPE_field_3d
 
     }
 
+    void calc_psi2_avg()
+    {
+
+       double psisqr,sum_ps2;  int loc_i;
+
+        sum_ps2 = 0.0;
+
+       
+        for(loc_i=0;loc_i<N3;++loc_i)
+        {
+            psisqr = fpGpsi[loc_i][0]*fpGpsi[loc_i][0] + fpGpsi[loc_i][1]*fpGpsi[loc_i][1];
+            sum_ps2+= psisqr;
+
+
+        }
+
+        psi2_avg = sum_ps2/dN3;
+
+    }
+
 
     void solve_V(double *kgrid)
     {
         double psisqr,ksqr;  int loc_i,loc_j,loc_k,ii;
 
-        #pragma omp parallel for private(psisqr)
+        calc_psi2_avg();
+
+     //   #pragma omp parallel for private(psisqr)
         for(loc_i=0;loc_i<N3;++loc_i)
         {
             psisqr = fpGpsi[loc_i][0]*fpGpsi[loc_i][0] + fpGpsi[loc_i][1]*fpGpsi[loc_i][1];
-            V_phi[loc_i][0] = (0.5/kppa)*(psisqr-3.0*omega_m0);
+            //V_phi[loc_i][0] = (0.5/kppa)*(psisqr-3.0*omega_m0);
+            V_phi[loc_i][0] = (0.5/kppa)*(psisqr-psi2_avg);
             V_phi[loc_i][1] = 0.0;
 
 
