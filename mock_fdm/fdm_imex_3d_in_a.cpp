@@ -158,6 +158,8 @@ psi_1.print_params_set_kappa();
 	
 	if(prnt)
 	printf("da %lf N %d\n",da,N);
+	HbyH0= psi_1.HbyH0(a_start);
+	printf("chking c %lf %lf\n",(a_start*a_start*HbyH0),psi_1.kppa/(a_start*a_start*a_start*HbyH0));
 
 
 	
@@ -251,7 +253,7 @@ psi_1.print_params_set_kappa();
 		if(vmax>(imx.ex_stb_r/da))
 		{		printf(" vmax da %lf stb r %lf  %lf\n",vmax*da,imx.ex_stb_r,fac);
 
-			da_up = 0.9*imx.ex_stb_r/vmax;
+			//da_up = 0.9*imx.ex_stb_r/vmax;
 		}
 
 
@@ -260,6 +262,8 @@ psi_1.print_params_set_kappa();
 		//////////////////////////////////////////////////////////////////////////////////////////
 		if((acntr%printcntr==0)&&prnt)
 		printf("time %lf %lf %lf  da %lf\n",a/a_end,psi_1.mass,psi_1.mass,da);
+
+
 		psi_1.do_forward_fft();
 		
 
@@ -367,6 +371,7 @@ psi_1.print_params_set_kappa();
 					
 
 					psi_1.fpGpsi[i][0] = psi_1.psi[i][0] + da*imx.ex_a[s_cntr][j]*psi_1.ex_K_psi[0][j][i]+ da*imx.im_a[s_cntr][j]*psi_1.im_K_psi[0][j][i];
+					psi_1.fpGpsi[i][1] = psi_1.psi[i][1] + da*imx.ex_a[s_cntr][j]*psi_1.ex_K_psi[1][j][i]+ da*imx.im_a[s_cntr][j]*psi_1.im_K_psi[1][j][i];
 					
 
 					
