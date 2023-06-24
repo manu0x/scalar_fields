@@ -553,7 +553,7 @@ int main(int argc, char ** argv)
 		//for(dx = dx_l;dx<=dx_u;dx+=ddx)
 		{
 			dx = 2e-2;
-			da = 1e-3;
+			da = 1e-4;
 			mass_loss = run(da,512,mass_err,argc,argv,1,1);
 
 			printf("%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,da,da/(dx*dx),mass_loss,*mass_err,*(mass_err+1));
