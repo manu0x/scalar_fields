@@ -254,6 +254,7 @@ psi_ini,alpha_ini = cal_psi_from_dc_v(dc,v,ai,k_grid_half,k_grid_sqr_half_den_c,
 
 
 psi_ini = psi_ini*tf.complex(tf.pow(ai,1.5),tf.zeros_like(ai))
+psi_ini = psi_ini.numpy()
 
 
 
@@ -269,6 +270,14 @@ alpha_ini = np.reshape(alpha_ini,(alpha_ini.shape[0],1))
 with h5py.File(outname+"_theta.hdf5", "w") as ff:
     dsetdc = ff.create_dataset("dc", dc.shape,data=dc)
     dset2 = ff.create_dataset("theta", alpha_ini.shape,data=alpha_ini)
+
+with h5py.File(outname+"_psi.hdf5", "w") as ff:
+    dsetdc = ff.create_dataset("psi",psi_ini.shape,data=psi_ini)
+    dsetdc1 = ff.create_dataset("dc", dc.shape,data=dc)
+    dset2 = ff.create_dataset("theta", alpha_ini.shape,data=alpha_ini)
+
+with open('psi.npy', 'wb') as f:
+    np.save(f,psi_ini)
 
 
 
