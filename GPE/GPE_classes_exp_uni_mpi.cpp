@@ -15,7 +15,7 @@
 class GPE_field_mpi
 {
     private:
-    
+    int dim;
     double hbar_unit,c_unit,h,pc_unit;
     double vfac;
     
@@ -62,15 +62,24 @@ class GPE_field_mpi
     double energy,ini_energy,max_eng_err;
     double mass,ini_mass,max_mass_err;
 
+    hid_t hdf5_file;  hid_t dtype; hid_t dset_glbl;hid_t dspace_glbl,memspace_loc;
+    hsize_t *offset; hsize_t *hdf_dims,*hdf_dims_loc;
+    
+    MPI_Info info  = MPI_INFO_NULL;
+    char my_name[20];
+    char fp_hdf5_name[30]=("data_");
 
 
-    GPE_field_mpi(int dim,int NN,int jj,int my_rank,int imex_s,int nthreads=4)
+
+    GPE_field_mpi(int dim_p,int NN,int jj,int my_rank,int imex_s,char *field_name,int nthreads=4)
     {
         comp_j= jj;
         N= NN;
         N_tot = N;
+
+
         
-       
+       dim = dim_p;
 
         ptrdiff_t *ptr_n = new  ptrdiff_t[dim];
       
@@ -98,12 +107,27 @@ class GPE_field_mpi
         myN_tot = myNx;
         cum_lin_ind = local_0_start;
 
+
+        //hsize_t hdf_dims[ dim_p],hdf_dims_loc[ dim_p];
+        offset = new hsize_t[dim];
+        hdf_dims = new hsize_t[dim];
+        hdf_dims_loc = new hsize_t[dim];
+        offset[0] = cum_lin_ind;
+        hdf_dims[0] = N;
+        hdf_dims_loc[0] = myNx;
+
+
         for(i=0;i<(dim-1);++i)
         {
             myN_tot*=N;
+            hdf_dims[i+1]=N;
+            hdf_dims_loc[i+1]=N;
+            offset[i+1] = 0;
 
 
         }
+
+
 
         s = imex_s;
 
@@ -111,11 +135,26 @@ class GPE_field_mpi
         dN_tot = (double)N_tot;
         mydN_tot= (double)myN_tot;
 
-       
-        
-        
+/////////////////////////   HDF5 things     ///////////////////////////////
+       strcat(fp_hdf5_name,field_name);
+        strcat(fp_hdf5_name,".hdf5"); 
+        strcat(my_name,field_name);
 
-        
+       
+
+        hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
+        H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, info);
+
+		
+		hdf5_file = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+		H5Pclose(plist_id);
+
+        dspace_glbl = H5Screate_simple(dim, hdf_dims, NULL);
+        memspace_loc = H5Screate_simple(dim, hdf_dims_loc, NULL);
+
+        dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
+
+  ////////////////////  FFT fields /////////////////////////////////////////////////////      
 
         fpGpsi = fftw_alloc_complex(alloc_local);// (fftw_complex*);fftw_malloc(sizeof(fftw_complex) * (N3));
 	    fpGpsi_ft =fftw_alloc_complex(alloc_local);//(fftw_complex*) fftw_malloc(sizeof(fftw_complex) *(N3));
@@ -225,7 +264,9 @@ class GPE_field_mpi
 
     void solve_V(double *kgrid)
     {
-        double psisqr,ksqr;  int loc_i,loc_j,loc_k,ii;
+        double psisqr,ksqr;  int cur_i,loc_i,wii,ii,i2; 
+        double dN = (double) N;
+        double Npwr;
 
         calc_psi2_avg();
 
@@ -241,23 +282,25 @@ class GPE_field_mpi
         }
         fftw_execute(plan_V_f);
 
-        for(ii=0,loc_i=cum_lin_ind-1,loc_j=-1,loc_k=0;ii<myN_tot;++ii,++loc_k)
+        for(ii=0;ii<myN_tot;++ii)
         {
-            if(ii%N ==0)
+            ksqr= 0.0;
+            wii = ii;
+            for(i2=0;i2<dim;++i2)
             {
-                loc_k=0;
-                ++loc_j;
-                if(ii%myNx==0)
-                {
-                    loc_j=0;
-                    ++loc_i;
-
-
-                }
-
+                Npwr = pow(dN,(double)(dim-i2-1));
+                
+                cur_i = (int) (((double)wii)/Npwr);
+                
+                wii = wii%((int)Npwr);
+                if(i2==0)
+                    ksqr+= (kgrid[cur_i+cum_lin_ind]*kgrid[cur_i+cum_lin_ind]);
+                else
+                    ksqr+= (kgrid[cur_i]*kgrid[cur_i]);
 
             }
-            ksqr = kgrid[loc_i]*kgrid[loc_i] + kgrid[loc_j]*kgrid[loc_j] + kgrid[loc_k]*kgrid[loc_k];
+
+            //ksqr = kgrid[loc_i]*kgrid[loc_i] + kgrid[loc_j]*kgrid[loc_j] + kgrid[loc_k]*kgrid[loc_k];
 
           if(ksqr>0.0)
            { V_phi_ft[ii][0] = -V_phi_ft[ii][0]/(ksqr*dN_tot);
@@ -343,7 +386,7 @@ class GPE_field_mpi
 
     }
 
-    void read_from_file(char  *fname)
+    void read_param_from_file(char  *fname)
     {
         FILE *fp_param = fopen(fname,"r");
 
@@ -570,7 +613,7 @@ void read_from_initial()
     for(i=0;i<N_tot;++i)
     {
         j = i-prev;
-        fscanf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",&a[0],&a[1],&a[2],&a[3],&fr,&fi,&a[4],&a[5],&a[6],&a[7],&a[8],&a[9]);
+        fscanf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",&a[0],&a[1],&a[2],&a[3],&fr,&fi,&a[4],&a[5],&a[6],&a[7],&a[8]);
         if(i>=prev)
         {psi[j][0] = fr/100.0;//H0=100 in given units and it is a unit conversion
          psi[j][1] = fi/100.0;
@@ -581,6 +624,42 @@ void read_from_initial()
 
 
 }
+
+
+	herr_t write_hdf5_mpi(double z)
+	{
+        hid_t plist_id;
+        herr_t status;
+        char dset_name[20];
+        snprintf(dset_name,20,"%.2lf",z);
+        strcat(dset_name,"_");
+        strcat(dset_name,my_name);
+
+
+        dset_glbl = H5Dcreate(hdf5_file, dset_name, dtype, dspace_glbl,
+						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+        H5Sselect_hyperslab(dspace_glbl, H5S_SELECT_SET,offset,NULL,hdf_dims_loc,NULL);
+
+
+        plist_id = H5Pcreate(H5P_DATASET_XFER);
+        H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+
+        status = H5Dwrite(dset_glbl, dtype, memspace_loc, dspace_glbl,
+		      				plist_id, &psi[0][0]);
+
+
+        H5Dclose(dset_glbl);
+        H5Pclose(plist_id);
+
+        return status;
+
+        
+
+       
+
+	}
+
 
 
 

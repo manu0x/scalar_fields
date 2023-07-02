@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <math.h>
 
-
+#include <mpi.h>
 #include <fftw3.h>
 #include <fftw3-mpi.h>
 #include <hdf5.h>
@@ -18,7 +18,7 @@
 
 #include <algorithm>
 #include "../imex/imex_classes.cpp"
-#include "../GPE/GPE_classes_3d_exp_uni_mpi.cpp"
+#include "../GPE/GPE_classes_exp_uni_mpi.cpp"
 
 using namespace std;
 
@@ -65,11 +65,12 @@ void initialise_kgrid(double *k,double dx,int N)
 }
 
 
-double run(double da,int dim,int N,double *mass_err,int argc,char **argv,int prntfp,int prnt)
+double run(double da,int dim,int N,double *mass_err,int prntfp,int prnt,int argc,char **argv)
 {
 
 	int my_rank;
 	int mpicheck;
+	int myNx,myN_tot,N_tot,cum_lin_ind;
 
 	mpicheck = MPI_Comm_rank(MPI_COMM_WORLD,&my_rank);
 
@@ -80,17 +81,7 @@ double run(double da,int dim,int N,double *mass_err,int argc,char **argv,int prn
 
 	da_up=da;
 
-	fftw_init_threads();
-	
-///////////////////////////////File for data/////////////////////////////////////////////////////
-/*
-	FILE *fp = fopen("data_ft.txt","w");
-	FILE *fp2 = fopen("data2_ft.txt","w");
-	FILE *fplap = fopen("lap_ft.txt","w");
-	FILE *fpmass = fopen("mass_ft.txt","w");
-	FILE *fptime = fopen("tm_ft.txt","w");
-*/
-/////////////////////////////// Parameter setting ////////////////////////////////////////////////
+	//fftw_init_threads();
 
 
 /////////////////////////////// Box & res. setting ///////////////////////////////////////////////
@@ -100,11 +91,14 @@ double run(double da,int dim,int N,double *mass_err,int argc,char **argv,int prn
 	//n  = 2.0/box_len;
 	N = 128;
 	dx = box_len/(double(N));
+
+	int N2,N3;
+	N2 = N*N;
+	N3=N*N*N;
 	
 	//N = ((int)(box_len/dx));
-	int myN_tot = 1;
-	int N2 = N*N;
-	printf("N2 %d\n",N2);
+
+	//printf("N2 %d\n",N2);
 
 ////////////	Imex declare and data write file declare ////////////////////////
 
@@ -126,7 +120,7 @@ double run(double da,int dim,int N,double *mass_err,int argc,char **argv,int prn
 	strcat(fp_name,imex_file);
 	printf("ImEx table filename is %s and stages given by u is %d and out file %s \n",imex_file,stages,fp_name);
 
-	FILE *fp = fopen(fp_name,"w");
+	//FILE *fp = fopen(fp_name,"w");
 	
 	
 	imex_table imx(stages);
@@ -140,11 +134,16 @@ double run(double da,int dim,int N,double *mass_err,int argc,char **argv,int prn
 ////////////////////////	Declare field /////////////////////////////////////////////
 char *f1paramfile;
 
-GPE_field_mpi  psi_1(dim,N,0,my_rank,imx.s,16); 
+char pas[20] = {"psi"};
+
+GPE_field_mpi  psi_1(dim,N,0,my_rank,imx.s,pas,16); 
+myNx = psi_1.myNx;
+myN_tot=psi_1.myN_tot;
+cum_lin_ind = psi_1.cum_lin_ind;
 
 f1paramfile = argv[3];
 
-psi_1.read_from_file(f1paramfile);
+psi_1.read_param_from_file(f1paramfile);
 	
 
 psi_1.print_params_set_kappa();
@@ -211,24 +210,28 @@ psi_1.print_params_set_kappa();
     int ii,jj,kk;
 	int s_cntr,acntr,printcntr,fpcntr,err_cntr=1,fail=0;
 
+	ii=-1;
+	jj=-1;
+	kk=0;
+
+
 	printcntr = (int)(((double) a_steps)/100.0);
 	fpcntr = (int)(((double) a_steps)/10.0);
+
 	if(a_steps<=100)
 	{	printcntr = 1.0;
 	
 	}	//printf("%d\n",printcntr);
-	double vel_val[2],c_psi[2],c_psi_amp2,delta,amp,avg_amp;
+
+	//Variables for holding temporary values
+	double c_psi[2],c_psi_amp2,delta;
 	
-	double amp_ini,dsum,fac,vmax=-0.00000000000001;
+	double delta_sum,fac,Vmax=-0.00000000000001;
 	
 
-	double kv[3];
-	int ind[3];
+	
+	
 
-
-	ii=-1;
-	jj=-1;
-	kk=0;
 
 	psi_1.reset_consv_quant(1);
 	
@@ -238,7 +241,7 @@ psi_1.print_params_set_kappa();
 	printf("Starting Run..,\n");
 
 	
-	for(a=a_start,acntr=0;(a<=a_end)&&(!fail)&&(30);a+=da,++acntr)
+	for(a=a_start,acntr=0;(a<=a_end)&&(!fail)&&(acntr > 1);a+=da,++acntr)
 	{
 		
 		////////////////////////////	Adaptive step checks	/////////////////////////////
@@ -247,17 +250,17 @@ psi_1.print_params_set_kappa();
 
 		HbyH0 = psi_1.HbyH0(a);
 		fac = a*a*HbyH0;
-		for ( i = 0; i < N3; i++)
+		for ( i = 0; i <myN_tot ; i++)
 		{
-			if(vmax<fabs(psi_1.V_phi[i][0]/fac))
-			{			vmax = fabs(psi_1.V_phi[i][0]/fac);
+			if(Vmax<fabs(psi_1.V_phi[i][0]/fac))
+			{			Vmax = fabs(psi_1.V_phi[i][0]/fac);
 				
 			}
 		}
 	
 
-		if(vmax>(imx.ex_stb_r/da))
-		{		printf(" vmax da %lf stb r %lf  %lf\n",vmax*da,imx.ex_stb_r,fac);
+		if(Vmax>(imx.ex_stb_r/da))
+		{		printf("Rank %d says Vmax da %lf stb r %lf  %lf\n",my_rank,Vmax*da,imx.ex_stb_r,fac);
 
 			//da_up = 0.9*imx.ex_stb_r/vmax;
 		}
@@ -274,10 +277,10 @@ psi_1.print_params_set_kappa();
 		
 
 		psi_1.reset_consv_quant();
-		dsum = 0.0;
+		delta_sum = 0.0;
 		
 		
-	 	for(i=0,ii=-1,jj=-1,kk=0;i<(N3);++i,++kk)
+	 	for(i=0,ii=(cum_lin_ind-1),jj=-1,kk=0;i<(myN_tot);++i,++kk)
 		{	
 
 			
@@ -310,8 +313,8 @@ psi_1.print_params_set_kappa();
 				
 				c_psi_amp2 = (psi_1.psi[i][0]*psi_1.psi[i][0]+psi_1.psi[i][1]*psi_1.psi[i][1]);
 				delta = (c_psi_amp2/(3.0*psi_1.omega_m0) -1.0);
-				dsum+=delta; 
-				fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",xv[0],xv[1],xv[2],psi_1.psi[i][0],psi_1.psi[i][1],c_psi_amp2,delta);
+				delta_sum+=delta; 
+				//fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",xv[0],xv[1],xv[2],psi_1.psi[i][0],psi_1.psi[i][1],c_psi_amp2,delta);
 
 
 			}
@@ -328,15 +331,16 @@ psi_1.print_params_set_kappa();
 
 		}
 		if((acntr%fpcntr==0)&&(prntfp))
-			printf("a/a_end %lf dsum = %lf\n",a/a_end,dsum);
+			printf("a/a_end %lf dsum = %lf\n",a/a_end,delta_sum);
+
 		if(acntr%err_cntr==0)
 		{	psi_1.conserve_err();
 			
 
 		}
 
-		if((acntr%fpcntr==0)&&(prntfp))
-		fprintf(fp,"\n\n\n");
+		//if((acntr%fpcntr==0)&&(prntfp))
+		//fprintf(fp,"\n\n\n");
 		
 		
 		psi_1.do_back_fft();
@@ -348,7 +352,7 @@ psi_1.print_params_set_kappa();
 			
 			for(j=0;j<s_cntr;++j)
 			{
-			   for(i=0;i<N3;++i)
+			   for(i=0;i<myN_tot;++i)
 			   {
 				
  				if(j==0)
@@ -358,8 +362,8 @@ psi_1.print_params_set_kappa();
 					HbyH0 = psi_1.HbyH0(ak);
 					fac = ak*ak*HbyH0;
 
-					if(vmax<fabs(psi_1.V_phi[i][0]/fac))
-					vmax = fabs(psi_1.V_phi[i][0]/fac);
+					if(Vmax<fabs(psi_1.V_phi[i][0]/fac))
+					Vmax = fabs(psi_1.V_phi[i][0]/fac);
 
 					psi_1.ex_rhs(i,s_cntr-1,fac);
 					
@@ -407,7 +411,7 @@ psi_1.print_params_set_kappa();
 		
 
 
-			for(i=0,ii=-1,jj=-1,kk=0;i<N3;++i,++kk)
+			for(i=0,ii=cum_lin_ind-1,jj=-1,kk=0;i<myN_tot;++i,++kk)
 			{
 			
 				if(i%N ==0)
@@ -453,7 +457,7 @@ psi_1.print_params_set_kappa();
 		
 
 
-		for(i=0,ii=-1,jj=-1,kk=0;i<N3;++i,++kk)
+		for(i=0,ii=-1,jj=-1,kk=0;i<myN_tot;++i,++kk)
 		{
 			
 				
@@ -509,8 +513,9 @@ psi_1.print_params_set_kappa();
 
 	}///// ENd f Time Evolution /////////////////////////
 
-	fclose(fp);
-	fftw_cleanup_threads();
+	//fclose(fp);
+	//fftw_cleanup_threads();
+
 	*mass_err = psi_1.max_mass_err;
 	*(mass_err+1)= psi_1.max_mass_err;
 
@@ -553,6 +558,8 @@ int main(int argc, char ** argv)
 	
 	mpicheck = MPI_Comm_rank(MPI_COMM_WORLD,&rank);
 
+	//fftw_mpi_init();
+
 
 	double da = 3e-4;
 	double dx = 4e-3;
@@ -575,7 +582,7 @@ int main(int argc, char ** argv)
 		{
 			dx = 2e-2;
 			da = 1e-4;
-			mass_loss = run(da,512,mass_err,argc,argv,1,1);
+			mass_loss = run(da,3,512,mass_err,1,1,argc,argv); //(double da,int dim,int N,double *mass_err,int prntfp,int prnt,int argc,char **argv)
 
 			printf("%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,da,da/(dx*dx),mass_loss,*mass_err,*(mass_err+1));
 			fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,da,da/(dx*dx),mass_loss,*mass_err,*(mass_err+1));
