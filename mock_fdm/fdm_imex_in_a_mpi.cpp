@@ -203,6 +203,8 @@ psi_1.print_params_set_kappa();
 	printf("Initialization done\n");
 	
 	psi_1.set_field();
+
+	//psi_1.write_hdf5_mpi(1.0/a_start -1.0);
 	
 
 
@@ -241,8 +243,18 @@ psi_1.print_params_set_kappa();
 	printf("Starting Run..,\n");
 
 	
-	for(a=a_start,acntr=0;(a<=a_end)&&(!fail)&&(acntr > 1);a+=da,++acntr)
+	for(a=a_start,acntr=0;(a<=a_end)&&(!fail)&&(1);a+=da,++acntr)
 	{
+
+		///////////////	Data Writing ////////////////////////////////
+
+		if((acntr%fpcntr==0)&&(prntfp))
+			psi_1.write_hdf5_mpi(1.0/a -1.0);
+
+
+			
+
+
 		
 		////////////////////////////	Adaptive step checks	/////////////////////////////
 		
@@ -270,7 +282,7 @@ psi_1.print_params_set_kappa();
 		da = da_up;
 		//////////////////////////////////////////////////////////////////////////////////////////
 		if((acntr%printcntr==0)&&prnt)
-		printf("time %lf %lf %lf  da %lf\n",a/a_end,psi_1.mass,psi_1.mass,da);
+		printf("time %lf %lf %lf  da %lf  from rank %d\n",a/a_end,psi_1.mass,psi_1.mass,da,my_rank);
 
 
 		psi_1.do_forward_fft();
@@ -308,16 +320,7 @@ psi_1.print_params_set_kappa();
 
 			}
 
-			if((acntr%fpcntr==0)&&(prntfp))
-			{
-				
-				c_psi_amp2 = (psi_1.psi[i][0]*psi_1.psi[i][0]+psi_1.psi[i][1]*psi_1.psi[i][1]);
-				delta = (c_psi_amp2/(3.0*psi_1.omega_m0) -1.0);
-				delta_sum+=delta; 
-				//fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",xv[0],xv[1],xv[2],psi_1.psi[i][0],psi_1.psi[i][1],c_psi_amp2,delta);
-
-
-			}
+			
 			ak = a+imx.im_c[0]*da;
 			HbyH0 = psi_1.HbyH0(ak);
 			ksqr = k_grid[ii]*k_grid[ii] + k_grid[jj]*k_grid[jj] + k_grid[kk]*k_grid[kk];
@@ -523,6 +526,7 @@ psi_1.print_params_set_kappa();
 	if(prnt)
 	printf("N %d\n Run en los %lf abs err %lf\n",N,*(mass_err),*(mass_err+1));
 
+	psi_1.write_hdf5_mpi(1.0/a -1.0);
 
 	
 	return(psi_1.max_mass_err);
@@ -581,7 +585,7 @@ int main(int argc, char ** argv)
 		//for(dx = dx_l;dx<=dx_u;dx+=ddx)
 		{
 			dx = 2e-2;
-			da = 1e-4;
+			da = 1e-3;
 			mass_loss = run(da,3,512,mass_err,1,1,argc,argv); //(double da,int dim,int N,double *mass_err,int prntfp,int prnt,int argc,char **argv)
 
 			printf("%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,da,da/(dx*dx),mass_loss,*mass_err,*(mass_err+1));
@@ -591,6 +595,8 @@ int main(int argc, char ** argv)
 	}
 
 	fclose(fp);
+
+	mpicheck = MPI_Finalize();
 
 
 

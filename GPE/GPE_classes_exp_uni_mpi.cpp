@@ -56,7 +56,7 @@ class GPE_field_mpi
     int unp_axis_N_tot;
     int myN_tot,myNx;
     int i,k;
-    int cum_lin_ind;
+    int cum_lin_ind,my_rank;
 
     double dj,dN_tot,mydN_tot;
     double energy,ini_energy,max_eng_err;
@@ -71,12 +71,12 @@ class GPE_field_mpi
 
 
 
-    GPE_field_mpi(int dim_p,int NN,int jj,int my_rank,int imex_s,char *field_name,int nthreads=4)
+    GPE_field_mpi(int dim_p,int NN,int jj,int my_rank_p,int imex_s,char *field_name,int nthreads=4)
     {
         comp_j= jj;
         N= NN;
         N_tot = N;
-
+        my_rank=my_rank_p;
 
         
        dim = dim_p;
@@ -109,9 +109,9 @@ class GPE_field_mpi
 
 
         //hsize_t hdf_dims[ dim_p],hdf_dims_loc[ dim_p];
-        offset = new hsize_t[dim];
-        hdf_dims = new hsize_t[dim];
-        hdf_dims_loc = new hsize_t[dim];
+        offset = new hsize_t[dim+1];
+        hdf_dims = new hsize_t[dim+1];
+        hdf_dims_loc = new hsize_t[dim+1];
         offset[0] = cum_lin_ind;
         hdf_dims[0] = N;
         hdf_dims_loc[0] = myNx;
@@ -126,6 +126,10 @@ class GPE_field_mpi
 
 
         }
+
+         offset[dim] = 0;
+        hdf_dims[dim] = 2;
+        hdf_dims_loc[dim] = 2;
 
 
 
@@ -149,8 +153,8 @@ class GPE_field_mpi
 		hdf5_file = H5Fcreate (fp_hdf5_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
 		H5Pclose(plist_id);
 
-        dspace_glbl = H5Screate_simple(dim, hdf_dims, NULL);
-        memspace_loc = H5Screate_simple(dim, hdf_dims_loc, NULL);
+        dspace_glbl = H5Screate_simple(dim+1, hdf_dims, NULL);
+        memspace_loc = H5Screate_simple(dim+1, hdf_dims_loc, NULL);
 
         dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
 
@@ -610,6 +614,7 @@ void read_from_initial()
     FILE *fp = fopen("initial1.txt","r");
     int prev = cum_lin_ind*unp_axis_N_tot;
     int j;
+    printf("prev is %d %d %d %d\n",prev,unp_axis_N_tot*my_rank*32,cum_lin_ind,my_rank);
     for(i=0;i<N_tot;++i)
     {
         j = i-prev;
