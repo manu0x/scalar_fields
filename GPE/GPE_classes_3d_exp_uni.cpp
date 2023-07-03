@@ -592,7 +592,7 @@ void read_from_initial()
     for(i=0;i<N3;++i)
     {
 
-        fscanf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",&a[0],&a[1],&a[2],&a[3],&fr,&fi,&a[4],&a[5],&a[6],&a[7],&a[8],&a[9]);
+        fscanf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",&a[0],&a[1],&a[2],&a[3],&fr,&fi,&a[4],&a[5],&a[6],&a[7],&a[8]);
         psi[i][0] = fr/100.0;//H0=100 in given units and it is a unit conversion
         psi[i][1] = fi/100.0;
 

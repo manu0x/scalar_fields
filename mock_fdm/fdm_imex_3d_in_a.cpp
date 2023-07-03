@@ -232,7 +232,7 @@ psi_1.print_params_set_kappa();
 	printf("Starting Run..,\n");
 
 	
-	for(a=a_start,acntr=0;(a<=a_end)&&(!fail)&&(30);a+=da,++acntr)
+	for(a=a_start,acntr=0;(a<=a_end)&&(!fail)&&(1);a+=da,++acntr)
 	{
 		
 		////////////////////////////	Adaptive step checks	/////////////////////////////
@@ -305,7 +305,7 @@ psi_1.print_params_set_kappa();
 				c_psi_amp2 = (psi_1.psi[i][0]*psi_1.psi[i][0]+psi_1.psi[i][1]*psi_1.psi[i][1]);
 				delta = (c_psi_amp2/(3.0*psi_1.omega_m0) -1.0);
 				dsum+=delta; 
-				fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",xv[0],xv[1],xv[2],psi_1.psi[i][0],psi_1.psi[i][1],c_psi_amp2,delta);
+				fprintf(fp,"%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\n",xv[0],xv[1],xv[2],psi_1.psi[i][0],psi_1.psi[i][1],c_psi_amp2,delta);
 
 
 			}
@@ -502,7 +502,30 @@ psi_1.print_params_set_kappa();
 
 
 	}///// ENd f Time Evolution /////////////////////////
+	for(i=0;i<N3;++i)
+	{			
+			if(i%N ==0)
+            {
+                kk=0;
+                ++jj;
+                if(i%N2==0)
+                {
+                    jj=0;
+                    ++ii;
 
+
+                }
+			}
+			
+
+		dbi = (double)(ii); dbj = (double)(jj); dbk = (double)(kk);
+		xv[0] = x0[0] + dx*dbi; xv[1] = x0[1] + dx*dbj; xv[2] = x0[2] + dx*dbk;
+		
+		c_psi_amp2 = (psi_1.psi[i][0]*psi_1.psi[i][0]+psi_1.psi[i][1]*psi_1.psi[i][1]);
+		delta = (c_psi_amp2/(3.0*psi_1.omega_m0) -1.0);
+		dsum+=delta; 
+		fprintf(fp,"%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\n",xv[0],xv[1],xv[2],psi_1.psi[i][0],psi_1.psi[i][1],c_psi_amp2,delta);
+	}
 	fclose(fp);
 	fftw_cleanup_threads();
 	*mass_err = psi_1.max_mass_err;
@@ -553,7 +576,7 @@ int main(int argc, char ** argv)
 		//for(dx = dx_l;dx<=dx_u;dx+=ddx)
 		{
 			dx = 2e-2;
-			da = 1e-4;
+			da = 1e-3;
 			mass_loss = run(da,512,mass_err,argc,argv,1,1);
 
 			printf("%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,da,da/(dx*dx),mass_loss,*mass_err,*(mass_err+1));
