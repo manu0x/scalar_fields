@@ -4,3 +4,4 @@ garage/
 run/
 run*/
 .ipynb_checkpoints/
+*.out
