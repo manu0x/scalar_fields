@@ -87,6 +87,7 @@ def pic_dc_construct(p,v,n,dx):
             vel[m,q,k] = vel[m,q,k]+d[j,i]*v[i]
             
     dc = dc-1.0
+    print("dc shape",dc.shape,"v shape",vel.shape)
             
     return dc,vel
 
@@ -199,10 +200,10 @@ filt_c = tf.complex(filt,filt_z)
 
 
 f = h5py.File(outname+".hdf5", "r")
-dc = tf.constant(f["/dc"],dtype=tf.float64)
+dc_tf = tf.constant(f["/dc"],dtype=tf.float64)
 #dc = tf.zeros_like(dc)
-v = tf.constant(f["/v"],dtype=tf.float64)
-v = tf.transpose(v,perm=[3,0,1,2])
+v_tf = tf.constant(f["/v"],dtype=tf.float64)
+v_tf = tf.transpose(v_tf,perm=[3,0,1,2])
 #print(dc.shape,v.shape)
 h5py.File.close(f)
 
@@ -238,6 +239,46 @@ def cal_psi_from_dc_v(dc,v,ai,k_grid_half,k_grid_sqr_half_den_c,h_filt_c,hbar_by
 
 
 
+def cal_psi_from_dc_v_2(dc,v,ai,n,L,hbar_by_m,H0,f_ini,omega_dm0=0.3,a0=1.0):
+    rho_b = 3.0*H0*H0*omega_dm0*np.power(a0/ai,3.0) 
+    print("dc type",type(dc),"vtype",type(v),type(H0),type(omega_dm0),type(ai),type(rho_b))
+    psi_amp = np.sqrt(rho_b*(1.0+dc))
+
+    H_ini = H0*np.sqrt( omega_dm0*np.power(a0/ai,3.0) + (1.0-omega_dm0)   )
+   
+    v_ft_x = np.fft.fftn(v[:,:,:,0],v[:,:,:,0].shape)
+    v_ft_y = np.fft.fftn(v[:,:,:,1],v[:,:,:,1].shape)
+    v_ft_z = np.fft.fftn(v[:,:,:,2],v[:,:,:,2].shape)
+
+    xi = np.fft.fftfreq(n)*n*2*np.pi/L
+    xix,xiy,xiz = np.meshgrid(xi,xi,xi)
+
+    theta_zel_rhs = -H_ini*f_ini*ai*ai*dc/hbar_by_m_val
+    theta_zel_ft = -np.fft.fftn(theta_zel_rhs,theta_zel_rhs.shape)/(xix*xix+xiy*xiy+xiz*xiz)
+    theta_zel_ft[0,0,0] = 0.0+0.0*1j
+
+    theta_zel = np.fft.ifftn(theta_zel_ft,theta_zel_ft.shape)
+    
+    
+    
+    grad_v = 1j*(xix*v_ft_x +xiy*v_ft_y+xiz*v_ft_z)
+    #print("GRAD",grad_v.dtype,hbar_by_m_c)
+    alpha_rhs = -grad_v/hbar_by_m
+    
+
+    #print("ALPHA",alpha_rhs.shape,h_filt_c.shape,alpha_rhs[0,0,0])
+    
+    alpha = np.fft.ifftn(alpha_rhs,alpha_rhs.shape)
+    
+    
+    
+    psi =  psi_amp*np.cos(np.real(alpha))+1j*psi_amp*np.sin(np.real(alpha))
+    
+    
+    
+    return psi,alpha,theta_zel
+
+
 
 
 
@@ -250,12 +291,15 @@ hbar_by_m_c = tf.complex(hbar_by_m,tf.zeros_like(hbar_by_m))
 
 
 
-psi_ini,alpha_ini = cal_psi_from_dc_v(dc,v,ai,k_grid_half,k_grid_sqr_half_den_c,h_filt_c,hbar_by_m_c,H0,omega_dm0,a0)
+psi_ini,alpha_ini = cal_psi_from_dc_v(dc_tf,v_tf,ai,k_grid_half,k_grid_sqr_half_den_c,h_filt_c,hbar_by_m_c,H0,omega_dm0,a0)
+psi_ini2,alpha_ini2,theta_zel = cal_psi_from_dc_v_2(dc,v,ai_val,n,L,hbar_by_m_val,H0_val,1.0,omega_dm0.numpy() )
 
 
 psi_ini = psi_ini*tf.complex(tf.pow(ai,1.5),tf.zeros_like(ai))
 psi_ini = psi_ini.numpy()
 
+psi_ini2 = np.power(ai_val,1.5)*psi_ini2
+alpha_ini2 = ai_val*alpha_ini2
 
 
 
@@ -265,6 +309,7 @@ alpha_ini = np.array(alpha_ini).flatten()
 
 dc = np.reshape(dc,(dc.shape[0],1))
 alpha_ini = np.reshape(alpha_ini,(alpha_ini.shape[0],1))
+
 
 #print(dc.shape,alpha_ini.shape)
 with h5py.File(outname+"_theta.hdf5", "w") as ff:
@@ -276,8 +321,24 @@ with h5py.File(outname+"_psi.hdf5", "w") as ff:
     dsetdc1 = ff.create_dataset("dc", dc.shape,data=dc)
     dset2 = ff.create_dataset("theta", alpha_ini.shape,data=alpha_ini)
 
+with h5py.File(outname+"_dc_theta_psi_2.hdf5", "w") as ff:
+    dsetdc = ff.create_dataset("psi",psi_ini2.shape,data=psi_ini2)
+    dsetdc1 = ff.create_dataset("dc", dc.shape,data=dc)
+    dset2 = ff.create_dataset("theta", alpha_ini2.shape,data=alpha_ini2)
+    dset3 = ff.create_dataset("theta_zel", theta_zel.shape,data=theta_zel)
+
+
 with open('psi.npy', 'wb') as f:
     np.save(f,psi_ini)
+    
+
+
+with open('alpha_1.npy', 'wb') as f:
+    np.save(f,alpha_ini)
+
+with open('alpha_2.npy', 'wb') as f:
+    np.save(f,alpha_ini2)
+    
 
 
 
