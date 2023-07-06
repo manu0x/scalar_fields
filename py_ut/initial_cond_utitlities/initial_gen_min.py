@@ -246,14 +246,15 @@ def cal_psi_from_dc_v_2(dc,v,ai,n,L,hbar_by_m,H0,f_ini,omega_dm0=0.3,a0=1.0):
 
     H_ini = H0*np.sqrt( omega_dm0*np.power(a0/ai,3.0) + (1.0-omega_dm0)   )
    
-    v_ft_x = np.fft.fftn(v[:,:,:,0],v[:,:,:,0].shape)
-    v_ft_y = np.fft.fftn(v[:,:,:,1],v[:,:,:,1].shape)
-    v_ft_z = np.fft.fftn(v[:,:,:,2],v[:,:,:,2].shape)
+    v_ft_x = np.fft.fftn(v[:,:,:,0]+0*1j,v[:,:,:,0].shape)
+    print(v[:,:,:,0].shape)
+    v_ft_y = np.fft.fftn(v[:,:,:,1]+0*1j,v[:,:,:,1].shape)
+    v_ft_z = np.fft.fftn(v[:,:,:,2]+0*1j,v[:,:,:,2].shape)
 
     xi = np.fft.fftfreq(n)*n*2*np.pi/L
     xix,xiy,xiz = np.meshgrid(xi,xi,xi)
 
-    theta_zel_rhs = -H_ini*f_ini*ai*ai*dc/hbar_by_m_val
+    theta_zel_rhs = -H_ini*f_ini*ai*ai*dc/hbar_by_m
     theta_zel_ft = -np.fft.fftn(theta_zel_rhs,theta_zel_rhs.shape)/(xix*xix+xiy*xiy+xiz*xiz)
     theta_zel_ft[0,0,0] = 0.0+0.0*1j
 
@@ -270,6 +271,7 @@ def cal_psi_from_dc_v_2(dc,v,ai,n,L,hbar_by_m,H0,f_ini,omega_dm0=0.3,a0=1.0):
     
     alpha = np.fft.ifftn(alpha_rhs,alpha_rhs.shape)
     
+    alpha = ai*alpha
     
     
     psi =  psi_amp*np.cos(np.real(alpha))+1j*psi_amp*np.sin(np.real(alpha))
@@ -299,7 +301,7 @@ psi_ini = psi_ini*tf.complex(tf.pow(ai,1.5),tf.zeros_like(ai))
 psi_ini = psi_ini.numpy()
 
 psi_ini2 = np.power(ai_val,1.5)*psi_ini2
-alpha_ini2 = ai_val*alpha_ini2
+
 
 
 
