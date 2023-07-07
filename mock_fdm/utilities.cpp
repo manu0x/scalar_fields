@@ -1,6 +1,6 @@
 
 
-void calc_theta_zeldo(int * ind,int *ind_loc, double *k_grid,double  *dc,double *theta,double ai,double a_t,double f_ini=1.0,double a0=1.0)
+void calc_theta_zeldo(int * ind,int *ind_loc, double *k_grid,double  *dc,double *theta,double hbar_by_m,double ai,double a_t,double f_ini=1.0,double a0=1.0)
 {
 	double H_ini = a_t/ai;
 	int n[3],n_loc[3],i,j,k,ci;
@@ -40,7 +40,7 @@ void calc_theta_zeldo(int * ind,int *ind_loc, double *k_grid,double  *dc,double 
 
 	plan_f_th = fftw_mpi_plan_dft_3d(n0, n1,  n2,
                                fpth, fpth_ft,
-                              MPI_COMM_WORLD m, FFTW_FORWARD, FFTW_ESTIMATE);
+                              MPI_COMM_WORLD , FFTW_FORWARD, FFTW_ESTIMATE);
 	plan_b_th = fftw_mpi_plan_dft_3d(n0, n1,  n2,
                                fpth_ft, fpth,
                              MPI_COMM_WORLD , FFTW_BACKWARD, FFTW_ESTIMATE);
@@ -255,18 +255,154 @@ void read_dc_from_hdf5(string fname,double *dc,double *theta,int *ind, int cum_l
 
 
 
+void read_psi_from_hdf5(string fname,fftw_complex *psi,int *ind,use_zeldo=1)
+{
+
+	herr_t status;	
+	hid_t file,dtype,dspace_glbl,dspace,dset_glbl,plist_id,g_id;
+	MPI_Info info  = MPI_INFO_NULL;
+
+	hsize_t dim[3],odim[2];
+
+	dim[0] = ind[0];
+	dim[1] = ind[1];
+	dim[2] = ind[2];
+	odim[0] = ind[0]*ind[1]*ind[2];
+	odim[1] = 2;
+
+	
+	
+	char fchar_name[fname.length()];
+	fname.copy(fchar_name,fname.length()-1,0);
+	printf("FINI_dc %s %d\n",fchar_name,fname.length());
+	
+	file = H5Fopen(fchar_name, H5F_ACC_RDONLY, H5P_DEFAULT);
+	
+	
+	dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
+    status = H5Tset_order(dtype, H5T_ORDER_LE);
+
+
+	//dspace_glbl = H5Screate_simple(2, odim, NULL);
+
+	//g_id = H5G.open(file, "/");
+	if(use_zeldo)
+		dset_glbl = H5Dopen(file, "/psi_zeldo",H5P_DEFAULT);
+	else
+		dset_glbl = H5Dopen(file, "/psi",H5P_DEFAULT);
+
+	dspace_glbl = H5Dget_space(dset_glbl);
+
+	hsize_t count[2],offset[2];
+	count[0] = ind[0]*ind[1]*ind[2]; count[1] = odim[1]; 
 
 
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	herr_t write_hdf5_mpi(char *file,int dim,hsize_t *offset, hsize_t *hdf_dims,hsize_t *hdf_dims_loc,double *data)
+	
+
+	status = H5Dread(dset_glbl, dtype,H5S_ALL, H5S_ALL, H5P_DEFAULT, psi);
+
+	H5Dclose(dset_glbl);
+	H5Fclose(file);
+	
+	
+
+
+
+
+
+
+
+}
+
+
+
+void read_psi_from_hdf5_mpi(string fname,fftw_complex *psi,int *ind_loc, int cum_lin_ind,int use_zeldo=1)
+{
+
+	herr_t status;	
+	hid_t file,dtype,dspace_glbl,dspace,dset_glbl,plist_id,g_id;
+	MPI_Info info  = MPI_INFO_NULL;
+
+	hsize_t dim[3],odim[2];
+
+	dim[0] = ind_loc[0];
+	dim[1] = ind_loc[1];
+	dim[2] = ind_loc[2];
+	odim[0] = ind_loc[0]*ind_loc[1]*ind_loc[2];
+	odim[1] = 2;
+
+	plist_id = H5Pcreate(H5P_FILE_ACCESS);
+    H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, info);
+
+	
+	char fchar_name[fname.length()];
+	fname.copy(fchar_name,fname.length(),0);
+	printf("FINI_dc %s %d\n",fchar_name,fname.length());
+	
+	file = H5Fopen(fchar_name, H5F_ACC_RDONLY, plist_id);
+	H5Pclose(plist_id);
+
+	
+	dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
+    status = H5Tset_order(dtype, H5T_ORDER_LE);
+
+
+	//dspace_glbl = H5Screate_simple(2, odim, NULL);
+
+	//g_id = H5G.open(file, "/");
+	if(use_zeldo)
+		dset_glbl = H5Dopen(file, "/psi_zeldo",H5P_DEFAULT);
+	else
+		dset_glbl = H5Dopen(file, "/psi",H5P_DEFAULT);
+
+	dspace_glbl = H5Dget_space(dset_glbl);
+
+	hsize_t count[2],offset[2];
+	count[0] = ind_loc[0]*ind_loc[1]*ind_loc[2]; count[1] = odim[1]; offset[0] = cum_lin_ind*ind_loc[1]*ind_loc[2]; offset[1] = 0;
+
+	
+
+	dspace = H5Screate_simple(2, count, NULL);
+
+	
+
+	H5Sselect_hyperslab(dspace_glbl, H5S_SELECT_SET, offset, NULL, count, NULL);
+	plist_id = H5Pcreate(H5P_DATASET_XFER);
+    	H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+
+	
+
+	status = H5Dread(dset_glbl, dtype, dspace, dspace_glbl, plist_id, psi);
+
+	H5Dclose(dset_glbl);
+	H5Pclose(plist_id);
+	H5Sclose(dspace);
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////	WRITING MODULES		//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	herr_t write_hdf5_mpi(char *file,int dim,hsize_t *offset, hsize_t *hdf_dims,hsize_t *hdf_dims_loc,char *my_name,double *data)
 	{
         hid_t hdf5_file;  hid_t dtype; hid_t dset_glbl; hid_t dspace_glbl,memspace_loc;
         herr_t status;
         char dset_name[20];
 
-
+		MPI_Info info  = MPI_INFO_NULL;
         strcat(dset_name,my_name);
 
 
@@ -274,7 +410,7 @@ void read_dc_from_hdf5(string fname,double *dc,double *theta,int *ind, int cum_l
         H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, info);
 
 		
-		hdf5_file = H5Fcreate (file_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+		hdf5_file = H5Fcreate (file, H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
 		H5Pclose(plist_id);
 
         dspace_glbl = H5Screate_simple(dim+1, hdf_dims, NULL);
