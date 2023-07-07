@@ -19,6 +19,7 @@
 #include <algorithm>
 #include "../imex/imex_classes.cpp"
 #include "../GPE/GPE_classes_exp_uni_mpi.cpp"
+#include "./utilities.cpp"
 
 using namespace std;
 
@@ -184,14 +185,15 @@ psi_1.print_params_set_kappa();
 
 
 
-    
+    int ind_loc[3] = {myNx,N,N};
 	
 
 	initialise_kgrid(k_grid,dx,N);
 
 	//psi_1.initialise_random(k_grid) ; 
-	psi_1.read_from_initial();
-	
+	//psi_1.read_from_initial();
+
+	read_psi_from_hdf5_mpi("dc_128_dc_theta_psi_zeldo.hdf5",psi_1.psi,ind_loc, cum_lin_ind,0);
 	
 	
 	//printf("no of threads %d\n",omp_get_num_threads());
