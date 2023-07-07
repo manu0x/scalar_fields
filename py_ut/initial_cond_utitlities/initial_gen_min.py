@@ -9,27 +9,52 @@ from tensorflow import keras
 import matplotlib.pyplot as plt
 import numpy as np
 import h5py
+import os
+import importlib
+
 pie = np.pi
 
 
 
 
+n = int(sys.argv[1])
+L = float(sys.argv[2])
+snap_name = str(sys.argv[3])
+param_file = str(sys.argv[4])
 
-hbar_box = 6.582
-c_box = 2.99
-pc_box = 3.0857
-h = 0.7
-alpha = 0.175
+par_path = os.getcwd()
+sys.path.append(par_path)
+
+
+param = importlib.import_module(param_file, package=None)
+print(param.c_unit)
+print("sys_args ",n,L,snap_name)
+
+
+
+hbar_box = param.hbar_unit
+c_box = param.c_unit
+pc_box = param.pc_unit
+h = param.h
+alpha = param.m_alpha
 hbar_by_m_val = (hbar_box*h*c_box*c_box/(alpha*pc_box))*0.001
 H0_val = 100.0
-da_val = 0.00001
+#da_val = 0.00001
 a0_val = 1.0
-ai_val = 0.0078125
-a_print = (int)((a0_val-ai_val)/(10.0*da_val))
+ai_val = param.ai
+
+print("\n#############PARAM loaded############")
+print('hbar',hbar_box)
+print('c_box',c_box)
+print('pc_box',pc_box)
+print('h',h)
+print('alpha',alpha)
+print('hbar_by_m',hbar_by_m_val)
+print("ai",ai_val)
+print("#####################################\n")
 
 
 
-da = tf.constant(da_val,dtype=tf.float64)
 
 a0 =  tf.constant(a0_val,dtype=tf.float64)
 ai =  tf.constant(ai_val,dtype=tf.float64)
@@ -112,10 +137,7 @@ def make_x_grid(L,n):
 
 
 
-n = int(sys.argv[1])
-L = float(sys.argv[2])
-snap_name = str(sys.argv[3])
-print("sys_args ",n,L,snap_name)
+
 
 dx = L/(float(n))
 
@@ -245,6 +267,7 @@ def cal_psi_from_dc_v_2(dc,v,ai,n,L,hbar_by_m,H0,f_ini,omega_dm0=0.3,a0=1.0):
     psi_amp = np.sqrt(rho_b*(1.0+dc))
 
     H_ini = H0*np.sqrt( omega_dm0*np.power(a0/ai,3.0) + (1.0-omega_dm0)   )
+    v = ai*v
    
     v_ft_x = np.fft.fftn(v[:,:,:,0]+0*1j,v[:,:,:,0].shape)
     print(v[:,:,:,0].shape)
@@ -275,10 +298,39 @@ def cal_psi_from_dc_v_2(dc,v,ai,n,L,hbar_by_m,H0,f_ini,omega_dm0=0.3,a0=1.0):
     
     
     psi =  psi_amp*np.cos(np.real(alpha))+1j*psi_amp*np.sin(np.real(alpha))
+    psi_zeldo =  psi_amp*np.cos(np.real(theta_zel))+1j*psi_amp*np.sin(np.real(theta_zel))
+
+    psi = np.power(ai_val,1.5)*psi/H0
+    psi_zeldo = np.power(ai_val,1.5)*psi_zeldo/H0
+
+    psi_zeldo_r = psi_zeldo.real
+    psi_zeldo_i = psi_zeldo.imag
+
+    psi_zeldo_r = np.reshape(psi_zeldo_r,(n*n*n))
+    psi_zeldo_i = np.reshape(psi_zeldo_i,(n*n*n))
+    psi_zeldo = np.stack([psi_zeldo_r,psi_zeldo_i],axis=-1)
+
+
+    psi_r = psi.real
+    psi_i = psi.imag
+
+    psi_r = np.reshape(psi_r,(n*n*n))
+    psi_i = np.reshape(psi_i,(n*n*n))
+    psi = np.stack([psi_r,psi_i],axis=-1)
+
+
+    alpha_r = alpha.real
+    alpha = np.reshape(alpha_r,(n*n*n,1))
+
+    theta_zel_r = theta_zel.real
+    theta_zel = np.reshape(theta_zel_r,(n*n*n,1))
+    
+
+    print("PSI shapes",psi.shape,psi_zeldo.shape,alpha.shape,theta_zel.shape)
     
     
     
-    return psi,alpha,theta_zel
+    return psi,alpha,psi_zeldo,theta_zel
 
 
 
@@ -294,13 +346,12 @@ hbar_by_m_c = tf.complex(hbar_by_m,tf.zeros_like(hbar_by_m))
 
 
 psi_ini,alpha_ini = cal_psi_from_dc_v(dc_tf,v_tf,ai,k_grid_half,k_grid_sqr_half_den_c,h_filt_c,hbar_by_m_c,H0,omega_dm0,a0)
-psi_ini2,alpha_ini2,theta_zel = cal_psi_from_dc_v_2(dc,v,ai_val,n,L,hbar_by_m_val,H0_val,1.0,omega_dm0.numpy() )
+psi_ini2,alpha_ini2,psi_zeldo,theta_zel = cal_psi_from_dc_v_2(dc,v,ai_val,n,L,hbar_by_m_val,H0_val,1.0,omega_dm0.numpy() )
 
 
 psi_ini = psi_ini*tf.complex(tf.pow(ai,1.5),tf.zeros_like(ai))
 psi_ini = psi_ini.numpy()
 
-psi_ini2 = np.power(ai_val,1.5)*psi_ini2
 
 
 
@@ -323,8 +374,9 @@ with h5py.File(outname+"_psi.hdf5", "w") as ff:
     dsetdc1 = ff.create_dataset("dc", dc.shape,data=dc)
     dset2 = ff.create_dataset("theta", alpha_ini.shape,data=alpha_ini)
 
-with h5py.File(outname+"_dc_theta_psi_2.hdf5", "w") as ff:
+with h5py.File(outname+"_dc_theta_psi_zeldo.hdf5", "w") as ff:
     dsetdc = ff.create_dataset("psi",psi_ini2.shape,data=psi_ini2)
+    dsetdc = ff.create_dataset("psi_zeldo",psi_zeldo.shape,data=psi_zeldo)
     dsetdc1 = ff.create_dataset("dc", dc.shape,data=dc)
     dset2 = ff.create_dataset("theta", alpha_ini2.shape,data=alpha_ini2)
     dset3 = ff.create_dataset("theta_zel", theta_zel.shape,data=theta_zel)
