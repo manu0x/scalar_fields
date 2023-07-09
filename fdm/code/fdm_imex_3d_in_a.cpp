@@ -17,8 +17,8 @@
 #include <string>
 
 #include <algorithm>
-#include "../imex/imex_classes.cpp"
-#include "../GPE/GPE_classes_3d_exp_uni.cpp"
+#include "../../imex/imex_classes.cpp"
+#include "../../GPE/GPE_classes_3d_exp_uni.cpp"
 #include "./utilities.cpp"
 
 using namespace std;
