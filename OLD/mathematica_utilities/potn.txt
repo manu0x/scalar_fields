@@ -1,0 +1,1 @@
+(pow[a, -1]*pow[a_t, -1]*(2*((phi_xx) + (phi_yy) + (phi_zz)) + (3 - 6*phi)*pow[a_t, 2] + pow[a, 2]*(-lambda + G*twopie*pow[2, 2 - alpha]*pow[aftsquare, -2]*pow[m, -1]*(aftsquare*(aftsquare - 2*alpha*paftsquare) + 2*alpha*(-aftsquare + 2*(-1 + alpha)*paftsquare + 2*aftsquare*phi)*pow[a, 2]*pow[f_t, 2])*pow[aftsquare*pow[a, -2], alpha])))/6

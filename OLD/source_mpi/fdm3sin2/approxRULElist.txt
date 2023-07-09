@@ -1,0 +1,2 @@
+a^2*(f_t)^2 - (f_x)^2 - (f_y)^2 - (f_z)^2 -> aftsquare
+a^2*phi*(f_t)^2 + phi*(f_x)^2 + phi*(f_y)^2 + phi*(f_z)^2 -> paftsquare
