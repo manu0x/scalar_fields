@@ -1,1 +1,0 @@
-(pow[2, -1 - alpha]*pow[a, -1]*pow[m, -1]*pow[a_t, -1]*(-(m*pow[2, alpha]*(-2*((phi_xx) + (phi_yy) + (phi_zz)) + lambda*pow[a, 2] + (-3 + 6*phi)*pow[a_t, 2])) + 4*(-1 + 2*alpha)*G*(-1 + 2*alpha*phi)*twopie*pow[a, 2]*pow[pow[f_t, 2], alpha]))/3
