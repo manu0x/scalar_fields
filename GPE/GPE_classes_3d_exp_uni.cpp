@@ -56,10 +56,17 @@ class GPE_field_3d
     double dj,dN3;
     double energy,ini_energy,max_eng_err;
     double mass,ini_mass,max_mass_err;
+    
+
+    char my_name[20];
+
+     hid_t hdf5_file;  hid_t dtype; hid_t dset_glbl;hid_t dspace_glbl,memspace_loc;
+     hsize_t hdf_dims[4];
+
+     char fp_hdf5_name[30]=("data_");
 
 
-
-    GPE_field_3d(int jj,int NN,int imex_s,int nthreads=4)
+    GPE_field_3d(int jj,int NN,int imex_s,char *field_name,int nthreads=4)
     {
         j= jj;
         N= NN;
@@ -68,6 +75,18 @@ class GPE_field_3d
         s = imex_s;
         dj = (double)j;
         dN3 = (double)N3;
+
+
+        dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
+        hdf_dims[0] = N;hdf_dims[1] = N;hdf_dims[2] = N;hdf_dims[3] = 2;
+        dspace_glbl = H5Screate_simple(4, hdf_dims, NULL);
+        memspace_loc = H5Screate_simple(4, hdf_dims, NULL);
+
+        strcat(fp_hdf5_name,field_name);
+        strcat(fp_hdf5_name,".hdf5"); 
+        strcat(my_name,field_name);
+
+        hdf5_file = H5Fcreate(fp_hdf5_name,  H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
         fpGpsi = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (N3));
 	    fpGpsi_ft =(fftw_complex*) fftw_malloc(sizeof(fftw_complex) *(N3));
@@ -602,93 +621,37 @@ void read_from_initial()
 
 }
 
-void read_dc_from_hdf5(string fname,double *dc,double *theta)
-{
 
-	herr_t status;	
-	hid_t file,dtype,dspace_glbl,dspace,dset_glbl,plist_id,g_id;
-	
 
-	hsize_t dim[3],odim[2];
 
-	dim[0] = N;
-	dim[1] = N;
-	dim[2] = N;
-	odim[0] = N3;
-	odim[1] = 1;
+	herr_t write_hdf5(double z)
+	{
+        hid_t plist_id;
+        herr_t status;
+        char dset_name[20];
+        snprintf(dset_name,20,"%.2lf",z);
+        strcat(dset_name,"_");
+        strcat(dset_name,my_name);
 
-	plist_id = H5Pcreate(H5P_FILE_ACCESS);
+
+        dset_glbl = H5Dcreate(hdf5_file, dset_name, dtype, dspace_glbl,
+						H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+  
+
+        status = H5Dwrite(dset_glbl, dtype, H5S_ALL, H5S_ALL,H5P_DEFAULT, &psi[0][0]);
+
+
+        H5Dclose(dset_glbl);
+        
+
+        return status;
+
+        
+
        
 
-	
-	char fchar_name[fname.length()];
-	fname.copy(fchar_name,fname.length()-1,0);
-	printf("FINI_dc %s %d\n",fchar_name,fname.length());
-	
-	file = H5Fopen(fchar_name, H5F_ACC_RDONLY, plist_id);
-	H5Pclose(plist_id);
-
-	
-	dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
-    	status = H5Tset_order(dtype, H5T_ORDER_LE);
-
-
-	//dspace_glbl = H5Screate_simple(2, odim, NULL);
-
-	//g_id = H5G.open(file, "/");
-
-	dset_glbl = H5Dopen(file, "/dc",H5P_DEFAULT);
-
-	dspace_glbl = H5Dget_space(dset_glbl);
-
-	hsize_t count[2],offset[2];
-	count[0] = N3; count[1] = odim[1]; offset[0] = 0; offset[1] = 0;
-
-	
-
-	dspace = H5Screate_simple(2, count, NULL);
-
-	
-
-	
-
-	status = H5Dread(dset_glbl, dtype, dspace, dspace_glbl, plist_id, dc);
-
-	H5Dclose(dset_glbl);
-	H5Pclose(plist_id);
-	H5Sclose(dspace);
-
-
-	dset_glbl = H5Dopen(file, "/theta",H5P_DEFAULT);
-
-	dspace_glbl = H5Dget_space(dset_glbl);
-
-
-	count[0] = N3; count[1] = 1; 
-
-	
-
-	dspace = H5Screate_simple(2, count, NULL);
-
-	
-
-	
-
-	
-
-	status = H5Dread(dset_glbl, dtype, dspace, dspace_glbl, plist_id, theta);
-
-	H5Dclose(dset_glbl);
-	H5Pclose(plist_id);
-	H5Sclose(dspace);
-
-
-
-
-
-
-
-}
+	}
 
 
    
@@ -703,39 +666,4 @@ void read_dc_from_hdf5(string fname,double *dc,double *theta)
 
     
 
-/*
-int main(int argc,char **argv)
-{
 
-
-	char fp_name[30]("imex_ft_");
-	
-    int stages;
-	char *imex_file; 
-    char *f1file;
-
-    stages = atoi(argv[1]);
-	imex_file = argv[2];
-    f1file = argv[3];
-	
-	strcat(fp_name,imex_file);
-	printf("ImEx table filename is %s and stages given by u is %d and out file %s \n",imex_file,stages,fp_name);
-
-	FILE *fp = fopen(fp_name,"w");
-	
-
-	imex_table imx(stages);
-    
- 
-  	imx.read_from_file(imex_file);
-  	imx.print_table();
-
-
-    GPE_field_2d  psi_1(0,128,3,8);
-    GPE_field_2d  psi_2(1,128,3,8);
-
-    psi_1.read_from_file(f1file);
-
-    psi_1.print_params();
-
-}*/

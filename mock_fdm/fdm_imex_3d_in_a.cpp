@@ -10,6 +10,7 @@
 
 #include <limits>
 
+#include <hdf5.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -18,6 +19,7 @@
 #include <algorithm>
 #include "../imex/imex_classes.cpp"
 #include "../GPE/GPE_classes_3d_exp_uni.cpp"
+#include "./utilities.cpp"
 
 using namespace std;
 
@@ -134,7 +136,9 @@ double run(double da,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 ////////////////////////	Declare field /////////////////////////////////////////////
 char *f1paramfile;
 
-GPE_field_3d  psi_1(0,N,imx.s,16);
+char pas[20] = {"psi"};
+
+GPE_field_3d  psi_1(0,N,imx.s,pas,16);
 
 f1paramfile = argv[3];
 
@@ -185,13 +189,10 @@ psi_1.print_params_set_kappa();
 	initialise_kgrid(k_grid,dx,N);
 
 	//psi_1.initialise_random(k_grid) ; 
-	psi_1.read_from_initial();
-	
-	
-	
-	//printf("no of threads %d\n",omp_get_num_threads());
-	//omp_set_num_threads(4);
-	//printf("no of threads %d\n",omp_get_num_threads());
+	//psi_1.read_from_initial();
+	int ind[3] = {N,N,N};
+	read_psi_from_hdf5("dc_128_dc_theta_psi_zeldo.hdf5",psi_1.psi,ind,1);
+
 	
 
 	if(prnt)
@@ -217,7 +218,7 @@ psi_1.print_params_set_kappa();
 	
 
 	double kv[3];
-	int ind[3];
+	
 
 
 	ii=-1;
@@ -234,6 +235,10 @@ psi_1.print_params_set_kappa();
 	
 	for(a=a_start,acntr=0;(a<=a_end)&&(!fail)&&(1);a+=da,++acntr)
 	{
+
+
+		if((acntr%fpcntr==0)&&(prntfp))
+			psi_1.write_hdf5(1.0/a -1.0);
 		
 		////////////////////////////	Adaptive step checks	/////////////////////////////
 		
@@ -536,6 +541,7 @@ psi_1.print_params_set_kappa();
 	printf("N %d\n Run en los %lf abs err %lf\n",N,*(mass_err),*(mass_err+1));
 
 
+	psi_1.write_hdf5(1.0/a -1.0);
 	
 	return(psi_1.max_mass_err);
 
