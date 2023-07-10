@@ -255,7 +255,7 @@ void read_dc_from_hdf5(string fname,double *dc,double *theta,int *ind, int cum_l
 
 
 
-void read_psi_from_hdf5(string fname,fftw_complex *psi,int *ind,use_zeldo=1)
+void read_psi_from_hdf5(string fname,fftw_complex *psi,int *ind,int use_zeldo=1)
 {
 
 	herr_t status;	
