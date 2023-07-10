@@ -567,7 +567,7 @@ int main(int argc, char ** argv)
 	double mass_err[2],mass_loss;
 
 	double dx_l=2e-3,dx_u = 4e-2;
-	double da_l= 1e-5,da_u = 1e-2;
+	double da_l= 1.25e-4,da_u = 1e-3;
 
 	double ddx = (dx_u-dx_l)/(20.0);
 	double dda = (da_u-da_l)/(20.0);
@@ -575,15 +575,16 @@ int main(int argc, char ** argv)
 	FILE *fp = fopen("imex_ft.txt","w");
 	
 
-	//for(da=da_l;da<=da_u;da+=dda)
+	for(da=da_l;da<=da_u;da*=2.0)
 	{
 
 
 		//for(dx = dx_l;dx<=dx_u;dx+=ddx)
 		{
 			dx = 2e-2;
-			da = 1e-3;
-			mass_loss = run(da,512,mass_err,argc,argv,1,1);
+			//da = 1e-3;
+			printf("\n\n RUNNING da = %lf\n\n",da);
+			mass_loss = run(da,512,mass_err,argc,argv,0,0);
 
 			printf("%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,da,da/(dx*dx),mass_loss,*mass_err,*(mass_err+1));
 			fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,da,da/(dx*dx),mass_loss,*mass_err,*(mass_err+1));
