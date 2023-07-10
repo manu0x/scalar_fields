@@ -61,6 +61,7 @@ class GPE_field_mpi
     double dj,dN_tot,mydN_tot;
     double energy,ini_energy,max_eng_err;
     double mass,ini_mass,max_mass_err;
+    double mass_mpi_glbl;
 
     hid_t hdf5_file;  hid_t dtype; hid_t dset_glbl;hid_t dspace_glbl,memspace_loc;
     hsize_t *offset; hsize_t *hdf_dims,*hdf_dims_loc;
@@ -525,7 +526,7 @@ class GPE_field_mpi
     {
            
         
-            double loc_energy,loc_mass,psi2;//der_x[2],der_y[2],der_amp2,fcntr,Rcntr;
+            double point_energy,point_mass,psi2;//der_x[2],der_y[2],der_amp2,fcntr,Rcntr;
          /*     int left[2],right[2],left_y,right_y,ci,cr,cl;   
            
             /////////////////////  x-derivative //////////////////////
@@ -573,27 +574,35 @@ class GPE_field_mpi
            // Rcntr = -(psi[ci][0]*     )
       
 
-           loc_energy = 0.0;// 0.5*der_amp2 +  V(x)*psi2 + fcntr + Rcntr;
-            loc_mass = psi2;
+           point_energy = 0.0;// 0.5*der_amp2 +  V(x)*psi2 + fcntr + Rcntr;
+            point_mass = psi2;
 
-            energy+=loc_energy;
-            mass+=loc_mass;
+            energy+=point_energy;
+            mass+=point_mass;
 
             if(is_ini)
             {
-                ini_energy+=loc_energy;
-                ini_mass+=loc_mass;
+                ini_energy+=point_energy;
+                ini_mass+=point_mass;
 
             }
 
+
+        
             
     }
 
-    void conserve_err()
+    void conserve_err(int is_ini=0)
     {
         double eng_err,mass_err;
+
+        MPI_Allreduce(&mass, &mass_mpi_glbl, 1, MPI_DOUBLE, MPI_SUM,MPI_COMM_WORLD);
+
+        if(is_ini)
+        ini_mass = mass_mpi_glbl;
+        
         eng_err = fabs(energy-ini_energy)/fabs(ini_energy);
-        mass_err = fabs(mass-ini_mass)/ini_mass;
+        mass_err = fabs(mass_mpi_glbl-ini_mass)/ini_mass;
 
         if(eng_err>max_eng_err)
             max_eng_err=eng_err;
