@@ -155,7 +155,8 @@ print("Loaded\n",par_v.shape,par_p.shape)
 
 dc,v = pic_dc_construct(par_p,par_v,n,dx)
 
-
+par_p = None
+par_v = None
 
 
 outname = "dc_"+str(n)
