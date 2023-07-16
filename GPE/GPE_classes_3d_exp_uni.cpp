@@ -18,6 +18,8 @@ class GPE_field_3d
     
     double hbar_unit,c_unit,h,pc_unit;
     double vfac;
+
+    double nm_correction = 1.0;
     
     double m_alpha;
 
@@ -56,6 +58,8 @@ class GPE_field_3d
     double dj,dN3;
     double energy,ini_energy,max_eng_err;
     double mass,ini_mass,max_mass_err;
+
+     int nm_correct_fac;
     
 
     char my_name[20];
@@ -66,7 +70,7 @@ class GPE_field_3d
      char fp_hdf5_name[30]=("data_");
 
 
-    GPE_field_3d(int jj,int NN,int imex_s,char *field_name,int nthreads=4)
+    GPE_field_3d(int jj,int NN,int imex_s,char *field_name,int cor_fac=1,int nthreads=4)
     {
         j= jj;
         N= NN;
@@ -75,6 +79,8 @@ class GPE_field_3d
         s = imex_s;
         dj = (double)j;
         dN3 = (double)N3;
+
+        nm_correct_fac = cor_fac;
 
 
         dtype = H5Tcopy(H5T_NATIVE_DOUBLE);
@@ -176,6 +182,10 @@ class GPE_field_3d
 
         psi2_avg = sum_ps2/dN3;
 
+         if(nm_correct_fac)
+        
+            nm_correction = (3.0*omega_m0)/psi2_avg;
+
     }
 
 
@@ -190,7 +200,7 @@ class GPE_field_3d
         {
             psisqr = fpGpsi[loc_i][0]*fpGpsi[loc_i][0] + fpGpsi[loc_i][1]*fpGpsi[loc_i][1];
             //V_phi[loc_i][0] = (0.5/kppa)*(psisqr-3.0*omega_m0);
-            V_phi[loc_i][0] = (0.5/kppa)*(psisqr-psi2_avg);
+            V_phi[loc_i][0] = nm_correction*(0.5/kppa)*(psisqr-psi2_avg);
             V_phi[loc_i][1] = 0.0;
 
 
