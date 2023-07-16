@@ -41,7 +41,7 @@ fp_in = h5py.File(f_in+".hdf5", "r")
 if use_zeldo==1:
     psi_in = fp_in["psi_zeldo"]
 else:
-    psi_in = fp_in["psi_zeldo"]
+    psi_in = fp_in["psi"]
 
 psi_in_t  = np.reshape(psi_in,(n_high,n_high,n_high,2))
 
