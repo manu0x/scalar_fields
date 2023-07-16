@@ -19,7 +19,7 @@ n_high = int(sys.argv[1])
 n_low = int(sys.argv[2])
 
 f_in = str(sys.argv[3])
-f_out = str(sys.argv[4])
+#f_out = str(sys.argv[4])
 
 use_zeldo = int(sys.argv[5])
 
