@@ -21,7 +21,7 @@ n_low = int(sys.argv[2])
 f_in = str(sys.argv[3])
 #f_out = str(sys.argv[4])
 
-use_zeldo = int(sys.argv[5])
+use_zeldo = int(sys.argv[4])
 
 finlist = f_in.split('_')
 n_name = finlist[1]
