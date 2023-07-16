@@ -138,7 +138,7 @@ char *f1paramfile;
 
 char pas[20] = {"psi"};
 
-GPE_field_mpi  psi_1(dim,N,0,my_rank,imx.s,pas,16); 
+GPE_field_mpi  psi_1(dim,N,0,my_rank,imx.s,pas,1,16); 
 myNx = psi_1.myNx;
 myN_tot=psi_1.myN_tot;
 cum_lin_ind = psi_1.cum_lin_ind;
@@ -195,7 +195,7 @@ psi_1.print_params_set_kappa();
 	//psi_1.initialise_random(k_grid) ; 
 	//psi_1.read_from_initial();
 
-	read_psi_from_hdf5_mpi("dc_128_dc_theta_psi_zeldo.hdf5",psi_1.psi,ind_loc, cum_lin_ind);
+	read_psi_from_hdf5_mpi("dc_256_dc_theta_psi_zeldo.hdf5",psi_1.psi,ind_loc, cum_lin_ind);
 	
 	
 	//printf("no of threads %d\n",omp_get_num_threads());
