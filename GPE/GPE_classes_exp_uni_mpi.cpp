@@ -18,6 +18,8 @@ class GPE_field_mpi
     int dim;
     double hbar_unit,c_unit,h,pc_unit;
     double vfac;
+
+    double nm_correction = 1.0;
     
     double m_alpha;
 
@@ -63,6 +65,8 @@ class GPE_field_mpi
     double mass,ini_mass,max_mass_err;
     double mass_mpi_glbl;
 
+    int nm_correct_fac;
+
     hid_t hdf5_file;  hid_t dtype; hid_t dset_glbl;hid_t dspace_glbl,memspace_loc;
     hsize_t *offset; hsize_t *hdf_dims,*hdf_dims_loc;
     
@@ -72,12 +76,14 @@ class GPE_field_mpi
 
 
 
-    GPE_field_mpi(int dim_p,int NN,int jj,int my_rank_p,int imex_s,char *field_name,int nthreads=4)
+    GPE_field_mpi(int dim_p,int NN,int jj,int my_rank_p,int imex_s,char *field_name,int cor_fac=1,int nthreads=4)
     {
         comp_j= jj;
         N= NN;
         N_tot = N;
         my_rank=my_rank_p;
+
+        nm_correct_fac = cor_fac;
 
         
        dim = dim_p;
@@ -263,6 +269,12 @@ class GPE_field_mpi
 
         psi2_avg = psi2_avg/dN_tot;
 
+        if(nm_correct_fac)
+        
+            nm_correction = (3.0*omega_m0)/psi2_avg;
+
+       
+
 
     }
 
@@ -280,7 +292,7 @@ class GPE_field_mpi
         {
             psisqr = fpGpsi[loc_i][0]*fpGpsi[loc_i][0] + fpGpsi[loc_i][1]*fpGpsi[loc_i][1];
             //V_phi[loc_i][0] = (0.5/kppa)*(psisqr-3.0*omega_m0);
-            V_phi[loc_i][0] = (0.5/kppa)*(psisqr-psi2_avg);
+            V_phi[loc_i][0] = nm_correction*(0.5/kppa)*(psisqr-psi2_avg);
             V_phi[loc_i][1] = 0.0;
 
 
