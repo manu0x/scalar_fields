@@ -138,7 +138,7 @@ char *f1paramfile;
 
 char pas[20] = {"psi"};
 
-GPE_field_3d  psi_1(0,N,imx.s,pas,16);
+GPE_field_3d  psi_1(0,N,imx.s,pas,1,16);
 
 f1paramfile = argv[3];
 
@@ -191,7 +191,7 @@ psi_1.print_params_set_kappa();
 	//psi_1.initialise_random(k_grid) ; 
 	//psi_1.read_from_initial();
 	int ind[3] = {N,N,N};
-	read_psi_from_hdf5("dc_128_dc_theta_psi_zeldo.hdf5",psi_1.psi,ind,1);
+	read_psi_from_hdf5("dc_256_dc_theta_psi_zeldo.hdf5",psi_1.psi,ind,1);
 
 	
 
