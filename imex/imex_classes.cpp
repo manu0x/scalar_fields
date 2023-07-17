@@ -115,7 +115,7 @@ class imex_table
         int j,i=0;
         size_t fnd_div;
         double num_val;
-        int max_len = 80;
+        int max_len = 400;
 	    char read_c_line[max_len];
 	    string read_str,cur_str, read_key, read_val,cur_num,cur_den;
 
