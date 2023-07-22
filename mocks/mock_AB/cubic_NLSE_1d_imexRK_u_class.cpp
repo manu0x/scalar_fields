@@ -12,8 +12,8 @@
 #include <string>
 
 #include <algorithm>
-#include "../imex/imex_classes.cpp"
-#include "../GPE/GPE_classes_1d.cpp"
+#include "../../imex/imex_classes.cpp"
+#include "../../GPE/GPE_classes_1d.cpp"
 
 using namespace std;
 
@@ -410,11 +410,12 @@ double run(double dt,int N,double *mass_err,int argc,char **argv,int prntfp,int 
 	fclose(fp);
 	//fftw_cleanup_threads();
 	*mass_err = psi_1.max_mass_err;
+	*(mass_err+1) = psi_1.max_sol_err;
 	
 
 
 	if(prnt)
-	printf("N %d\n Run mass los %lf\n",N,*(mass_err));
+	printf("N %d\n Run mass los %e sol err %e\n",N,*(mass_err),psi_1.max_sol_err);
 
 
 	
@@ -442,25 +443,25 @@ int main(int argc, char ** argv)
 	double err[2],mass_loss;
 
 	double dx_l=2e-3,dx_u = 4e-2;
-	double dt_l= 1e-5,dt_u = 1e-2;
+	double dt_l= 0.125e-3,dt_u = 1e-3;
 
-	double ddx = (dx_u-dx_l)/(20.0);
-	double ddt = (dt_u-dt_l)/(20.0);
+	//double ddx = ;
+	//double ddt = (dt_u-dt_l)/(20.0);
 
 	FILE *fp = fopen("imex_ft.txt","w");
 	
 
-	//for(dt=dt_l;dt<=dt_u;dt+=ddt)
+	//for(dt=dt_l;dt<=dt_u;dt*=2.0*dt)
 	{
 
 
 		//for(dx = dx_l;dx<=dx_u;dx+=ddx)
 		{
 			dx = 2e-2;
-			dt = 1e-3;
+			dt = 1e-5;//0.125e-3;
 			mass_loss = run(dt,512,err,argc,argv,1,1);
 
-			printf("%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,dt,dt/(dx*dx),mass_loss,*err,*(err+1));
+			printf("%lf\t%lf\t%lf\t%lf\t%e\t%e\n",dx,dt,dt/(dx*dx),mass_loss,*err,*(err+1));
 			fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,dt,dt/(dx*dx),mass_loss,*err,*(err+1));
 		}
 
