@@ -164,7 +164,12 @@ outname = "dc_"+str(n)
 
 
 
-def cal_psi_from_dc_v_2(dc,v,ai,n,L,hbar_by_m,H0,f_ini,omega_dm0=0.3,a0=1.0):
+def cal_psi_from_dc_v_2(dc,v,ai,n,L,hbar_by_m,H0,omega_dm0=0.3,a0=1.0):
+
+    omega_l = 1.0-omega_dm0
+    f_ini = np.power(omega_dm0,4.0/7.0) + (1.0+0.5*omega_dm0)*omega_l/70.0
+    print("#### f_ini is ",f_ini,"  ##############")
+
     rho_b = 3.0*H0*H0*omega_dm0*np.power(a0/ai,3.0) 
     print("dc type",type(dc),"vtype",type(v),type(H0),type(omega_dm0),type(ai),type(rho_b))
     psi_amp = np.sqrt(rho_b*(1.0+dc))
@@ -246,7 +251,7 @@ def cal_psi_from_dc_v_2(dc,v,ai,n,L,hbar_by_m,H0,f_ini,omega_dm0=0.3,a0=1.0):
 
 
 
-psi_ini2,alpha_ini2,psi_zeldo,theta_zel = cal_psi_from_dc_v_2(dc,v,ai_val,n,L,hbar_by_m_val,H0_val,1.0,omega_dm0.numpy() )
+psi_ini2,alpha_ini2,psi_zeldo,theta_zel = cal_psi_from_dc_v_2(dc,v,ai_val,n,L,hbar_by_m_val,H0_val,omega_dm0.numpy() )
 
 
 
