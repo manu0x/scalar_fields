@@ -366,7 +366,7 @@ class GPE_field_1d
 			sol[0] = cos(theta)*fs;
 			sol[1] = sin(theta)*fs;
 
-			(err_n2)+=((sol[0]-psi[i][0])*(sol[0]-psi[i][0])+(sol[1]-psi[i][1])*(sol[1]-psi[i][1]));
+			(err_n2)+=((sol[0]-psi[ci][0])*(sol[0]-psi[ci][0])+(sol[1]-psi[ci][1])*(sol[1]-psi[ci][1]));
 			sol_n2+= (sol[0]*sol[0] + sol[1]*sol[1]);
 
 
