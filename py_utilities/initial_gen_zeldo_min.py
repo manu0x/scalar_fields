@@ -190,14 +190,15 @@ def cal_psi_from_dc_v_2(dc,v,ai,n,L,hbar_by_m,H0,f_ini,omega_dm0=0.3,a0=1.0):
     
     grad_v = 1j*(xix*v_ft_x +xiy*v_ft_y+xiz*v_ft_z)
     #print("GRAD",grad_v.dtype,hbar_by_m_c)
-    alpha_rhs = -grad_v/hbar_by_m
-    
+    alpha_rhs = grad_v*ai/hbar_by_m
+    alpha_rhs = -alpha_rhs/(xix*xix + xiy*xiy + xiz*xiz)    
+    alpha_rhs[0,0,0] = 0.0+0.0*1j
 
     #print("ALPHA",alpha_rhs.shape,h_filt_c.shape,alpha_rhs[0,0,0])
     
     alpha = np.fft.ifftn(alpha_rhs,alpha_rhs.shape)
     
-    alpha = ai*alpha
+    
     
     
     psi =  psi_amp*np.cos(np.real(alpha))+1j*psi_amp*np.sin(np.real(alpha))
@@ -267,12 +268,13 @@ with h5py.File(outname+"_dc_theta_psi_zeldo.hdf5", "w") as ff:
     dsetdc = ff.create_dataset("psi",psi_ini2.shape,data=psi_ini2)
     dsetdc = ff.create_dataset("psi_zeldo",psi_zeldo.shape,data=psi_zeldo)
     dsetdc1 = ff.create_dataset("dc", dc.shape,data=dc)
+    dsetv= ff.create_dataset("v", v.shape,data=v)
     dset2 = ff.create_dataset("theta", alpha_ini2.shape,data=alpha_ini2)
     dset3 = ff.create_dataset("theta_zel", theta_zel.shape,data=theta_zel)
 
 
 
-    
+print("DONE DONE DONE")
 
 
 
