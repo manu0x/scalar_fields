@@ -19,7 +19,7 @@ class GPE_field_mpi
     double hbar_unit,c_unit,h,pc_unit;
     double vfac;
 
-    double nm_correction = 1.0;
+   
     
     double m_alpha;
 
@@ -27,7 +27,10 @@ class GPE_field_mpi
 
     public:
     double kppa,omega_m0,ai,ti,t0;
-    double psi2_avg;
+    double psi2_avg,fpsi2_avg;
+
+     double nm_correction = 1.0;
+     double fnm_correction = 1.0;
 
     fftw_complex *psi;
 
@@ -65,7 +68,7 @@ class GPE_field_mpi
     double mass,ini_mass,max_mass_err;
     double mass_mpi_glbl;
 
-    int nm_correct_fac;
+    int is_nm_correction;
 
     hid_t hdf5_file;  hid_t dtype; hid_t dset_glbl;hid_t dspace_glbl,memspace_loc;
     hsize_t *offset; hsize_t *hdf_dims,*hdf_dims_loc;
@@ -83,7 +86,7 @@ class GPE_field_mpi
         N_tot = N;
         my_rank=my_rank_p;
 
-        nm_correct_fac = cor_fac;
+        is_nm_correction = cor_fac;
 
         
        dim = dim_p;
@@ -257,7 +260,7 @@ class GPE_field_mpi
        
         for(loc_i=0;loc_i<myN_tot;++loc_i)
         {
-            psisqr = fpGpsi[loc_i][0]*fpGpsi[loc_i][0] + fpGpsi[loc_i][1]*fpGpsi[loc_i][1];
+            psisqr = psi[loc_i][0]*psi[loc_i][0] + psi[loc_i][1]*psi[loc_i][1];
             sum_ps2+= psisqr;
 
 
@@ -269,9 +272,40 @@ class GPE_field_mpi
 
         psi2_avg = psi2_avg/dN_tot;
 
-        if(nm_correct_fac)
+        if(is_nm_correction)
         
             nm_correction = (3.0*omega_m0)/psi2_avg;
+
+       
+
+
+    }
+
+    void calc_fpsi2_avg()
+    {
+
+       double psisqr,sum_ps2;  int loc_i;
+
+        sum_ps2 = 0.0;
+
+       
+        for(loc_i=0;loc_i<myN_tot;++loc_i)
+        {
+            psisqr = fpGpsi[loc_i][0]*fpGpsi[loc_i][0] + fpGpsi[loc_i][1]*fpGpsi[loc_i][1];
+            sum_ps2+= psisqr;
+
+
+        }
+
+       // MPI_Barrier(MPI_COMM_WORLD);
+
+        MPI_Allreduce(&sum_ps2, &fpsi2_avg, 1, MPI_DOUBLE, MPI_SUM,MPI_COMM_WORLD);
+
+        fpsi2_avg = fpsi2_avg/dN_tot;
+
+        if(is_nm_correction)
+        
+            fnm_correction = (3.0*omega_m0)/fpsi2_avg;
 
        
 
@@ -285,14 +319,14 @@ class GPE_field_mpi
         double dN = (double) N;
         double Npwr;
 
-        calc_psi2_avg();
+        calc_fpsi2_avg();
 
      //   #pragma omp parallel for private(psisqr)
         for(loc_i=0;loc_i<myN_tot;++loc_i)
         {
             psisqr = fpGpsi[loc_i][0]*fpGpsi[loc_i][0] + fpGpsi[loc_i][1]*fpGpsi[loc_i][1];
             //V_phi[loc_i][0] = (0.5/kppa)*(psisqr-3.0*omega_m0);
-            V_phi[loc_i][0] = nm_correction*(0.5/kppa)*(psisqr-psi2_avg);
+            V_phi[loc_i][0] = (1.5/kppa)*omega_m0*(psisqr/fpsi2_avg-1.0);
             V_phi[loc_i][1] = 0.0;
 
 
