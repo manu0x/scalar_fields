@@ -66,11 +66,12 @@ void initialise_kgrid(double *k,double dx,int N)
 }
 
 
-double run(double da,int dim,int N,double *mass_err,int prntfp,int prnt,int argc,char **argv)
+double run(double da,int dim,double *mass_err,int prntfp,int prnt,int argc,char **argv)
 {
 
 	int my_rank;
 	int mpicheck;
+	int N;
 	int myNx,myN_tot,N_tot,cum_lin_ind;
 
 	mpicheck = MPI_Comm_rank(MPI_COMM_WORLD,&my_rank);
@@ -90,7 +91,8 @@ double run(double da,int dim,int N,double *mass_err,int prntfp,int prnt,int argc
 	x0[0]=-0.5*box_len; x0[1]=-0.5*box_len; x0[2]=-0.5*box_len;
 	
 	//n  = 2.0/box_len;
-	N = 128;
+	//N = 256;
+	N = atoi(argv[2]);
 	dx = box_len/(double(N));
 
 	int N2,N3;
@@ -99,7 +101,7 @@ double run(double da,int dim,int N,double *mass_err,int prntfp,int prnt,int argc
 	
 	//N = ((int)(box_len/dx));
 
-	//printf("N2 %d\n",N2);
+	printf("N %d\n",N);
 
 ////////////	Imex declare and data write file declare ////////////////////////
 
@@ -113,8 +115,8 @@ double run(double da,int dim,int N,double *mass_err,int prntfp,int prnt,int argc
    
 
 
-    stages = atoi(argv[1]);
-	imex_file = argv[2];
+    stages = atoi(argv[3]);
+	imex_file = argv[4];
     
 	
 	
@@ -135,6 +137,7 @@ double run(double da,int dim,int N,double *mass_err,int prntfp,int prnt,int argc
 
 ////////////////////////	Declare field /////////////////////////////////////////////
 char *f1paramfile;
+char *fpsi_ini_file;
 
 char pas[20] = {"psi"};
 
@@ -143,7 +146,8 @@ myNx = psi_1.myNx;
 myN_tot=psi_1.myN_tot;
 cum_lin_ind = psi_1.cum_lin_ind;
 
-f1paramfile = argv[3];
+f1paramfile = argv[5];
+fpsi_ini_file = argv[6];
 
 psi_1.read_param_from_file(f1paramfile);
 	
@@ -195,12 +199,14 @@ psi_1.print_params_set_kappa();
 	//psi_1.initialise_random(k_grid) ; 
 	//psi_1.read_from_initial();
 
-	read_psi_from_hdf5_mpi("dc_256_dc_theta_psi_zeldo.hdf5",psi_1.psi,ind_loc, cum_lin_ind);
-	
+	read_psi_from_hdf5_mpi(fpsi_ini_file,psi_1.psi,ind_loc, cum_lin_ind);
+	printf("INI file is %s\n",fpsi_ini_file);
 	
 	//printf("no of threads %d\n",omp_get_num_threads());
 	//omp_set_num_threads(4);
 	//printf("no of threads %d\n",omp_get_num_threads());
+
+	
 	
 
 	if(prnt)
@@ -246,9 +252,13 @@ psi_1.print_params_set_kappa();
 	if(my_rank==0)
 	printf("Starting Run..,\n");
 
+	double cor_fac;
 	
 	for(a=a_start,acntr=0;(a<=a_end)&&(!fail)&&(1);a+=da,++acntr)
 	{
+
+
+
 
 		///////////////	Data Writing ////////////////////////////////
 
@@ -286,7 +296,11 @@ psi_1.print_params_set_kappa();
 		da = da_up;
 		//////////////////////////////////////////////////////////////////////////////////////////
 		if((acntr%printcntr==0)&&prnt)
-		printf("time %lf %lf %lf  da %lf  from rank %d\n",a/a_end,psi_1.mass,psi_1.mass,da,my_rank);
+		{printf("time %lf %lf %lf  da %lf  from rank %d\n",a/a_end,psi_1.mass,psi_1.mass,da,my_rank);
+
+			printf("SV da<=  %lf\n",a*a*a*psi_1.HbyH0(a)*(dx*dx)*(4.0/(3.0*pie))/psi_1.kppa);
+
+		}
 
 
 		psi_1.do_forward_fft();
@@ -512,9 +526,21 @@ psi_1.print_params_set_kappa();
 		   
 		}
 
+	/*	psi_1.calc_psi2_avg();
+		cor_fac = sqrt(psi_1.nm_correction);
+
+		//printf("beforeSUM %lf ratio %lf  %d %lf\n",psi_1.psi2_avg,psi_1.psi2_avg/(3.0*psi_1.omega_m0),psi_1.is_nm_correction,psi_1.nm_correction);
+
+		for( i = 0; i <myN_tot ; i++)
+		{
+			psi_1.psi[i][0] = cor_fac*psi_1.psi[i][0];
+			psi_1.psi[i][1] = cor_fac*psi_1.psi[i][1];
 		
+		}
+	*/
+		//psi_1.calc_psi2_avg();
 
-
+		//printf("SUM %lf ratio %lf  %d %lf\n",psi_1.psi2_avg,psi_1.psi2_avg/(3.0*psi_1.omega_m0),psi_1.is_nm_correction,psi_1.nm_correction);
 	}///// ENd f Time Evolution /////////////////////////
 
 	//fclose(fp);
@@ -581,20 +607,20 @@ int main(int argc, char ** argv)
 	fp = fopen("imex_ft_mpi.txt","w");
 	
 
-	for(da=da_l;da<=da_u;da*=2.0)
+	//for(da=da_l;da<=da_u;da*=2.0)
 	{
 
 
 		//for(dx = dx_l;dx<=dx_u;dx+=ddx)
 		{
 			//dx = 2e-2;
-			//da = 1e-3;
+			da = atof(argv[1]);
 		
 			printf("\n\n RUNNING da = %lf\n\n",da);
-			if(da==da_l)
+		/*	if(da==da_l)
 			mass_loss = run(da,3,512,mass_err,1,0,argc,argv); //(double da,int dim,int N,double *mass_err,int prntfp,int prnt,int argc,char **argv)
 			else
-			mass_loss = run(da,3,512,mass_err,0,0,argc,argv);
+		*/	mass_loss = run(da,3,mass_err,1,1,argc,argv);
 			printf("%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,da,da/(dx*dx),mass_loss,*mass_err,*(mass_err+1));
 			if(rank==0)
 			fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,da,da/(dx*dx),mass_loss,*mass_err,*(mass_err+1));
