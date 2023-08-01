@@ -577,6 +577,7 @@ int main(int argc, char ** argv)
 
 
 	clock_t t_start,t_end;
+	double start_t_mpi,end_t_mpi;
 
 	t_start = clock();
 
@@ -589,6 +590,10 @@ int main(int argc, char ** argv)
 	
 	mpicheck = MPI_Comm_rank(MPI_COMM_WORLD,&rank);
 
+
+	MPI_Barrier(MPI_COMM_WORLD);
+	start_t_mpi = MPI_Wtime();
+
 	//fftw_mpi_init();
 
 
@@ -599,8 +604,8 @@ int main(int argc, char ** argv)
 	double dx_l=2e-3,dx_u = 4e-2;
 	double da_l= 1.25e-4,da_u = 1e-3;
 
-	double ddx = (dx_u-dx_l)/(20.0);
-	double dda = (da_u-da_l)/(20.0);
+	//double ddx = (dx_u-dx_l)/(20.0);
+	//double dda = (da_u-da_l)/(20.0);
 
 	FILE *fp;
 	if(rank==0)
@@ -616,7 +621,7 @@ int main(int argc, char ** argv)
 			//dx = 2e-2;
 			da = atof(argv[1]);
 		
-			printf("\n\n RUNNING da = %lf\n\n",da);
+			//printf("\n\n RUNNING da = %lf\n\n",da);
 		/*	if(da==da_l)
 			mass_loss = run(da,3,512,mass_err,1,0,argc,argv); //(double da,int dim,int N,double *mass_err,int prntfp,int prnt,int argc,char **argv)
 			else
@@ -628,6 +633,14 @@ int main(int argc, char ** argv)
 
 	}
 
+	MPI_Barrier(MPI_COMM_WORLD);
+	end_t_mpi = MPI_Wtime();
+	t_end = clock();
+
+	printf("\nMPI time from rank %d is: %lf\n",rank,end_t_mpi-start_t_mpi);
+	printf("\nClock time from rank %d is: %lf\n",rank,t_end-t_start);
+
+	if(rank==0)
 	fclose(fp);
 
 	mpicheck = MPI_Finalize();
