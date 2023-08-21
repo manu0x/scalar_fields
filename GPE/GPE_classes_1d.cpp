@@ -124,13 +124,17 @@ class GPE_field_1d
 
     void update_fft_fields(int ind,double k,double lamda)
     {
+
+        double temp_psi[2];
+        temp_psi[0] = fpGpsi_ft[ind][0];
+        temp_psi[1] = fpGpsi_ft[ind][1];
        
      //  if(ind==130)
 		//	printf("Lambda %.10lf  %.10lf  %.10lf  %.10lf  %.10lf\n",lamda,fpGpsi_ft[130][0],fpGpsi[130][0],fpGpsi_ft[130][1],fpGpsi[130][1]);
        	fpGpsi_ft[ind][0] = ((fpGpsi_ft[ind][0]) + lamda*fpGpsi_ft[ind][1])/(1.0+lamda*lamda); 
      //   if(ind==130)
 		//	printf("Lambda %.10lf  %.10lf  %.10lf  %.10lf  %.10lf\n",lamda,fpGpsi_ft[130][0],fpGpsi[130][0],fpGpsi_ft[130][1],fpGpsi[130][1]);
-		fpGpsi_ft[ind][1] = ((fpGpsi_ft[ind][1]) - lamda*fpGpsi_ft[ind][0])/(1.0+lamda*lamda);
+		fpGpsi_ft[ind][1] = ((fpGpsi_ft[ind][1]) - lamda*temp_psi[0])/(1.0+lamda*lamda);
         
         
 

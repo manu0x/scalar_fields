@@ -378,10 +378,12 @@ class GPE_field_mpi
    
     void update_fft_fields(int ind,double ksqr,double lamda)
     {
-       
+        double temp_psi[2];
+        temp_psi[0] = fpGpsi_ft[ind][0];
+        temp_psi[1] = fpGpsi_ft[ind][1];
        
        	fpGpsi_ft[ind][0] = ((fpGpsi_ft[ind][0]) + lamda*fpGpsi_ft[ind][1])/(1.0+lamda*lamda);
-		fpGpsi_ft[ind][1] = ((fpGpsi_ft[ind][1]) - lamda*fpGpsi_ft[ind][0])/(1.0+lamda*lamda);
+		fpGpsi_ft[ind][1] = ((fpGpsi_ft[ind][1]) - lamda*temp_psi[0])/(1.0+lamda*lamda);
         
 
 
