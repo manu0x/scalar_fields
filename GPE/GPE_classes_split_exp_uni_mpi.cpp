@@ -668,7 +668,8 @@ double calc_v(double *kgrid)
 
 double calc_v_dir(int dir,double *kgrid)
 {
-    int ii,Npwr,wii,cur_i,kcomp;
+    int ii,Npwr,NpwrS,wii,cur_i,ci;
+    double kcomp;
     double num,den;
     double dN = (double) N;
      
@@ -695,21 +696,22 @@ double calc_v_dir(int dir,double *kgrid)
        
             
     Npwr = pow(dN,(double)(dim-dir-1));
+    NpwrS = (pow(dN,(double)(dim-dir)));
     
 
-    printf("DGGDHD %d %d\n",dir,Npwr);
+    //printf("DGGDHD %d %d\n",dir,Npwr);
 
     
     for(ii=0;ii<myN_tot;++ii)
     {
-                
-            cur_i = (int) (((double)ii)/Npwr);
+            ci = ii%NpwrS;
+            cur_i = (int) (((double)ci)/Npwr);
                 
            
-                if(dir==0)
-                    kcomp= (kgrid[cur_i+cum_lin_ind]);
-                else
-                    kcomp= (kgrid[cur_i]);
+            if(dir==0)
+                kcomp= (kgrid[cur_i+cum_lin_ind]);
+            else
+                kcomp= (kgrid[cur_i]);
 
             theta_ft[ii][0] = -kcomp*theta_ft[ii][1]/(dN_tot);
             theta_ft[ii][1] =  kcomp*theta_ft[ii][0]/(dN_tot);
