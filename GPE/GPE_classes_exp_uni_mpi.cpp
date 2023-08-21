@@ -1,4 +1,4 @@
-
+///// 
 
 ///#include <omp.h>
 #include <fftw3.h>
