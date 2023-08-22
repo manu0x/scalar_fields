@@ -66,7 +66,7 @@ void initialise_kgrid(double *k,double dx,int N)
 }
 
 
-double run(double da,int dim,double *mass_err,int prntfp,int prnt,int argc,char **argv)
+double run(double da,int dim,double *mass_err,int calvel,int cal_da_cons,int prntfp,int prnt,int argc,char **argv)
 {
 
 	int my_rank;
@@ -238,10 +238,11 @@ psi_1.print_params_set_kappa();
 	//Variables for holding temporary values
 	double c_psi[2],c_psi_amp2,delta;
 	
-	double delta_sum,fac,Vmax=-0.00000000000001;
+	double delta_sum,fac,Vmax=-0.00000000000001,Vmax_mpi_glbl;
 	
 
-	
+	double da_constraints[2];
+	double velmax;
 	
 
 
@@ -278,27 +279,40 @@ psi_1.print_params_set_kappa();
 		fac = a*a*HbyH0;
 		for ( i = 0; i <myN_tot ; i++)
 		{
-			if(Vmax<fabs(psi_1.V_phi[i][0]/fac))
-			{			Vmax = fabs(psi_1.V_phi[i][0]/fac);
+			if(Vmax<fabs(psi_1.V_phi[i][0]))
+			{			Vmax = fabs(psi_1.V_phi[i][0]);
 				
 			}
 		}
 	
 
-		if(Vmax>(imx.ex_stb_r/da))
-		{		printf("Rank %d says Vmax da %lf stb r %lf  %lf\n",my_rank,Vmax*da,imx.ex_stb_r,fac);
+		if((Vmax/fac)>(imx.ex_stb_r/da))
+		{		printf("Rank %d says Vmax da %lf stb r %lf  %lf\n",my_rank,Vmax*da/fac,imx.ex_stb_r,fac);
 
-			//da_up = 0.9*imx.ex_stb_r/vmax;
+			da_up = 0.95*imx.ex_stb_r/(Vmax/fac);
 		}
 
 
+		if(cal_da_cons)
+		{ 
+		  MPI_Allreduce(&Vmax, &Vmax_mpi_glbl, 1, MPI_DOUBLE, MPI_MAX,MPI_COMM_WORLD);	
+		  da_constraints[0] = a*a*psi_1.HbyH0(a)*2.0*M_PI/Vmax_mpi_glbl;
+		  da_constraints[1] = 4.0*a*a*a*psi_1.HbyH0(a)*(dx*dx)/(3.0*M_PI*psi_1.kppa);
+
+		}
 
 		da = da_up;
 		//////////////////////////////////////////////////////////////////////////////////////////
 		if((acntr%printcntr==0)&&prnt)
 		{printf("time %lf %lf %lf  da %lf  from rank %d\n",a/a_end,psi_1.mass,psi_1.mass,da,my_rank);
 
-			printf("SV da<=  %lf\n",a*a*a*psi_1.HbyH0(a)*(dx*dx)*(4.0/(3.0*pie))/psi_1.kppa);
+			if(calvel)
+			velmax = psi_1.calc_v(k_grid);
+			if(cal_da_cons)
+			printf("Constraints da<  {%lf,%lf}\n",da_constraints[0],da_constraints[1]);
+			if(calvel)
+			printf("Constraints on (%lf)dx <%lf\n",dx,M_PI/velmax);
+			
 
 		}
 
@@ -351,8 +365,7 @@ psi_1.print_params_set_kappa();
 			
 
 		}
-		if((acntr%fpcntr==0)&&(prntfp))
-			printf("RANK %d a/a_end %lf dsum = %lf\n",my_rank,a/a_end,delta_sum);
+		
 
 		if(acntr%err_cntr==0)
 		{	psi_1.conserve_err(!acntr);
@@ -625,7 +638,7 @@ int main(int argc, char ** argv)
 		/*	if(da==da_l)
 			mass_loss = run(da,3,512,mass_err,1,0,argc,argv); //(double da,int dim,int N,double *mass_err,int prntfp,int prnt,int argc,char **argv)
 			else
-		*/	mass_loss = run(da,3,mass_err,1,1,argc,argv);
+		*/	mass_loss = run(da,3,mass_err,0,1,1,1,argc,argv);
 			printf("%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,da,da/(dx*dx),mass_loss,*mass_err,*(mass_err+1));
 			if(rank==0)
 			fprintf(fp,"%lf\t%lf\t%lf\t%lf\t%lf\t%.10lf\n",dx,da,da/(dx*dx),mass_loss,*mass_err,*(mass_err+1));
