@@ -43,6 +43,9 @@ class GPE_field_mpi
 	fftw_complex *K;
 	fftw_complex *K_ft;
 
+    fftw_complex *theta;
+	fftw_complex *theta_ft;
+
    
 
     double ***im_K_psi = new double**[2];
@@ -54,6 +57,9 @@ class GPE_field_mpi
 
     fftw_plan plan_V_f;
     fftw_plan plan_V_b;
+
+    fftw_plan plan_theta_f;
+    fftw_plan plan_theta_b;
 
 
 
@@ -67,6 +73,8 @@ class GPE_field_mpi
     double energy,ini_energy,max_eng_err;
     double mass,ini_mass,max_mass_err;
     double mass_mpi_glbl;
+
+    double vmax_mpi_glbl;
 
     int is_nm_correction;
 
@@ -724,6 +732,98 @@ void read_from_initial()
 
 
 
+
+
+double calc_v(double *kgrid)
+{
+    int dir;
+    double dir_max,vmax_loc=-1.0;
+
+    for(dir=0;dir<dim;++dir)
+    {  
+        dir_max = calc_v_dir(dir,kgrid);
+        
+        if(fabs(dir_max)>vmax_loc)
+            vmax_loc = fabs(dir_max);
+
+        
+    }
+    
+     MPI_Allreduce(&vmax_loc, &vmax_mpi_glbl, 1, MPI_DOUBLE, MPI_MAX,MPI_COMM_WORLD);
+   return(vmax_mpi_glbl);
+
+}
+
+
+double calc_v_dir(int dir,double *kgrid)
+{
+    int ii,Npwr,NpwrS,wii,cur_i,ci;
+    double kcomp;
+    double num,den;
+    double dN = (double) N;
+     
+    for(ii=0;ii<myN_tot;++ii)
+    {
+        den = sqrt(fpGpsi[ii][0]*fpGpsi[ii][0]+fpGpsi[ii][1]*fpGpsi[ii][1]);
+        if(den>0.0)
+        {
+
+            num = fpGpsi[ii][0];
+            theta[ii][0] = acos(num/den);
+
+        }
+        else
+        theta[ii][0]=0.0;
+
+        theta[ii][1]=0.0;
+
+    }
+
+    fftw_execute(plan_theta_f);
+
+    
+       
+            
+    Npwr = pow(dN,(double)(dim-dir-1));
+    NpwrS = (pow(dN,(double)(dim-dir)));
+    
+
+    //printf("DGGDHD %d %d\n",dir,Npwr);
+
+    
+    for(ii=0;ii<myN_tot;++ii)
+    {
+            ci = ii%NpwrS;
+            cur_i = (int) (((double)ci)/Npwr);
+                
+           
+            if(dir==0)
+                kcomp= (kgrid[cur_i+cum_lin_ind]);
+            else
+                kcomp= (kgrid[cur_i]);
+
+            theta_ft[ii][0] = -kcomp*theta_ft[ii][1]/(dN_tot);
+            theta_ft[ii][1] =  kcomp*theta_ft[ii][0]/(dN_tot);
+    }
+
+    fftw_execute(plan_theta_b);
+    
+    
+    double loc_max = 0.0;
+    for(ii=0;ii<myN_tot;++ii)
+    {
+        
+        if(fabs(theta[ii][0])>loc_max)
+            loc_max = fabs(theta[ii][0]);
+
+    }
+
+
+    
+    return loc_max;
+
+
+ }
 
 
    
