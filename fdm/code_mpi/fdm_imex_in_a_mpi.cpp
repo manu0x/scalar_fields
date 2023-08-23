@@ -199,7 +199,7 @@ psi_1.print_params_set_kappa();
 	//psi_1.initialise_random(k_grid) ; 
 	//psi_1.read_from_initial();
 
-	read_psi_from_hdf5_mpi(fpsi_ini_file,psi_1.psi,ind_loc, cum_lin_ind);
+	read_psi_from_hdf5_mpi(fpsi_ini_file,psi_1.psi,ind_loc, cum_lin_ind,0);
 	printf("INI file is %s\n",fpsi_ini_file);
 	
 	//printf("no of threads %d\n",omp_get_num_threads());
@@ -289,7 +289,7 @@ psi_1.print_params_set_kappa();
 		if((Vmax/fac)>(imx.ex_stb_r/da))
 		{		printf("Rank %d says Vmax da %lf stb r %lf  %lf\n",my_rank,Vmax*da/fac,imx.ex_stb_r,fac);
 
-			da_up = 0.95*imx.ex_stb_r/(Vmax/fac);
+			da_up = 0.9*imx.ex_stb_r/(Vmax/fac);
 		}
 
 

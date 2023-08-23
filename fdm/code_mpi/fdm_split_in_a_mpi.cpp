@@ -174,7 +174,7 @@ psi_1.print_params_set_kappa();
 	//psi_1.initialise_random(k_grid) ; 
 	//psi_1.read_from_initial();
 
-	read_psi_from_hdf5_mpi(fpsi_ini_file,psi_1.psi,ind_loc, cum_lin_ind);
+	read_psi_from_hdf5_mpi(fpsi_ini_file,psi_1.psi,ind_loc, cum_lin_ind,0);
 	printf("INI file is %s\n",fpsi_ini_file);
 	
 	//printf("no of threads %d\n",omp_get_num_threads());
@@ -249,6 +249,13 @@ psi_1.print_params_set_kappa();
 		  MPI_Allreduce(&Vmax, &Vmax_mpi_glbl, 1, MPI_DOUBLE, MPI_MAX,MPI_COMM_WORLD);	
 		  da_constraints[0] = a*a*psi_1.HbyH0(a)*2.0*M_PI/Vmax_mpi_glbl;
 		  da_constraints[1] = 4.0*a*a*a*psi_1.HbyH0(a)*(dx*dx)/(3.0*M_PI*psi_1.kppa);
+		  if(0.5*(da_constraints[0]+da_constraints[1])<da)
+		  {  if(da_constraints[0]<da_constraints[1])
+		  	  da = 0.9*da_constraints[0];
+			 else
+			  da = 0.9*da_constraints[1];
+
+		  }
 
 		}
 	
