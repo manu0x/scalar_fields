@@ -249,7 +249,7 @@ psi_1.print_params_set_kappa();
 		  MPI_Allreduce(&Vmax, &Vmax_mpi_glbl, 1, MPI_DOUBLE, MPI_MAX,MPI_COMM_WORLD);	
 		  da_constraints[0] = a*a*psi_1.HbyH0(a)*2.0*M_PI/Vmax_mpi_glbl;
 		  da_constraints[1] = 4.0*a*a*a*psi_1.HbyH0(a)*(dx*dx)/(3.0*M_PI*psi_1.kppa);
-		  if(0.5*(da_constraints[0]+da_constraints[1])<da)
+		  if((da_constraints[1]<da)||(da_constraints[0]<da))
 		  {  if(da_constraints[0]<da_constraints[1])
 		  	  da = 0.9*da_constraints[0];
 			 else
