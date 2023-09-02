@@ -257,6 +257,14 @@ psi_1.print_params_set_kappa();
 
 		  }
 
+		  if((da_constraints[1]>(da/0.9))&&(da_constraints[0]>(da/0.9)))
+		  {  if(da_constraints[0]<da_constraints[1])
+		  	  da = 0.9*da_constraints[0];
+			 else
+			  da = 0.9*da_constraints[1];
+
+		  }
+
 		}
 	
 		if((acntr%printcntr==0)&&prnt)
